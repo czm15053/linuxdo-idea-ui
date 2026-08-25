@@ -169,7 +169,7 @@
           .join("，");
         return bits ? [`<span class="idea-cmt">// ${escapeHtml(bits)}。</span>`] : [];
       },
-      footerTopic({ name, floor, time, postNumber, body }) {
+      footerTopic({ name, floor, time, postNumber, body, cooked }) {
         const n = goFloorNumber(floor, postNumber);
         return [
           ``,
@@ -182,11 +182,11 @@
           `\tAuthor: ${goStringLiteral(name || "")},`,
           `\tFloor:  ${escapeHtml(n)},`,
           ...(time ? [`\tAt:     ${goStringLiteral(time)},`] : []),
-          ...goBodyFieldLines(body),
+          ...goBodyFieldLinesFromCooked(cooked, "\t", body),
           `}`
         ];
       },
-      footerReply({ name, floor, time, replyTo, postNumber, body }) {
+      footerReply({ name, floor, time, replyTo, postNumber, body, cooked }) {
         const ident = goPostIdent(name, postNumber);
         const n = goFloorNumber(floor, postNumber);
         return [
@@ -196,7 +196,7 @@
           `\t\tFloor:   ${escapeHtml(n)},`,
           ...(time ? [`\t\tAt:      ${goStringLiteral(time)},`] : []),
           ...(replyTo ? [`\t\tReplyTo: ${goStringLiteral(replyTo)},`] : []),
-          ...goBodyFieldLines(body, "\t\t"),
+          ...goBodyFieldLinesFromCooked(cooked, "\t\t", body),
           `\t}`,
           `}`
         ];
@@ -526,6 +526,191 @@
     const lines = [`${indent}Body: ${rawLines[0]}`];
     for (let i = 1; i < rawLines.length; i += 1) {
       lines.push(i === rawLines.length - 1 ? `${rawLines[i]},` : rawLines[i]);
+    }
+    return lines;
+  }
+
+  function leftoverCookedText(node) {
+    if (!node || node.nodeType !== Node.ELEMENT_NODE) return "";
+    const clone = node.cloneNode(true);
+    for (const img of clone.querySelectorAll?.("img") || []) img.remove();
+    for (const a of clone.querySelectorAll?.("a.lightbox") || []) a.remove();
+    return String(clone.textContent || "")
+      .replace(/\u00a0/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function isDiscourseImageCaption(text) {
+    const t = String(text || "").replace(/\s+/g, " ").trim();
+    if (!t) return true;
+    const hasDims = /\d+\s*[×xX]\s*\d+/.test(t);
+    const hasSize = /\d+(?:\.\d+)?\s*[KMGT]?B\b/i.test(t);
+    if (hasDims && hasSize) return true;
+    if (/^PixPin_\d{4}-\d{2}-\d{2}/i.test(t)) return true;
+    if (/^[\w.-]+\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(t) && t.length < 80) return true;
+    return false;
+  }
+
+  function cookedNodePlainText(node) {
+    if (!node) return "";
+    let text = "";
+    if (node.nodeType === Node.TEXT_NODE) text = node.nodeValue || "";
+    else if (typeof node.innerText === "string" && node.innerText) text = node.innerText;
+    else text = node.textContent || "";
+    return String(text)
+      .replace(/\u00a0/g, " ")
+      .replace(/\r/g, "")
+      .replace(/[ \t]+\n/g, "\n")
+      .trim();
+  }
+
+  function collectCookedBodySegments(cooked) {
+    const segments = [];
+    if (!cooked) return segments;
+
+    function normalizeBodyText(text) {
+      return String(text ?? "")
+        .replace(/\u00a0/g, " ")
+        .replace(/\r/g, "")
+        .replace(/[ \t]+\n/g, "\n")
+        .trim();
+    }
+
+    function pushText(text) {
+      const t = normalizeBodyText(text);
+      if (!t) return;
+      if (segments[segments.length - 1]?.kind === "image" && isDiscourseImageCaption(t)) return;
+      segments.push({ kind: "text", text: t });
+    }
+
+    function pushImages(root) {
+      const images =
+        root.tagName?.toLowerCase() === "img"
+          ? [root]
+          : Array.from(root.querySelectorAll?.("img") || []);
+      for (const img of images) {
+        const src = getImageSrc(img);
+        if (src) segments.push({ kind: "image", src });
+      }
+    }
+
+    function walkMixed(node) {
+      for (const child of Array.from(node.childNodes)) {
+        if (child.nodeType === Node.TEXT_NODE) {
+          const text = (child.nodeValue || "").replace(/\u00a0/g, " ");
+          if (text.trim() && !isDiscourseImageCaption(text.trim())) pushText(text);
+          continue;
+        }
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        if (child.tagName.toLowerCase() === "img" || isImageContainer(child)) {
+          const leftover = leftoverCookedText(child);
+          pushImages(child);
+          if (leftover && !isDiscourseImageCaption(leftover)) pushText(leftover);
+          continue;
+        }
+        if (child.querySelector?.("img,a.lightbox,.lightbox-wrapper,picture,figure")) {
+          walkMixed(child);
+          continue;
+        }
+        const t = leftoverCookedText(child) || cookedNodePlainText(child);
+        if (t && !isDiscourseImageCaption(t)) pushText(t);
+      }
+    }
+
+    function walk(root) {
+      for (const child of Array.from(root.childNodes)) {
+        if (child.nodeType === Node.TEXT_NODE) {
+          const text = (child.nodeValue || "").replace(/\u00a0/g, " ");
+          if (text.trim()) pushText(text);
+          continue;
+        }
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        const tag = child.tagName.toLowerCase();
+        if (tag === "script" || tag === "style") continue;
+        if (tag === "br" || tag === "hr") continue;
+
+        if (isImageContainer(child)) {
+          const leftover = leftoverCookedText(child);
+          if (leftover && !isDiscourseImageCaption(leftover)) {
+            walkMixed(child);
+            continue;
+          }
+          pushImages(child);
+          continue;
+        }
+
+        if (tag === "p" || tag === "div" || /^h[1-6]$/.test(tag)) {
+          const t = cookedNodePlainText(child);
+          if (t) pushText(t);
+          continue;
+        }
+
+        if (tag === "ul" || tag === "ol") {
+          if (child.querySelector?.("img,a.lightbox,.lightbox-wrapper,picture,figure")) {
+            walk(child);
+            continue;
+          }
+          const items = [];
+          let index = 1;
+          for (const item of child.querySelectorAll(":scope > li")) {
+            const bullet = tag === "ol" ? `${index}. ` : "- ";
+            const t = cookedNodePlainText(item);
+            if (t) items.push(bullet + t);
+            index += 1;
+          }
+          if (items.length) pushText(items.join("\n"));
+          continue;
+        }
+
+        if (tag === "blockquote" || tag === "pre" || tag === "li") {
+          if (child.querySelector?.("img,a.lightbox,.lightbox-wrapper,picture,figure")) walk(child);
+          else {
+            const t = cookedNodePlainText(child);
+            if (t) pushText(t);
+          }
+          continue;
+        }
+
+        walk(child);
+      }
+    }
+
+    walk(cooked);
+    return segments;
+  }
+
+  function goBodyFieldLinesFromCooked(cooked, indent = "\t", fallback = "") {
+    if (!cooked) return goBodyFieldLines(fallback, indent);
+    const segments = collectCookedBodySegments(cooked);
+    if (!segments.some((seg) => seg.kind === "image")) {
+      return goBodyFieldLines(cookedToGoBody(cooked) || fallback, indent);
+    }
+
+    const parts = segments.slice();
+    if (parts[0].kind === "image") parts.unshift({ kind: "text", text: "" });
+    if (parts[parts.length - 1].kind === "image") parts.push({ kind: "text", text: "" });
+
+    const lines = [];
+    let textIndex = 0;
+    const textCount = parts.filter((seg) => seg.kind === "text").length;
+    for (const seg of parts) {
+      if (seg.kind === "image") {
+        lines.push(`${indent}${buildImageCodeLine("// ", seg.src)}`);
+        continue;
+      }
+      const prefix = textIndex === 0 ? `${indent}Body: ` : indent;
+      const suffix = textIndex === textCount - 1 ? "," : " +";
+      const rawLines = goRawStringDisplayLines(seg.text);
+      if (rawLines.length === 1) {
+        lines.push(`${prefix}${rawLines[0]}${suffix}`);
+      } else {
+        lines.push(`${prefix}${rawLines[0]}`);
+        for (let i = 1; i < rawLines.length; i += 1) {
+          lines.push(i === rawLines.length - 1 ? `${rawLines[i]}${suffix}` : rawLines[i]);
+        }
+      }
+      textIndex += 1;
     }
     return lines;
   }
@@ -3356,13 +3541,15 @@
   function buildFooterLines(post) {
     const product = getProduct();
     const postNumber = post.getAttribute("data-post-number") || "?";
+    const cooked = post.querySelector(".cooked");
     const ctx = {
       name: getPostAuthorName(post),
       time: getPostTimeText(post),
       floor: getPostFloorLabel(post),
       replyTo: getReplyToName(post),
       postNumber,
-      body: product.paintBody === "raw-string" ? cookedToGoBody(post.querySelector(".cooked")) : ""
+      body: product.paintBody === "raw-string" ? cookedToGoBody(cooked) : "",
+      cooked
     };
     if (postNumber === "1") return product.footerTopic(ctx);
     return product.footerReply(ctx);
@@ -3419,15 +3606,13 @@
       const product = getProduct();
       const embedBody = product.paintBody === "raw-string";
       const paintReplyAsCode = isReply && !embedBody;
-      const imageLines = embedBody ? collectCookedImageLines(cooked, "// ") : [];
       const allLines = [
         ...buildHeaderLines(post),
         ...(embedBody ? [] : collectCookedLineHtml(cooked, paintReplyAsCode)),
-        ...buildFooterLines(post),
-        ...(imageLines.length ? ["", ...imageLines] : [])
+        ...buildFooterLines(post)
       ];
 
-      const signature = `v9:${getProductId()}\n${allLines.join("\n")}`;
+      const signature = `v10:${getProductId()}\n${allLines.join("\n")}`;
       if (codeLines.dataset.signature !== signature) {
         codeLines.dataset.signature = signature;
         codeLines.innerHTML = allLines
@@ -3958,7 +4143,11 @@
       goStringLiteral,
       goRawStringDisplayLines,
       goBodyFieldLines,
+      goBodyFieldLinesFromCooked,
       cookedToGoBody,
+      leftoverCookedText,
+      isDiscourseImageCaption,
+      collectCookedBodySegments,
       collectCookedImageLines,
       buildImageCodeLine,
       sectionTreeLabel,
