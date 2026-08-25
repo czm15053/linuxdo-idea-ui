@@ -200,8 +200,8 @@
       replyLink: (indent, str, body) => `${indent}ctx.<span class="idea-fn">Open</span>(${str(body)})`,
       replyList: (indent, str, body) =>
         `${indent}items = <span class="idea-fn">append</span>(items, ${str(body)})`,
-      replyQuote: (indent, comment, body) =>
-        `${indent}<span class="idea-cmt">${comment}quoted: ${body}</span>`,
+      replyQuote: (indent, _comment, body) => goReplyQuoteBlock(indent, "", body),
+      replyQuoteBlock: goReplyQuoteBlock,
       replyFillers: []
     },
     idea: {
@@ -556,6 +556,17 @@
 
   function goPrintlnStatement(indent, str, body) {
     return `${indent}<span class="idea-fn">println</span>(${str(body)})`;
+  }
+
+  function goReplyQuoteBlock(indent, who, text) {
+    const whoPlain = stripHtmlToText(who).trim();
+    const textPlain = stripHtmlToText(text).trim();
+    const textRaw = goQuoteHtmlAsRawString(escapeHtml(textPlain));
+    if (whoPlain) {
+      const whoRaw = goQuoteHtmlAsRawString(escapeHtml(whoPlain));
+      return `${indent}<span class="idea-fn">quote</span>.<span class="idea-fn">From</span>(${whoRaw}, ${textRaw})`;
+    }
+    return `${indent}<span class="idea-fn">quote</span>.<span class="idea-fn">From</span>(${textRaw})`;
   }
 
   function goBodyFieldLines(text, indent = "\t") {
@@ -3292,6 +3303,32 @@
     return false;
   }
 
+  function isDiscourseQuoteBlock(node) {
+    if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
+    if (node.matches?.("aside.quote, aside[data-username]")) return true;
+    if (node.classList?.contains("quote") && node.querySelector?.(":scope > blockquote, blockquote")) {
+      return true;
+    }
+    return false;
+  }
+
+  function extractDiscourseQuote(node) {
+    const whoRaw =
+      node.getAttribute?.("data-username") ||
+      node.querySelector?.(".title")?.textContent ||
+      "";
+    const who = String(whoRaw)
+      .replace(/\u00a0/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/[:：]\s*$/, "");
+    const body = String(node.querySelector?.("blockquote")?.textContent || "")
+      .replace(/\u00a0/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return { who, body };
+  }
+
   function createReplyPainter(product = getProduct()) {
     let seq = 0;
     const indent = product.indent;
@@ -3362,6 +3399,23 @@
         const tag = child.tagName.toLowerCase();
         if (tag === "br") {
           if (!asReply) lines.push(`<span class="idea-cmt">${commentPrefix.trimEnd()}</span>`);
+          continue;
+        }
+
+        if (isDiscourseQuoteBlock(child)) {
+          const { who, body } = extractDiscourseQuote(child);
+          if (!who && !body) continue;
+          if (asReply) {
+            if (typeof product.replyQuoteBlock === "function") {
+              lines.push(product.replyQuoteBlock(product.indent, who, body));
+            } else {
+              const payload = who ? `${escapeHtml(who)}: ${escapeHtml(body)}` : escapeHtml(body);
+              painter.pushText(lines, payload, "quote");
+            }
+          } else {
+            const commentText = who && body ? `${who}: ${body}` : who || body;
+            pushCommentLines(lines, commentText, style.quoteComment);
+          }
           continue;
         }
 
@@ -3626,7 +3680,7 @@
         ...buildFooterLines(post)
       ];
 
-      const signature = `v15:${getProductId()}\n${allLines.join("\n")}`;
+      const signature = `v16:${getProductId()}\n${allLines.join("\n")}`;
       if (codeLines.dataset.signature !== signature) {
         codeLines.dataset.signature = signature;
         codeLines.innerHTML = allLines
@@ -4164,6 +4218,9 @@
       isDiscourseImageCaption,
       collectCookedBodySegments,
       collectCookedImageLines,
+      isDiscourseQuoteBlock,
+      extractDiscourseQuote,
+      goReplyQuoteBlock,
       buildImageCodeLine,
       sectionTreeLabel,
       createReplyPainter,
