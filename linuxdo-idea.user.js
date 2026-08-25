@@ -141,7 +141,7 @@
         resources: "externalLibraries"
       },
       mark: GOLAND_MARK_SVG,
-      headerTopic({ name, floor, time, title, postNumber }) {
+      headerTopic({ name, floor, time, title, postNumber, cooked }) {
         const topic = String(title || "").replace(/\s+/g, " ").trim() || "未命名话题";
         const n = goFloorNumber(floor, postNumber);
         const meta = [
@@ -156,6 +156,10 @@
         ];
         if (meta) lines.push(`<span class="idea-cmt">// ${escapeHtml(meta)}。</span>`);
         lines.push(`<span class="idea-kw">package</span> topics`);
+        if (cookedHasImages(cooked)) {
+          lines.push(``);
+          lines.push(`<span class="idea-kw">import</span> <span class="idea-str">"fmt"</span>`);
+        }
         return lines;
       },
       headerReply({ name, floor, time, replyTo, postNumber }) {
@@ -680,38 +684,48 @@
     return segments;
   }
 
+  function cookedHasImages(cooked) {
+    return collectCookedBodySegments(cooked).some((seg) => seg.kind === "image");
+  }
+
+  function goEscapeFmtPercent(text) {
+    return String(text ?? "").replace(/%/g, "%%");
+  }
+
+  function goImageSprintfArgLine(src, indent) {
+    const safeSrc = escapeHtml(src || "");
+    return (
+      `${indent}${goStringLiteral(src)}, ` +
+      `<span class="idea-cmt">// [image]</span>` +
+      `<img class="idea-code-image-preview" data-src="${safeSrc}" alt="">`
+    );
+  }
+
   function goBodyFieldLinesFromCooked(cooked, indent = "\t", fallback = "") {
     if (!cooked) return goBodyFieldLines(fallback, indent);
     const segments = collectCookedBodySegments(cooked);
-    if (!segments.some((seg) => seg.kind === "image")) {
+    const images = segments.filter((seg) => seg.kind === "image");
+    if (!images.length) {
       return goBodyFieldLines(cookedToGoBody(cooked) || fallback, indent);
     }
 
-    const parts = segments.slice();
-    if (parts[0].kind === "image") parts.unshift({ kind: "text", text: "" });
-    if (parts[parts.length - 1].kind === "image") parts.push({ kind: "text", text: "" });
-
+    const formatText = segments
+      .map((seg) => (seg.kind === "image" ? "%s" : goEscapeFmtPercent(seg.text)))
+      .join("\n");
+    const rawLines = goRawStringDisplayLines(formatText);
+    const fmtCall = `fmt.<span class="idea-fn">Sprintf</span>(`;
     const lines = [];
-    let textIndex = 0;
-    const textCount = parts.filter((seg) => seg.kind === "text").length;
-    for (const seg of parts) {
-      if (seg.kind === "image") {
-        lines.push(`${indent}${buildImageCodeLine("// ", seg.src)}`);
-        continue;
+    if (rawLines.length === 1) {
+      lines.push(`${indent}Body: ${fmtCall}${rawLines[0]},`);
+    } else {
+      lines.push(`${indent}Body: ${fmtCall}${rawLines[0]}`);
+      for (let i = 1; i < rawLines.length; i += 1) {
+        lines.push(i === rawLines.length - 1 ? `${rawLines[i]},` : rawLines[i]);
       }
-      const prefix = textIndex === 0 ? `${indent}Body: ` : indent;
-      const suffix = textIndex === textCount - 1 ? "," : " +";
-      const rawLines = goRawStringDisplayLines(seg.text);
-      if (rawLines.length === 1) {
-        lines.push(`${prefix}${rawLines[0]}${suffix}`);
-      } else {
-        lines.push(`${prefix}${rawLines[0]}`);
-        for (let i = 1; i < rawLines.length; i += 1) {
-          lines.push(i === rawLines.length - 1 ? `${rawLines[i]}${suffix}` : rawLines[i]);
-        }
-      }
-      textIndex += 1;
     }
+    const argIndent = `${indent}\t`;
+    for (const img of images) lines.push(goImageSprintfArgLine(img.src, argIndent));
+    lines.push(`${indent}),`);
     return lines;
   }
 
@@ -3512,7 +3526,15 @@
     const stem = sanitizeFileStem(title);
 
     if (postNumber === "1") {
-      return product.headerTopic({ name, floor, time, stem, title, postNumber });
+      return product.headerTopic({
+        name,
+        floor,
+        time,
+        stem,
+        title,
+        postNumber,
+        cooked: post.querySelector(".cooked")
+      });
     }
 
     const methodName = `reply_${sanitizeFileStem(name) || "user"}_${postNumber}`.replace(
@@ -3612,7 +3634,7 @@
         ...buildFooterLines(post)
       ];
 
-      const signature = `v10:${getProductId()}\n${allLines.join("\n")}`;
+      const signature = `v11:${getProductId()}\n${allLines.join("\n")}`;
       if (codeLines.dataset.signature !== signature) {
         codeLines.dataset.signature = signature;
         codeLines.innerHTML = allLines
@@ -4144,6 +4166,8 @@
       goRawStringDisplayLines,
       goBodyFieldLines,
       goBodyFieldLinesFromCooked,
+      cookedHasImages,
+      goEscapeFmtPercent,
       cookedToGoBody,
       leftoverCookedText,
       isDiscourseImageCaption,
