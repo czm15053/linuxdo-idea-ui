@@ -106,7 +106,7 @@
         quoteComment: "// > ",
         line: "//"
       },
-      paintReplyBody: "comment",
+      paintBody: "raw-string",
       statusText: "UTF-8  ·  tabs  ·  Go 1.26  ·  Darcula  ·  Linux DO",
       statusLang: "Go",
       tabIcon: "linear-gradient(135deg, #00D886, #007DFE)",
@@ -141,25 +141,27 @@
         resources: "externalLibraries"
       },
       mark: GOLAND_MARK_SVG,
-      headerTopic({ name, floor, time, title }) {
+      headerTopic({ name, floor, time, title, postNumber }) {
         const topic = String(title || "").replace(/\s+/g, " ").trim() || "未命名话题";
+        const n = goFloorNumber(floor, postNumber);
         const meta = [
           name ? `作者 ${name}` : "",
-          floor ? `楼层 ${floor}` : "",
+          n ? `楼层 ${n}` : "",
           time ? `发表于 ${time}` : ""
         ]
           .filter(Boolean)
           .join("，");
-        return [
-          `<span class="idea-cmt">// Package topics 记录「${escapeHtml(topic)}」。</span>`,
-          meta ? `<span class="idea-cmt">// ${escapeHtml(meta)}。</span>` : ``,
-          `<span class="idea-cmt">//</span>`
+        const lines = [
+          `<span class="idea-cmt">// Package topics 记录「${escapeHtml(topic)}」。</span>`
         ];
+        if (meta) lines.push(`<span class="idea-cmt">// ${escapeHtml(meta)}。</span>`);
+        lines.push(`<span class="idea-kw">package</span> topics`);
+        return lines;
       },
       headerReply({ name, floor, time, replyTo, postNumber }) {
-        const loc = floor || (postNumber ? `#${postNumber}` : "");
+        const n = goFloorNumber(floor, postNumber);
         const bits = [
-          name && loc ? `${name} 的 ${loc} 楼` : name ? `${name} 的回复` : loc ? `${loc} 楼` : "",
+          name ? `${name} 的 ${n} 楼` : `${n} 楼`,
           time,
           replyTo ? `回复 ${replyTo}` : ""
         ]
@@ -171,36 +173,35 @@
           bits ? `<span class="idea-cmt">// ${escapeHtml(bits)}。</span>` : ``
         ];
       },
-      footerTopic({ name, floor, time, postNumber }) {
+      footerTopic({ name, floor, time, postNumber, body }) {
         const n = goFloorNumber(floor, postNumber);
-        const lines = [
-          `<span class="idea-kw">package</span> topics`,
+        return [
           ``,
           `<span class="idea-kw">type</span> <span class="idea-fn">Post</span> <span class="idea-kw">struct</span> {`,
-          `\tAuthor, At, ReplyTo <span class="idea-kw">string</span>`,
-          `\tFloor               <span class="idea-kw">int</span>`,
+          `\tAuthor, At, ReplyTo, Body <span class="idea-kw">string</span>`,
+          `\tFloor                     <span class="idea-kw">int</span>`,
           `}`,
           ``,
           `<span class="idea-kw">var</span> Topic = <span class="idea-fn">Post</span>{`,
           `\tAuthor: ${goStringLiteral(name || "")},`,
-          `\tFloor:  ${escapeHtml(n)},`
+          `\tFloor:  ${escapeHtml(n)},`,
+          ...(time ? [`\tAt:     ${goStringLiteral(time)},`] : []),
+          ...goBodyFieldLines(body),
+          `}`
         ];
-        if (time) lines.push(`\tAt:     ${goStringLiteral(time)},`);
-        lines.push(`}`);
-        return lines;
       },
-      footerReply({ name, floor, time, replyTo, postNumber }) {
+      footerReply({ name, floor, time, replyTo, postNumber, body }) {
         const ident = goPostIdent(name, postNumber);
         const n = goFloorNumber(floor, postNumber);
-        const lines = [
+        return [
           `<span class="idea-kw">var</span> ${escapeHtml(ident)} = <span class="idea-fn">Post</span>{`,
-          `\tAuthor: ${goStringLiteral(name || "anon")},`,
-          `\tFloor:  ${escapeHtml(n)},`
+          `\tAuthor:  ${goStringLiteral(name || "anon")},`,
+          `\tFloor:   ${escapeHtml(n)},`,
+          ...(time ? [`\tAt:      ${goStringLiteral(time)},`] : []),
+          ...(replyTo ? [`\tReplyTo: ${goStringLiteral(replyTo)},`] : []),
+          ...goBodyFieldLines(body),
+          `}`
         ];
-        if (time) lines.push(`\tAt:     ${goStringLiteral(time)},`);
-        if (replyTo) lines.push(`\tReplyTo: ${goStringLiteral(replyTo)},`);
-        lines.push(`}`);
-        return lines;
       }
     },
     idea: {
@@ -490,6 +491,64 @@
       else escaped += ch;
     }
     return `<span class="idea-str">"${escapeHtml(escaped)}"</span>`;
+  }
+
+  function goRawStringDisplayLines(text) {
+    const parts = String(text ?? "").split("`");
+    if (parts.length === 1) {
+      const rows = parts[0].split("\n");
+      return rows.map((row, i) => {
+        const open = i === 0 ? `<span class="idea-str">\`` : `<span class="idea-str">`;
+        const close = i === rows.length - 1 ? `\`</span>` : `</span>`;
+        return `${open}${escapeHtml(row)}${close}`;
+      });
+    }
+    const pieces = [];
+    for (let i = 0; i < parts.length; i += 1) {
+      if (parts[i] !== "") {
+        const rows = parts[i].split("\n");
+        pieces.push(
+          rows
+            .map((row, li) => {
+              const open = li === 0 ? `<span class="idea-str">\`` : `<span class="idea-str">`;
+              const close = li === rows.length - 1 ? `\`</span>` : `</span>`;
+              return `${open}${escapeHtml(row)}${close}`;
+            })
+            .join("\n")
+        );
+      }
+      if (i < parts.length - 1) pieces.push(`<span class="idea-str">"\`"</span>`);
+    }
+    return (pieces.join(" + ") || `<span class="idea-str">\`\`</span>`).split("\n");
+  }
+
+  function goBodyFieldLines(text) {
+    const rawLines = goRawStringDisplayLines(text);
+    if (rawLines.length === 1) return [`\tBody: ${rawLines[0]},`];
+    const lines = [`\tBody: ${rawLines[0]}`];
+    for (let i = 1; i < rawLines.length; i += 1) {
+      lines.push(i === rawLines.length - 1 ? `${rawLines[i]},` : rawLines[i]);
+    }
+    return lines;
+  }
+
+  function cookedToGoBody(cooked) {
+    if (!cooked) return "";
+    const extras = [];
+    for (const img of cooked.querySelectorAll?.("img") || []) {
+      const src = getImageSrc(img);
+      if (src) extras.push(`[image] ${src}`);
+    }
+    let text = "";
+    if (typeof cooked.innerText === "string" && cooked.innerText) text = cooked.innerText;
+    else text = cooked.textContent || "";
+    text = String(text)
+      .replace(/\u00a0/g, " ")
+      .replace(/\r/g, "")
+      .replace(/[ \t]+\n/g, "\n")
+      .trim();
+    if (extras.length) text = text ? `${text}\n\n${extras.join("\n")}` : extras.join("\n");
+    return text;
   }
 
   function productNamesLabel() {
@@ -3270,7 +3329,7 @@
     const stem = sanitizeFileStem(title);
 
     if (postNumber === "1") {
-      return product.headerTopic({ name, floor, time, stem, title });
+      return product.headerTopic({ name, floor, time, stem, title, postNumber });
     }
 
     const methodName = `reply_${sanitizeFileStem(name) || "user"}_${postNumber}`.replace(
@@ -3304,7 +3363,8 @@
       time: getPostTimeText(post),
       floor: getPostFloorLabel(post),
       replyTo: getReplyToName(post),
-      postNumber
+      postNumber,
+      body: product.paintBody === "raw-string" ? cookedToGoBody(post.querySelector(".cooked")) : ""
     };
     if (postNumber === "1") return product.footerTopic(ctx);
     return product.footerReply(ctx);
@@ -3358,14 +3418,16 @@
       if (!gutter || !codeLines) continue;
 
       const isReply = (post.getAttribute("data-post-number") || "1") !== "1";
-      const paintReplyAsCode = isReply && getProduct().paintReplyBody !== "comment";
+      const product = getProduct();
+      const embedBody = product.paintBody === "raw-string";
+      const paintReplyAsCode = isReply && !embedBody;
       const allLines = [
         ...buildHeaderLines(post),
-        ...collectCookedLineHtml(cooked, paintReplyAsCode),
+        ...(embedBody ? [] : collectCookedLineHtml(cooked, paintReplyAsCode)),
         ...buildFooterLines(post)
       ];
 
-      const signature = `v7:${getProductId()}\n${allLines.join("\n")}`;
+      const signature = `v8:${getProductId()}\n${allLines.join("\n")}`;
       if (codeLines.dataset.signature !== signature) {
         codeLines.dataset.signature = signature;
         codeLines.innerHTML = allLines
@@ -3894,6 +3956,9 @@
       goIdent,
       goPostIdent,
       goStringLiteral,
+      goRawStringDisplayLines,
+      goBodyFieldLines,
+      cookedToGoBody,
       sectionTreeLabel,
       createReplyPainter,
       padShortReplyBody,
