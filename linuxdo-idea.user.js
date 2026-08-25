@@ -140,29 +140,44 @@
         resources: "externalLibraries"
       },
       mark: GOLAND_MARK_SVG,
-      headerTopic({ name, floor, time, stem, title }) {
+      headerTopic({ name, floor, time, stem, title, postNumber }) {
+        const topic = String(title || "").replace(/\s+/g, " ").trim() || "未命名话题";
         const typeName = exportedIdent(title || stem);
-        return [
-          `<span class="idea-kw">package</span> topics`,
-          ``,
-          `<span class="idea-kw">import</span> <span class="idea-str">"community/discourse"</span>`,
-          ``,
-          `<span class="idea-cmt">// <span class="idea-ann">@author</span> ${escapeHtml(name || "")}</span>`,
-          floor
-            ? `<span class="idea-cmt">// <span class="idea-ann">@floor</span> ${escapeHtml(floor)}</span>`
-            : `<span class="idea-cmt">//</span>`,
-          time
-            ? `<span class="idea-cmt">// <span class="idea-ann">@since</span> ${escapeHtml(time)}</span>`
-            : `<span class="idea-cmt">//</span>`,
-          `<span class="idea-kw">type</span> <span class="idea-fn">${escapeHtml(typeName)}</span> <span class="idea-kw">struct</span> {`
+        const n = goFloorNumber(floor, postNumber);
+        const meta = [
+          name ? `作者 ${name}` : "",
+          n ? `楼层 ${n}` : "",
+          time ? `发表于 ${time}` : ""
+        ]
+          .filter(Boolean)
+          .join("，");
+        const lines = [
+          `<span class="idea-cmt">// Package topics 记录「${escapeHtml(topic)}」。</span>`
         ];
+        if (meta) lines.push(`<span class="idea-cmt">// ${escapeHtml(meta)}。</span>`);
+        lines.push(`<span class="idea-kw">package</span> topics`);
+        lines.push(``);
+        lines.push(`<span class="idea-kw">import</span> <span class="idea-str">"community/discourse"</span>`);
+        lines.push(``);
+        lines.push(
+          `<span class="idea-kw">type</span> <span class="idea-fn">${escapeHtml(typeName)}</span> <span class="idea-kw">struct</span> {`
+        );
+        return lines;
       },
-      headerReply({ methodName, meta }) {
+      headerReply({ methodName, name, floor, time, replyTo, postNumber }) {
+        const ident = methodName || "reply_user_0";
+        const n = goFloorNumber(floor, postNumber);
+        const bits = [
+          name ? `${name} 的 ${n} 楼` : `${n} 楼`,
+          time,
+          replyTo ? `回复 ${replyTo}` : ""
+        ]
+          .filter(Boolean)
+          .join("，");
         return [
           ``,
-          `<span class="idea-cmt">// ${escapeHtml(meta)}</span>`,
-          `<span class="idea-ann">//go:reply</span>`,
-          `<span class="idea-kw">func</span> <span class="idea-fn">${escapeHtml(methodName)}</span>() {`
+          `<span class="idea-cmt">// ${escapeHtml(ident)} 是 ${escapeHtml(bits)}。</span>`,
+          `<span class="idea-kw">func</span> <span class="idea-fn">${escapeHtml(ident)}</span>() {`
         ];
       },
       footerTopic() {
@@ -187,13 +202,7 @@
         `${indent}items = <span class="idea-fn">append</span>(items, ${str(body)})`,
       replyQuote: (indent, comment, body) =>
         `${indent}<span class="idea-cmt">${comment}quoted: ${body}</span>`,
-      replyFillers: [
-        `\t<span class="idea-kw">if</span> msg == <span class="idea-str">""</span> {`,
-        `\t\t<span class="idea-kw">return</span>`,
-        `\t}`,
-        `\tctx.<span class="idea-fn">Touch</span>()`,
-        `\tmetrics.<span class="idea-fn">Inc</span>(<span class="idea-str">"reply"</span>)`
-      ]
+      replyFillers: []
     },
     idea: {
       id: "idea",
@@ -3438,11 +3447,12 @@
     if (!lines.length) {
       return asReply ? [painter.blank()] : [emptyComment];
     }
-    if (asReply) padShortReplyBody(lines, product);
+    if (asReply && product.id !== "goland") padShortReplyBody(lines, product);
     return lines;
   }
 
   function padShortReplyBody(lines, product = getProduct()) {
+    if (product.id === "goland") return;
     const MIN_BODY = 5;
     const bodyCount = lines.filter((l) => String(l || "").trim()).length;
     if (bodyCount >= MIN_BODY) return;
@@ -3616,7 +3626,7 @@
         ...buildFooterLines(post)
       ];
 
-      const signature = `v14:${getProductId()}\n${allLines.join("\n")}`;
+      const signature = `v15:${getProductId()}\n${allLines.join("\n")}`;
       if (codeLines.dataset.signature !== signature) {
         codeLines.dataset.signature = signature;
         codeLines.innerHTML = allLines
