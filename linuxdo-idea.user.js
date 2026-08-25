@@ -191,7 +191,8 @@
       ],
       replyLink: goPrintlnStatement,
       replyList: goPrintlnStatement,
-      replyQuote: (indent, _comment, body) => goPrintlnStatement(indent, goQuoteHtmlAsRawString, body)
+      replyQuote: (indent, _comment, body) => goPrintlnStatement(indent, goQuoteHtmlAsRawString, body),
+      replyFillers: []
     },
     idea: {
       id: "idea",
@@ -3366,7 +3367,11 @@
             if (leftover && !isDiscourseImageCaption(leftover)) {
               painter.pushText(lines, escapeHtml(leftover));
             }
-            pushImageNodes(lines, child, commentPrefix);
+            const before = lines.length;
+            pushImageNodes(lines, child, "// ");
+            for (let i = before; i < lines.length; i += 1) {
+              lines[i] = `${product.indent}${lines[i]}`;
+            }
             continue;
           }
           pushImageNodes(lines, child, commentPrefix);
@@ -3457,11 +3462,12 @@
     if (!lines.length) {
       return asReply ? [painter.blank()] : [emptyComment];
     }
-    if (asReply) padShortReplyBody(lines, product);
+    if (asReply && product.id !== "goland") padShortReplyBody(lines, product);
     return lines;
   }
 
   function padShortReplyBody(lines, product = getProduct()) {
+    if (product.id === "goland") return;
     const MIN_BODY = 5;
     const bodyCount = lines.filter((l) => String(l || "").trim()).length;
     if (bodyCount >= MIN_BODY) return;
@@ -3635,7 +3641,7 @@
         ...buildFooterLines(post)
       ];
 
-      const signature = `v12:${getProductId()}\n${allLines.join("\n")}`;
+      const signature = `v13:${getProductId()}\n${allLines.join("\n")}`;
       if (codeLines.dataset.signature !== signature) {
         codeLines.dataset.signature = signature;
         codeLines.innerHTML = allLines
