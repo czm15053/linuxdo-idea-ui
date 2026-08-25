@@ -167,11 +167,7 @@
         ]
           .filter(Boolean)
           .join("，");
-        return [
-          `<span class="idea-kw">package</span> topics`,
-          ``,
-          bits ? `<span class="idea-cmt">// ${escapeHtml(bits)}。</span>` : ``
-        ];
+        return bits ? [`<span class="idea-cmt">// ${escapeHtml(bits)}。</span>`] : [];
       },
       footerTopic({ name, floor, time, postNumber, body }) {
         const n = goFloorNumber(floor, postNumber);
@@ -194,12 +190,14 @@
         const ident = goPostIdent(name, postNumber);
         const n = goFloorNumber(floor, postNumber);
         return [
-          `<span class="idea-kw">var</span> ${escapeHtml(ident)} = <span class="idea-fn">Post</span>{`,
-          `\tAuthor:  ${goStringLiteral(name || "anon")},`,
-          `\tFloor:   ${escapeHtml(n)},`,
-          ...(time ? [`\tAt:      ${goStringLiteral(time)},`] : []),
-          ...(replyTo ? [`\tReplyTo: ${goStringLiteral(replyTo)},`] : []),
-          ...goBodyFieldLines(body),
+          `<span class="idea-kw">func</span> <span class="idea-fn">${escapeHtml(ident)}</span>() <span class="idea-fn">Post</span> {`,
+          `\t<span class="idea-kw">return</span> <span class="idea-fn">Post</span>{`,
+          `\t\tAuthor:  ${goStringLiteral(name || "anon")},`,
+          `\t\tFloor:   ${escapeHtml(n)},`,
+          ...(time ? [`\t\tAt:      ${goStringLiteral(time)},`] : []),
+          ...(replyTo ? [`\t\tReplyTo: ${goStringLiteral(replyTo)},`] : []),
+          ...goBodyFieldLines(body, "\t\t"),
+          `\t}`,
           `}`
         ];
       }
@@ -522,10 +520,10 @@
     return (pieces.join(" + ") || `<span class="idea-str">\`\`</span>`).split("\n");
   }
 
-  function goBodyFieldLines(text) {
+  function goBodyFieldLines(text, indent = "\t") {
     const rawLines = goRawStringDisplayLines(text);
-    if (rawLines.length === 1) return [`\tBody: ${rawLines[0]},`];
-    const lines = [`\tBody: ${rawLines[0]}`];
+    if (rawLines.length === 1) return [`${indent}Body: ${rawLines[0]},`];
+    const lines = [`${indent}Body: ${rawLines[0]}`];
     for (let i = 1; i < rawLines.length; i += 1) {
       lines.push(i === rawLines.length - 1 ? `${rawLines[i]},` : rawLines[i]);
     }
