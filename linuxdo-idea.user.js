@@ -101,12 +101,11 @@
       breadcrumbFileLeaf: true,
       indent: "\t",
       comment: {
-        replyComment: "\t// ",
-        bodyComment: "// ",
-        quoteComment: "// > ",
+        replyComment: "// ",
+        bodyComment: "\t// ",
+        quoteComment: "\t// > ",
         line: "//"
       },
-      paintBody: "statements",
       statusText: "UTF-8  ·  tabs  ·  Go 1.26  ·  Darcula  ·  Linux DO",
       statusLang: "Go",
       tabIcon: "linear-gradient(135deg, #00D886, #007DFE)",
@@ -141,39 +140,30 @@
         resources: "externalLibraries"
       },
       mark: GOLAND_MARK_SVG,
-      headerTopic({ name, floor, time, title, postNumber }) {
-        const topic = String(title || "").replace(/\s+/g, " ").trim() || "未命名话题";
-        const n = goFloorNumber(floor, postNumber);
-        const meta = [
-          name ? `作者 ${name}` : "",
-          n ? `楼层 ${n}` : "",
-          time ? `发表于 ${time}` : ""
-        ]
-          .filter(Boolean)
-          .join("，");
-        const lines = [
-          `<span class="idea-cmt">// Package topics 记录「${escapeHtml(topic)}」。</span>`
+      headerTopic({ name, floor, time, stem, title }) {
+        const typeName = exportedIdent(title || stem);
+        return [
+          `<span class="idea-kw">package</span> topics`,
+          ``,
+          `<span class="idea-kw">import</span> <span class="idea-str">"community/discourse"</span>`,
+          ``,
+          `<span class="idea-cmt">// <span class="idea-ann">@author</span> ${escapeHtml(name || "")}</span>`,
+          floor
+            ? `<span class="idea-cmt">// <span class="idea-ann">@floor</span> ${escapeHtml(floor)}</span>`
+            : `<span class="idea-cmt">//</span>`,
+          time
+            ? `<span class="idea-cmt">// <span class="idea-ann">@since</span> ${escapeHtml(time)}</span>`
+            : `<span class="idea-cmt">//</span>`,
+          `<span class="idea-kw">type</span> <span class="idea-fn">${escapeHtml(typeName)}</span> <span class="idea-kw">struct</span> {`
         ];
-        if (meta) lines.push(`<span class="idea-cmt">// ${escapeHtml(meta)}。</span>`);
-        lines.push(`<span class="idea-kw">package</span> topics`);
-        lines.push(``);
-        lines.push(`<span class="idea-kw">func</span> <span class="idea-fn">Topic</span>() {`);
-        return lines;
       },
-      headerReply({ name, floor, time, replyTo, postNumber }) {
-        const ident = goPostIdent(name, postNumber);
-        const n = goFloorNumber(floor, postNumber);
-        const bits = [
-          name ? `${name} 的 ${n} 楼` : `${n} 楼`,
-          time,
-          replyTo ? `回复 ${replyTo}` : ""
-        ]
-          .filter(Boolean)
-          .join("，");
-        const lines = [];
-        if (bits) lines.push(`<span class="idea-cmt">// ${escapeHtml(bits)}。</span>`);
-        lines.push(`<span class="idea-kw">func</span> <span class="idea-fn">${escapeHtml(ident)}</span>() {`);
-        return lines;
+      headerReply({ methodName, meta }) {
+        return [
+          ``,
+          `<span class="idea-cmt">// ${escapeHtml(meta)}</span>`,
+          `<span class="idea-ann">//go:reply</span>`,
+          `<span class="idea-kw">func</span> <span class="idea-fn">${escapeHtml(methodName)}</span>() {`
+        ];
       },
       footerTopic() {
         return [`}`];
@@ -183,16 +173,27 @@
       },
       quoteString: goQuoteHtmlAsRawString,
       replyPlain: [
-        goPrintlnStatement,
-        goPrintlnStatement,
-        goPrintlnStatement,
-        goPrintlnStatement,
-        goPrintlnStatement
+        (indent, str, body) =>
+          `${indent}<span class="idea-fn">log</span>.<span class="idea-fn">Print</span>(${str(body)})`,
+        (indent, str, body) =>
+          `${indent}notes = <span class="idea-fn">append</span>(notes, ${str(body)})`,
+        (indent, str, body) =>
+          `${indent}<span class="idea-kw">if</span> <span class="idea-fn">len</span>(${str(body)}) == 0 { <span class="idea-fn">panic</span>(<span class="idea-str">"empty"</span>) }`,
+        (indent, str, body) => `${indent}ctx.<span class="idea-fn">Reply</span>(${str(body)})`,
+        (indent, str, body) => `${indent}msg := ${str(body)}`
       ],
-      replyLink: goPrintlnStatement,
-      replyList: goPrintlnStatement,
-      replyQuote: (indent, _comment, body) => goPrintlnStatement(indent, goQuoteHtmlAsRawString, body),
-      replyFillers: []
+      replyLink: (indent, str, body) => `${indent}ctx.<span class="idea-fn">Open</span>(${str(body)})`,
+      replyList: (indent, str, body) =>
+        `${indent}items = <span class="idea-fn">append</span>(items, ${str(body)})`,
+      replyQuote: (indent, comment, body) =>
+        `${indent}<span class="idea-cmt">${comment}quoted: ${body}</span>`,
+      replyFillers: [
+        `\t<span class="idea-kw">if</span> msg == <span class="idea-str">""</span> {`,
+        `\t\t<span class="idea-kw">return</span>`,
+        `\t}`,
+        `\tctx.<span class="idea-fn">Touch</span>()`,
+        `\tmetrics.<span class="idea-fn">Inc</span>(<span class="idea-str">"reply"</span>)`
+      ]
     },
     idea: {
       id: "idea",
@@ -3306,17 +3307,11 @@
       return tpl(indent, str, text);
     }
 
-    const keepMultiline = product.paintBody === "statements";
-
     return {
       pushText(bucket, textHtml, kind = "plain") {
         const inline = String(textHtml || "").replace(/\n+/g, "\n").trim();
         if (!inline) {
           bucket.push(paint("…", kind));
-          return;
-        }
-        if (keepMultiline) {
-          for (const row of String(paint(inline, kind)).split("\n")) bucket.push(row);
           return;
         }
         for (const part of inline.split("\n")) {
@@ -3362,24 +3357,14 @@
         }
 
         if (isImageContainer(child)) {
-          if (product.paintBody === "statements" && asReply) {
-            const leftover = leftoverCookedText(child);
-            if (leftover && !isDiscourseImageCaption(leftover)) {
-              painter.pushText(lines, escapeHtml(leftover));
-            }
-            const before = lines.length;
-            pushImageNodes(lines, child, "// ");
-            for (let i = before; i < lines.length; i += 1) {
-              lines[i] = `${product.indent}${lines[i]}`;
-            }
-            continue;
-          }
-          pushImageNodes(lines, child, commentPrefix);
+          const imagePrefix =
+            asReply && product.id === "goland" ? `${product.indent}// ` : commentPrefix;
+          pushImageNodes(lines, child, imagePrefix);
           const clone = child.cloneNode(true);
           for (const img of clone.querySelectorAll?.("img") || []) img.remove();
           for (const a of clone.querySelectorAll?.("a.lightbox") || []) a.remove();
           const leftover = (clone.textContent || "").trim();
-          if (leftover) {
+          if (leftover && !(product.id === "goland" && isDiscourseImageCaption(leftover))) {
             if (asReply) painter.pushText(lines, escapeHtml(leftover));
             else pushCommentLines(lines, leftover, commentPrefix);
           }
@@ -3387,9 +3372,6 @@
         }
 
         if (tag === "p" || tag === "div" || /^h[1-6]$/.test(tag)) {
-          if (product.paintBody === "statements" && asReply && lines.length && lines[lines.length - 1] !== "") {
-            lines.push("");
-          }
           const inline = serializeInline(child).replace(/\n+/g, "\n").trim();
           if (!inline) {
             if (!asReply) lines.push(`<span class="idea-cmt">${commentPrefix.trimEnd()}</span>`);
@@ -3405,9 +3387,6 @@
           continue;
         }
         if (tag === "ul" || tag === "ol") {
-          if (product.paintBody === "statements" && asReply && lines.length && lines[lines.length - 1] !== "") {
-            lines.push("");
-          }
           const items = child.querySelectorAll(":scope > li");
           let index = 1;
           for (const item of items) {
@@ -3420,9 +3399,6 @@
           continue;
         }
         if (tag === "blockquote") {
-          if (product.paintBody === "statements" && asReply && lines.length && lines[lines.length - 1] !== "") {
-            lines.push("");
-          }
           if (asReply) {
             const quoted = escapeHtml((child.textContent || "").replace(/\s+/g, " ").trim());
             if (quoted) painter.pushText(lines, quoted, "quote");
@@ -3462,12 +3438,11 @@
     if (!lines.length) {
       return asReply ? [painter.blank()] : [emptyComment];
     }
-    if (asReply && product.id !== "goland") padShortReplyBody(lines, product);
+    if (asReply) padShortReplyBody(lines, product);
     return lines;
   }
 
   function padShortReplyBody(lines, product = getProduct()) {
-    if (product.id === "goland") return;
     const MIN_BODY = 5;
     const bodyCount = lines.filter((l) => String(l || "").trim()).length;
     if (bodyCount >= MIN_BODY) return;
@@ -3634,14 +3609,14 @@
       const isReply = (post.getAttribute("data-post-number") || "1") !== "1";
       const product = getProduct();
       const embedBody = product.paintBody === "raw-string";
-      const paintAsStatements = !embedBody && (isReply || product.paintBody === "statements");
+      const paintReplyAsCode = isReply && !embedBody;
       const allLines = [
         ...buildHeaderLines(post),
-        ...(embedBody ? [] : collectCookedLineHtml(cooked, paintAsStatements)),
+        ...(embedBody ? [] : collectCookedLineHtml(cooked, paintReplyAsCode)),
         ...buildFooterLines(post)
       ];
 
-      const signature = `v13:${getProductId()}\n${allLines.join("\n")}`;
+      const signature = `v14:${getProductId()}\n${allLines.join("\n")}`;
       if (codeLines.dataset.signature !== signature) {
         codeLines.dataset.signature = signature;
         codeLines.innerHTML = allLines
