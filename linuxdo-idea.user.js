@@ -101,12 +101,12 @@
       breadcrumbFileLeaf: true,
       indent: "\t",
       comment: {
-        replyComment: "// ",
+        replyComment: "\t// ",
         bodyComment: "// ",
         quoteComment: "// > ",
         line: "//"
       },
-      paintBody: "raw-string",
+      paintBody: "statements",
       statusText: "UTF-8  ·  tabs  ·  Go 1.26  ·  Darcula  ·  Linux DO",
       statusLang: "Go",
       tabIcon: "linear-gradient(135deg, #00D886, #007DFE)",
@@ -141,7 +141,7 @@
         resources: "externalLibraries"
       },
       mark: GOLAND_MARK_SVG,
-      headerTopic({ name, floor, time, title, postNumber, cooked }) {
+      headerTopic({ name, floor, time, title, postNumber }) {
         const topic = String(title || "").replace(/\s+/g, " ").trim() || "未命名话题";
         const n = goFloorNumber(floor, postNumber);
         const meta = [
@@ -156,13 +156,12 @@
         ];
         if (meta) lines.push(`<span class="idea-cmt">// ${escapeHtml(meta)}。</span>`);
         lines.push(`<span class="idea-kw">package</span> topics`);
-        if (cookedHasImages(cooked)) {
-          lines.push(``);
-          lines.push(`<span class="idea-kw">import</span> <span class="idea-str">"fmt"</span>`);
-        }
+        lines.push(``);
+        lines.push(`<span class="idea-kw">func</span> <span class="idea-fn">Topic</span>() {`);
         return lines;
       },
       headerReply({ name, floor, time, replyTo, postNumber }) {
+        const ident = goPostIdent(name, postNumber);
         const n = goFloorNumber(floor, postNumber);
         const bits = [
           name ? `${name} 的 ${n} 楼` : `${n} 楼`,
@@ -171,40 +170,28 @@
         ]
           .filter(Boolean)
           .join("，");
-        return bits ? [`<span class="idea-cmt">// ${escapeHtml(bits)}。</span>`] : [];
+        const lines = [];
+        if (bits) lines.push(`<span class="idea-cmt">// ${escapeHtml(bits)}。</span>`);
+        lines.push(`<span class="idea-kw">func</span> <span class="idea-fn">${escapeHtml(ident)}</span>() {`);
+        return lines;
       },
-      footerTopic({ name, floor, time, postNumber, body, cooked }) {
-        const n = goFloorNumber(floor, postNumber);
-        return [
-          ``,
-          `<span class="idea-kw">type</span> <span class="idea-fn">Post</span> <span class="idea-kw">struct</span> {`,
-          `\tAuthor, At, ReplyTo, Body <span class="idea-kw">string</span>`,
-          `\tFloor                     <span class="idea-kw">int</span>`,
-          `}`,
-          ``,
-          `<span class="idea-kw">var</span> Topic = <span class="idea-fn">Post</span>{`,
-          `\tAuthor: ${goStringLiteral(name || "")},`,
-          `\tFloor:  ${escapeHtml(n)},`,
-          ...(time ? [`\tAt:     ${goStringLiteral(time)},`] : []),
-          ...goBodyFieldLinesFromCooked(cooked, "\t", body),
-          `}`
-        ];
+      footerTopic() {
+        return [`}`];
       },
-      footerReply({ name, floor, time, replyTo, postNumber, body, cooked }) {
-        const ident = goPostIdent(name, postNumber);
-        const n = goFloorNumber(floor, postNumber);
-        return [
-          `<span class="idea-kw">func</span> <span class="idea-fn">${escapeHtml(ident)}</span>() <span class="idea-fn">Post</span> {`,
-          `\t<span class="idea-kw">return</span> <span class="idea-fn">Post</span>{`,
-          `\t\tAuthor:  ${goStringLiteral(name || "anon")},`,
-          `\t\tFloor:   ${escapeHtml(n)},`,
-          ...(time ? [`\t\tAt:      ${goStringLiteral(time)},`] : []),
-          ...(replyTo ? [`\t\tReplyTo: ${goStringLiteral(replyTo)},`] : []),
-          ...goBodyFieldLinesFromCooked(cooked, "\t\t", body),
-          `\t}`,
-          `}`
-        ];
-      }
+      footerReply() {
+        return [`}`];
+      },
+      quoteString: goQuoteHtmlAsRawString,
+      replyPlain: [
+        goPrintlnStatement,
+        goPrintlnStatement,
+        goPrintlnStatement,
+        goPrintlnStatement,
+        goPrintlnStatement
+      ],
+      replyLink: goPrintlnStatement,
+      replyList: goPrintlnStatement,
+      replyQuote: (indent, _comment, body) => goPrintlnStatement(indent, goQuoteHtmlAsRawString, body)
     },
     idea: {
       id: "idea",
@@ -524,6 +511,42 @@
     return (pieces.join(" + ") || `<span class="idea-str">\`\`</span>`).split("\n");
   }
 
+  function goQuoteHtmlAsRawString(htmlOrText) {
+    const raw = String(htmlOrText ?? "");
+    const parts = raw.split("`");
+    if (parts.length === 1) {
+      const rows = parts[0].split("\n");
+      return rows
+        .map((row, i) => {
+          const open = i === 0 ? `<span class="idea-str">\`` : `<span class="idea-str">`;
+          const close = i === rows.length - 1 ? `\`</span>` : `</span>`;
+          return `${open}${row}${close}`;
+        })
+        .join("\n");
+    }
+    const pieces = [];
+    for (let i = 0; i < parts.length; i += 1) {
+      if (parts[i] !== "") {
+        const rows = parts[i].split("\n");
+        pieces.push(
+          rows
+            .map((row, li) => {
+              const open = li === 0 ? `<span class="idea-str">\`` : `<span class="idea-str">`;
+              const close = li === rows.length - 1 ? `\`</span>` : `</span>`;
+              return `${open}${row}${close}`;
+            })
+            .join("\n")
+        );
+      }
+      if (i < parts.length - 1) pieces.push(`<span class="idea-str">"\`"</span>`);
+    }
+    return pieces.join(" + ") || `<span class="idea-str">\`\`</span>`;
+  }
+
+  function goPrintlnStatement(indent, str, body) {
+    return `${indent}<span class="idea-fn">println</span>(${str(body)})`;
+  }
+
   function goBodyFieldLines(text, indent = "\t") {
     const rawLines = goRawStringDisplayLines(text);
     if (rawLines.length === 1) return [`${indent}Body: ${rawLines[0]},`];
@@ -682,51 +705,6 @@
 
     walk(cooked);
     return segments;
-  }
-
-  function cookedHasImages(cooked) {
-    return collectCookedBodySegments(cooked).some((seg) => seg.kind === "image");
-  }
-
-  function goEscapeFmtPercent(text) {
-    return String(text ?? "").replace(/%/g, "%%");
-  }
-
-  function goImageSprintfArgLine(src, indent) {
-    const safeSrc = escapeHtml(src || "");
-    return (
-      `${indent}${goStringLiteral(src)}, ` +
-      `<span class="idea-cmt">// [image]</span>` +
-      `<img class="idea-code-image-preview" data-src="${safeSrc}" alt="">`
-    );
-  }
-
-  function goBodyFieldLinesFromCooked(cooked, indent = "\t", fallback = "") {
-    if (!cooked) return goBodyFieldLines(fallback, indent);
-    const segments = collectCookedBodySegments(cooked);
-    const images = segments.filter((seg) => seg.kind === "image");
-    if (!images.length) {
-      return goBodyFieldLines(cookedToGoBody(cooked) || fallback, indent);
-    }
-
-    const formatText = segments
-      .map((seg) => (seg.kind === "image" ? "%s" : goEscapeFmtPercent(seg.text)))
-      .join("\n");
-    const rawLines = goRawStringDisplayLines(formatText);
-    const fmtCall = `fmt.<span class="idea-fn">Sprintf</span>(`;
-    const lines = [];
-    if (rawLines.length === 1) {
-      lines.push(`${indent}Body: ${fmtCall}${rawLines[0]},`);
-    } else {
-      lines.push(`${indent}Body: ${fmtCall}${rawLines[0]}`);
-      for (let i = 1; i < rawLines.length; i += 1) {
-        lines.push(i === rawLines.length - 1 ? `${rawLines[i]},` : rawLines[i]);
-      }
-    }
-    const argIndent = `${indent}\t`;
-    for (const img of images) lines.push(goImageSprintfArgLine(img.src, argIndent));
-    lines.push(`${indent}),`);
-    return lines;
   }
 
   function cookedToGoBody(cooked) {
@@ -3327,11 +3305,17 @@
       return tpl(indent, str, text);
     }
 
+    const keepMultiline = product.paintBody === "statements";
+
     return {
       pushText(bucket, textHtml, kind = "plain") {
         const inline = String(textHtml || "").replace(/\n+/g, "\n").trim();
         if (!inline) {
           bucket.push(paint("…", kind));
+          return;
+        }
+        if (keepMultiline) {
+          for (const row of String(paint(inline, kind)).split("\n")) bucket.push(row);
           return;
         }
         for (const part of inline.split("\n")) {
@@ -3377,6 +3361,14 @@
         }
 
         if (isImageContainer(child)) {
+          if (product.paintBody === "statements" && asReply) {
+            const leftover = leftoverCookedText(child);
+            if (leftover && !isDiscourseImageCaption(leftover)) {
+              painter.pushText(lines, escapeHtml(leftover));
+            }
+            pushImageNodes(lines, child, commentPrefix);
+            continue;
+          }
           pushImageNodes(lines, child, commentPrefix);
           const clone = child.cloneNode(true);
           for (const img of clone.querySelectorAll?.("img") || []) img.remove();
@@ -3390,6 +3382,9 @@
         }
 
         if (tag === "p" || tag === "div" || /^h[1-6]$/.test(tag)) {
+          if (product.paintBody === "statements" && asReply && lines.length && lines[lines.length - 1] !== "") {
+            lines.push("");
+          }
           const inline = serializeInline(child).replace(/\n+/g, "\n").trim();
           if (!inline) {
             if (!asReply) lines.push(`<span class="idea-cmt">${commentPrefix.trimEnd()}</span>`);
@@ -3405,6 +3400,9 @@
           continue;
         }
         if (tag === "ul" || tag === "ol") {
+          if (product.paintBody === "statements" && asReply && lines.length && lines[lines.length - 1] !== "") {
+            lines.push("");
+          }
           const items = child.querySelectorAll(":scope > li");
           let index = 1;
           for (const item of items) {
@@ -3417,6 +3415,9 @@
           continue;
         }
         if (tag === "blockquote") {
+          if (product.paintBody === "statements" && asReply && lines.length && lines[lines.length - 1] !== "") {
+            lines.push("");
+          }
           if (asReply) {
             const quoted = escapeHtml((child.textContent || "").replace(/\s+/g, " ").trim());
             if (quoted) painter.pushText(lines, quoted, "quote");
@@ -3627,14 +3628,14 @@
       const isReply = (post.getAttribute("data-post-number") || "1") !== "1";
       const product = getProduct();
       const embedBody = product.paintBody === "raw-string";
-      const paintReplyAsCode = isReply && !embedBody;
+      const paintAsStatements = !embedBody && (isReply || product.paintBody === "statements");
       const allLines = [
         ...buildHeaderLines(post),
-        ...(embedBody ? [] : collectCookedLineHtml(cooked, paintReplyAsCode)),
+        ...(embedBody ? [] : collectCookedLineHtml(cooked, paintAsStatements)),
         ...buildFooterLines(post)
       ];
 
-      const signature = `v11:${getProductId()}\n${allLines.join("\n")}`;
+      const signature = `v12:${getProductId()}\n${allLines.join("\n")}`;
       if (codeLines.dataset.signature !== signature) {
         codeLines.dataset.signature = signature;
         codeLines.innerHTML = allLines
@@ -4165,9 +4166,8 @@
       goStringLiteral,
       goRawStringDisplayLines,
       goBodyFieldLines,
-      goBodyFieldLinesFromCooked,
-      cookedHasImages,
-      goEscapeFmtPercent,
+      goQuoteHtmlAsRawString,
+      goPrintlnStatement,
       cookedToGoBody,
       leftoverCookedText,
       isDiscourseImageCaption,
