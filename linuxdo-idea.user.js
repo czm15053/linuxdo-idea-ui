@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Linux DO · JetBrains / Darcula 外观
 // @namespace    https://linux.do/
-// @version      0.1.1
-// @description  将 Linux DO 的主页与话题页换成 JetBrains IDE / Darcula 风格（支持 IDEA / PyCharm 切换）。仅改变外观，保留站点原有内容与交互。
+// @version      0.2.0
+// @description  将 Linux DO 的主页与话题页换成 JetBrains IDE / Darcula 风格（默认 GoLand，可切换 IDEA / PyCharm）。仅改变外观，保留站点原有内容与交互。
 // @author       czm15053
 // @match        https://linux.do/*
 // @icon         https://linux.do/favicon.ico
@@ -68,13 +68,150 @@
     <rect x="17" y="44" width="16" height="3" fill="#fff"/>
   </svg>`;
 
+  const GOLAND_MARK_SVG = (idPrefix, sizeAttr) => `<svg ${sizeAttr} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="${idPrefix}-a" x1="64.391" x2="39.607" y1="56.329" y2="2.874" gradientUnits="userSpaceOnUse">
+        <stop offset="0.24" stop-color="#00D886"/>
+        <stop offset="0.51" stop-color="#007DFE"/>
+      </linearGradient>
+      <linearGradient id="${idPrefix}-b" x1="59.676" x2="1.08" y1="4.067" y2="62.663" gradientUnits="userSpaceOnUse">
+        <stop offset="0.27" stop-color="#007DFE"/>
+        <stop offset="0.7" stop-color="#D249FC"/>
+      </linearGradient>
+    </defs>
+    <path fill="#00D886" d="M47.55 58h12.259a4.125 4.125 0 0 0 4.124-4.19l-.176-11.044a4.13 4.13 0 0 0-1.44-3.066L24.159 6.993A4.13 4.13 0 0 0 21.474 6H10.125A4.125 4.125 0 0 0 6 10.125v11.003c0 1.19.514 2.321 1.409 3.105l37.425 32.746A4.12 4.12 0 0 0 47.55 58"/>
+    <path fill="url(#${idPrefix}-a)" d="M49.013 58h10.862A4.125 4.125 0 0 0 64 53.875V41.309q0-.3-.044-.598L58.508 3.527A4.124 4.124 0 0 0 54.427 0H39.029a4.125 4.125 0 0 0-4.125 4.126l.005 18.505c0 .425.066.848.195 1.253l9.979 31.246a4.13 4.13 0 0 0 3.93 2.87"/>
+    <path fill="url(#${idPrefix}-b)" d="M4.125 64h34.128a4.13 4.13 0 0 0 3.8-2.52L57.85 24.057c.219-.518.33-1.076.324-1.638l-.15-18.329A4.124 4.124 0 0 0 53.9 0H36.234c-.805 0-1.593.236-2.266.678L1.86 21.787A4.13 4.13 0 0 0 0 25.234v34.641A4.125 4.125 0 0 0 4.125 64"/>
+    <rect x="12" y="12" width="40" height="40" fill="#000"/>
+    <path fill="#fff" d="M19.748 31.243a7.3 7.3 0 0 1-2.743-2.787q-.997-1.774-.997-3.961c0-2.187.332-2.778.997-3.96s1.58-2.112 2.743-2.787q1.747-1.013 3.902-1.014 1.747 0 3.222.622a6.9 6.9 0 0 1 2.486 1.747 6.4 6.4 0 0 1 1.42 2.594h-3.13a3.9 3.9 0 0 0-.926-1.228q-.584-.52-1.367-.803c-.783-.283-1.083-.284-1.683-.284q-1.33 0-2.402.664a4.6 4.6 0 0 0-1.677 1.828q-.606 1.163-.606 2.62c0 1.457.202 1.846.606 2.621a4.6 4.6 0 0 0 1.677 1.828q1.072.664 2.402.664 1.232 0 2.235-.461t1.591-1.276a3.3 3.3 0 0 0 .633-1.833l.01.31h-3.526v-2.304h6.357v1.18q0 1.982-.96 3.585a6.9 6.9 0 0 1-2.626 2.525q-1.666.921-3.736.921c-2.07 0-2.737-.337-3.902-1.013zM36.271 31.243a7.3 7.3 0 0 1-2.755-2.787q-1.002-1.774-1.002-3.961c0-2.187.333-2.778 1.002-3.96a7.3 7.3 0 0 1 2.755-2.787q1.752-1.013 3.918-1.014c1.443 0 2.738.338 3.907 1.013a7.3 7.3 0 0 1 2.749 2.787q.996 1.774.997 3.961c0 2.187-.333 2.778-.997 3.96s-1.581 2.113-2.75 2.788q-1.752 1.013-3.906 1.013c-1.437 0-2.75-.338-3.918-1.013m6.308-2.23q1.062-.67 1.662-1.854t.6-2.664-.6-2.664-1.662-1.854-2.39-.67-2.395.67a4.6 4.6 0 0 0-1.672 1.854q-.606 1.185-.606 2.664t.606 2.664 1.672 1.854 2.395.67q1.33 0 2.39-.67"/>
+    <rect x="17" y="44" width="16" height="3" fill="#fff"/>
+  </svg>`;
+
+  const PRODUCT_ORDER = ["goland", "idea", "pycharm"];
+  const DEFAULT_PRODUCT_ID = "goland";
+
   const PRODUCTS = {
+    goland: {
+      id: "goland",
+      name: "GoLand",
+      accent: "#00D886",
+      ext: "go",
+      contextRoot: "cmd",
+      newFileLabel: "New File",
+      breadcrumbFileLeaf: true,
+      indent: "\t",
+      comment: {
+        replyComment: "// ",
+        bodyComment: "\t// ",
+        quoteComment: "// > ",
+        line: "//"
+      },
+      statusText: "UTF-8  ·  tabs  ·  Go  ·  Darcula  ·  Linux DO",
+      statusLang: "Go",
+      tabIcon: "linear-gradient(135deg, #00D886, #007DFE)",
+      menus: [
+        "File",
+        "Edit",
+        "View",
+        "Navigate",
+        "Code",
+        "Refactor",
+        "Run",
+        "Tools",
+        "VCS",
+        "Window",
+        "Help"
+      ],
+      stripLeft: [
+        { label: "Project", icon: "folder", active: true },
+        { label: "Commit", icon: "commit" },
+        { label: "Structure", icon: "structure" }
+      ],
+      stripRight: [
+        { label: "Go", icon: "go" },
+        { label: "Database", icon: "database" },
+        { label: "AI", icon: "ai" }
+      ],
+      sidebarAliases: {
+        categories: "cmd",
+        tags: "internal",
+        chat: "testdata",
+        dms: "scratch",
+        resources: "externalLibraries"
+      },
+      mark: GOLAND_MARK_SVG,
+      headerTopic({ name, floor, time, stem }) {
+        const ident = exportedIdent(stem);
+        return [
+          `<span class="idea-kw">package</span> topics`,
+          ``,
+          `<span class="idea-kw">import</span> <span class="idea-str">"linux.do/community/discourse"</span>`,
+          ``,
+          `<span class="idea-cmt">// <span class="idea-ann">@author</span> ${escapeHtml(name)}</span>`,
+          floor
+            ? `<span class="idea-cmt">// <span class="idea-ann">@floor</span> ${escapeHtml(floor)}</span>`
+            : ``,
+          time
+            ? `<span class="idea-cmt">// <span class="idea-ann">@since</span> ${escapeHtml(time)}</span>`
+            : ``,
+          ``,
+          `<span class="idea-kw">func</span> <span class="idea-fn">${escapeHtml(ident)}</span>() {`,
+          ``
+        ];
+      },
+      headerReply({ methodName, meta }) {
+        return [
+          ``,
+          `<span class="idea-cmt">// ${escapeHtml(meta)}</span>`,
+          `<span class="idea-kw">func</span> <span class="idea-fn">${escapeHtml(methodName)}</span>() {`
+        ];
+      },
+      footerTopic() {
+        return [``, `<span class="idea-kw">}</span> <span class="idea-cmt">// end of topic</span>`];
+      },
+      footerReply() {
+        return [`<span class="idea-kw">}</span>`];
+      },
+      replyPlain: [
+        (indent, str, body) =>
+          `${indent}<span class="idea-fn">log</span>.<span class="idea-fn">Printf</span>(<span class="idea-str">"%s"</span>, ${str(body)})`,
+        (indent, str, body) =>
+          `${indent}notes = <span class="idea-fn">append</span>(notes, ${str(body)})`,
+        (indent, str, body) =>
+          `${indent}<span class="idea-kw">if</span> ${str(body)} == <span class="idea-str">""</span> { <span class="idea-kw">return</span> }`,
+        (indent, str, body) => `${indent}ctx.<span class="idea-fn">Reply</span>(${str(body)})`,
+        (indent, str, body) => `${indent}msg := ${str(body)}`
+      ],
+      replyLink: (indent, str, body) => `${indent}ctx.<span class="idea-fn">Open</span>(${str(body)})`,
+      replyList: (indent, str, body) =>
+        `${indent}items = <span class="idea-fn">append</span>(items, ${str(body)})`,
+      replyQuote: (indent, comment, body) =>
+        `${indent}<span class="idea-cmt">${comment}quoted: ${body}</span>`,
+      replyFillers: [
+        `\t<span class="idea-kw">if</span> msg == <span class="idea-str">""</span> { <span class="idea-kw">return</span> }`,
+        `\tctx.<span class="idea-fn">Touch</span>()`,
+        `\tsort.<span class="idea-fn">Strings</span>(notes)`,
+        `\tmetrics.<span class="idea-fn">Inc</span>(<span class="idea-str">"reply"</span>)`
+      ]
+    },
     idea: {
       id: "idea",
       name: "IntelliJ IDEA",
       accent: "#4A9FD8",
       ext: "java",
       contextRoot: "topics",
+      newFileLabel: "New Class",
+      breadcrumbFileLeaf: false,
+      indent: "  ",
+      comment: {
+        replyComment: "// ",
+        bodyComment: "  // ",
+        quoteComment: "// > ",
+        line: "//"
+      },
+      statusText: "UTF-8  ·  4 spaces  ·  Java  ·  Darcula  ·  Linux DO",
+      statusLang: "Java",
+      tabIcon: "linear-gradient(135deg, #CC7832, #6A8759)",
       menus: [
         "File",
         "Edit",
@@ -99,7 +236,70 @@
         { label: "Database", icon: "database" },
         { label: "AI", icon: "ai" }
       ],
-      mark: IDEA_MARK_SVG
+      sidebarAliases: {
+        categories: "directories",
+        tags: "packages",
+        chat: "resources",
+        dms: "scratch",
+        resources: "externalLibraries"
+      },
+      mark: IDEA_MARK_SVG,
+      headerTopic({ name, floor, time, stem }) {
+        return [
+          `<span class="idea-kw">package</span> <span class="idea-str">linux.do.topics</span>;`,
+          ``,
+          `<span class="idea-kw">import</span> <span class="idea-str">community.discourse.*</span>;`,
+          ``,
+          `<span class="idea-cmt">/**</span>`,
+          `<span class="idea-cmt"> * <span class="idea-ann">@author</span> ${escapeHtml(name)}</span>`,
+          floor
+            ? `<span class="idea-cmt"> * <span class="idea-ann">@floor</span> ${escapeHtml(floor)}</span>`
+            : `<span class="idea-cmt"> *</span>`,
+          time
+            ? `<span class="idea-cmt"> * <span class="idea-ann">@since</span> ${escapeHtml(time)}</span>`
+            : `<span class="idea-cmt"> *</span>`,
+          `<span class="idea-cmt"> */</span>`,
+          `<span class="idea-kw">public class</span> <span class="idea-fn">${escapeHtml(stem)}</span> {`,
+          ``
+        ];
+      },
+      headerReply({ methodName, meta }) {
+        return [
+          ``,
+          `<span class="idea-cmt">// ${escapeHtml(meta)}</span>`,
+          `<span class="idea-ann">@Reply</span>`,
+          `<span class="idea-kw">void</span> <span class="idea-fn">${escapeHtml(methodName)}</span>() {`
+        ];
+      },
+      footerTopic() {
+        return [``, `<span class="idea-kw">}</span> <span class="idea-cmt">// end of topic</span>`];
+      },
+      footerReply() {
+        return [`<span class="idea-kw">}</span>`];
+      },
+      replyPlain: [
+        (indent, str, body) =>
+          `${indent}<span class="idea-fn">log</span>.<span class="idea-fn">info</span>(${str(body)});`,
+        (indent, str, body) => `${indent}notes.<span class="idea-fn">add</span>(${str(body)});`,
+        (indent, str, body) =>
+          `${indent}<span class="idea-kw">assert</span> ${str(body)}.<span class="idea-fn">length</span>() > 0;`,
+        (indent, str, body) => `${indent}ctx.<span class="idea-fn">reply</span>(${str(body)});`,
+        (indent, str, body) => `${indent}<span class="idea-kw">var</span> msg = ${str(body)};`
+      ],
+      replyLink: (indent, str, body) =>
+        `${indent}ctx.<span class="idea-fn">open</span>(${str(body)});`,
+      replyList: (indent, str, body) =>
+        `${indent}items.<span class="idea-fn">add</span>(${str(body)});`,
+      replyQuote: (indent, comment, body) =>
+        `${indent}<span class="idea-cmt">${comment}quoted: ${body}</span>`,
+      replyFillers: [
+        `  <span class="idea-kw">if</span> (msg == <span class="idea-kw">null</span> || msg.<span class="idea-fn">isBlank</span>()) {`,
+        `    <span class="idea-kw">return</span>;`,
+        `  }`,
+        `  ctx.<span class="idea-fn">touch</span>();`,
+        `  notes.<span class="idea-fn">sort</span>(<span class="idea-kw">null</span>);`,
+        `  Metrics.<span class="idea-fn">inc</span>(<span class="idea-str">"reply"</span>);`
+      ]
     },
     pycharm: {
       id: "pycharm",
@@ -107,6 +307,18 @@
       accent: "#21D789",
       ext: "py",
       contextRoot: "src",
+      newFileLabel: "New File",
+      breadcrumbFileLeaf: true,
+      indent: "    ",
+      comment: {
+        replyComment: "# ",
+        bodyComment: "    # ",
+        quoteComment: "# > ",
+        line: "#"
+      },
+      statusText: "UTF-8  ·  4 spaces  ·  Python  ·  Darcula  ·  Linux DO",
+      statusLang: "Python",
+      tabIcon: "linear-gradient(135deg, #3572A5, #21D789)",
       menus: [
         "File",
         "Edit",
@@ -130,23 +342,71 @@
         { label: "Database", icon: "database" },
         { label: "AI", icon: "ai" }
       ],
-      mark: PYCHARM_MARK_SVG
+      sidebarAliases: {
+        categories: "src",
+        tags: "packages",
+        chat: "notebooks",
+        dms: "scratch",
+        resources: "externalLibraries"
+      },
+      mark: PYCHARM_MARK_SVG,
+      headerTopic({ name, floor, time, stem }) {
+        return [
+          `<span class="idea-cmt">"""linux.do.topics</span>`,
+          ``,
+          `<span class="idea-cmt"><span class="idea-ann">@author</span> ${escapeHtml(name)}</span>`,
+          floor
+            ? `<span class="idea-cmt"><span class="idea-ann">@floor</span> ${escapeHtml(floor)}</span>`
+            : ``,
+          time
+            ? `<span class="idea-cmt"><span class="idea-ann">@since</span> ${escapeHtml(time)}</span>`
+            : ``,
+          `<span class="idea-cmt">"""</span>`,
+          ``,
+          `<span class="idea-kw">from</span> <span class="idea-str">community.discourse</span> <span class="idea-kw">import</span> *`,
+          ``,
+          `<span class="idea-kw">class</span> <span class="idea-fn">${escapeHtml(stem)}</span>:`,
+          ``
+        ];
+      },
+      headerReply({ methodName, meta }) {
+        return [
+          ``,
+          `<span class="idea-cmt"># ${escapeHtml(meta)}</span>`,
+          `<span class="idea-kw">def</span> <span class="idea-fn">${escapeHtml(methodName)}</span>():`
+        ];
+      },
+      footerTopic() {
+        return [``, `<span class="idea-cmt"># end of topic</span>`];
+      },
+      footerReply() {
+        return [];
+      },
+      replyPlain: [
+        (indent, str, body) =>
+          `${indent}<span class="idea-fn">logger</span>.<span class="idea-fn">info</span>(${str(body)})`,
+        (indent, str, body) => `${indent}notes.<span class="idea-fn">append</span>(${str(body)})`,
+        (indent, str, body) => `${indent}<span class="idea-kw">assert</span> ${str(body)}`,
+        (indent, str, body) => `${indent}ctx.<span class="idea-fn">reply</span>(${str(body)})`,
+        (indent, str, body) => `${indent}msg = ${str(body)}`
+      ],
+      replyLink: (indent, str, body) => `${indent}ctx.<span class="idea-fn">open</span>(${str(body)})`,
+      replyList: (indent, str, body) =>
+        `${indent}items.<span class="idea-fn">append</span>(${str(body)})`,
+      replyQuote: (indent, comment, body) =>
+        `${indent}<span class="idea-cmt">${comment}quoted: ${body}</span>`,
+      replyFillers: [
+        `    <span class="idea-kw">if</span> <span class="idea-kw">not</span> msg:`,
+        `        <span class="idea-kw">return</span>`,
+        `    ctx.<span class="idea-fn">touch</span>()`,
+        `    notes.<span class="idea-fn">sort</span>()`,
+        `    metrics.<span class="idea-fn">inc</span>(<span class="idea-str">"reply"</span>)`
+      ]
     }
   };
 
   function langStyle(product = getProduct()) {
-    if (product.id === "pycharm") {
-      return {
-        replyComment: "# ",
-        bodyComment: "    # ",
-        quoteComment: "# > "
-      };
-    }
-    return {
-      replyComment: "// ",
-      bodyComment: "  // ",
-      quoteComment: "// > "
-    };
+    return product.comment;
   }
 
   function getProductId() {
@@ -156,11 +416,26 @@
     } catch {
       /* ignore */
     }
-    return "idea";
+    return DEFAULT_PRODUCT_ID;
   }
 
   function getProduct() {
-    return PRODUCTS[getProductId()] || PRODUCTS.idea;
+    return PRODUCTS[getProductId()] || PRODUCTS[DEFAULT_PRODUCT_ID];
+  }
+
+  function nextProductId(id = getProductId()) {
+    const index = PRODUCT_ORDER.indexOf(id);
+    return PRODUCT_ORDER[(index + 1) % PRODUCT_ORDER.length];
+  }
+
+  function exportedIdent(stem) {
+    const cleaned = String(stem || "Topic") || "Topic";
+    if (/^[0-9]/.test(cleaned)) return `Topic_${cleaned}`;
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+
+  function productNamesLabel() {
+    return PRODUCT_ORDER.map((id) => PRODUCTS[id].name).join(" / ");
   }
 
   function setProductId(id) {
@@ -177,7 +452,7 @@
     return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
   }
 
-  const IDEA_SPLASH_BG = productSplashBg(PRODUCTS.idea);
+  const DEFAULT_SPLASH_BG = productSplashBg(PRODUCTS[DEFAULT_PRODUCT_ID]);
 
   const RAW_CSS = String.raw`
     /* Splash */
@@ -187,8 +462,8 @@
     }
 
     .idea-ide-theme #d-splash {
-      --dot-color: #4A9FD8 !important;
-      --splash-bg: ${IDEA_SPLASH_BG} !important;
+      --dot-color: #00D886 !important;
+      --splash-bg: ${DEFAULT_SPLASH_BG} !important;
       background: #2B2B2B !important;
     }
 
@@ -228,6 +503,8 @@
     .idea-ide-theme {
 
       color-scheme: light !important;
+      --idea-status-text: "UTF-8  ·  tabs  ·  Go  ·  Darcula  ·  Linux DO";
+      --idea-tab-icon: linear-gradient(135deg, #00D886, #007DFE);
       --idea-accent: #4A9FD8;
       --idea-accent-strong: #3592C4;
       --idea-accent-soft: #6CB2D9;
@@ -1677,13 +1954,9 @@
       width: 12px;
       height: 12px;
       border-radius: 2px;
-      background: linear-gradient(135deg, #CC7832, #6A8759);
+      background: var(--idea-tab-icon, linear-gradient(135deg, #00D886, #007DFE));
       box-shadow: inset 0 0 0 1px rgb(0 0 0 / 25%);
       flex: 0 0 auto;
-    }
-
-    .idea-product-pycharm.idea-ide-topic .idea-editor-tab-icon {
-      background: linear-gradient(135deg, #3572A5, #21D789);
     }
 
     .idea-ide-topic #topic-title,
@@ -1828,6 +2101,7 @@
       line-height: 20px;
       white-space: pre-wrap;
       word-break: break-word;
+      tab-size: 4;
     }
 
     .idea-ide-topic.idea-post-rows-themed .idea-code-line .idea-kw {
@@ -1995,7 +2269,7 @@
 
     /* Status bar */
     .idea-ide-theme #main-outlet::after {
-      content: "UTF-8  ·  4 spaces  ·  Java  ·  Darcula  ·  Linux DO";
+      content: var(--idea-status-text, "UTF-8  ·  tabs  ·  Go  ·  Darcula  ·  Linux DO");
       position: fixed;
       left: 0;
       right: 0;
@@ -2103,8 +2377,7 @@
   function onBrandClick(event) {
     event.preventDefault();
     event.stopPropagation();
-    const next = getProductId() === "pycharm" ? "idea" : "pycharm";
-    setProductId(next);
+    setProductId(nextProductId());
     invalidateProductBoundUi();
     applyTheme();
   }
@@ -2123,7 +2396,7 @@
     if (!brand) {
       brand = document.createElement("span");
       brand.className = "idea-brand";
-      brand.title = "点击切换 IntelliJ IDEA / PyCharm";
+      brand.title = `点击切换 ${productNamesLabel()}`;
       brand.addEventListener("click", onBrandClick);
       titleLink.appendChild(brand);
     }
@@ -2177,6 +2450,8 @@
       `<svg viewBox="0 0 16 16" aria-hidden="true"><text x="8" y="11.5" text-anchor="middle" font-size="9.5" font-weight="700" font-family="JetBrains Mono, Menlo, Consolas, monospace" fill="currentColor">M</text></svg>`,
     python: () =>
       `<svg viewBox="0 0 16 16" aria-hidden="true"><text x="8" y="11.5" text-anchor="middle" font-size="8" font-weight="700" font-family="JetBrains Mono, Menlo, Consolas, monospace" fill="currentColor">Py</text></svg>`,
+    go: () =>
+      `<svg viewBox="0 0 16 16" aria-hidden="true"><text x="8" y="11.5" text-anchor="middle" font-size="8" font-weight="700" font-family="JetBrains Mono, Menlo, Consolas, monospace" fill="currentColor">Go</text></svg>`,
     database: () =>
       `<svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="4" rx="5" ry="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>`,
     ai: () =>
@@ -2310,20 +2585,20 @@
   }
 
   function sectionTreeLabel(sectionName) {
-    const isPy = getProductId() === "pycharm";
+    const aliases = getProduct().sidebarAliases || {};
     switch ((sectionName || "").toLowerCase()) {
       case "categories":
-        return isPy ? "src" : "directories";
+        return aliases.categories || "";
       case "tags":
-        return "packages";
+        return aliases.tags || "";
       case "chat-channels":
       case "chat-search":
-        return isPy ? "notebooks" : "resources";
+        return aliases.chat || "";
       case "chat-dms":
-        return "scratch";
+        return aliases.dms || "";
       default:
         if (sectionName === "资源" || /resource/i.test(sectionName)) {
-          return "externalLibraries";
+          return aliases.resources || "";
         }
         return "";
     }
@@ -2512,7 +2787,7 @@
       controls.prepend(button);
     }
 
-    button.textContent = getProductId() === "pycharm" ? "New File" : "New Class";
+    button.textContent = getProduct().newFileLabel;
 
     if (native && !native.dataset.ideaHidden) {
       native.dataset.ideaHidden = "1";
@@ -2537,7 +2812,7 @@
       document.title.replace(/\s*-\s*Linux DO.*$/i, "").trim() ||
       "untitled";
     const stem = sanitizeFileStem(title);
-    const leaf = product.id === "pycharm" ? `${stem}.${product.ext}` : title;
+    const leaf = product.breadcrumbFileLeaf ? `${stem}.${product.ext}` : title;
     const routeKey = `${product.id}|${location.pathname}|${leaf}`;
     if (bar.dataset.routeKey === routeKey) return;
     bar.dataset.routeKey = routeKey;
@@ -2714,52 +2989,27 @@
     return false;
   }
 
-  function createReplyPainter(productId) {
+  function createReplyPainter(product = getProduct()) {
     let seq = 0;
-    const isPy = productId === "pycharm";
-    const indent = isPy ? "    " : "  ";
+    const indent = product.indent;
+    const comment = product.comment.replyComment;
     const str = (body) => `<span class="idea-str">"${body}"</span>`;
-
-    const plainTemplates = isPy
-      ? [
-          (b) => `${indent}<span class="idea-fn">logger</span>.<span class="idea-fn">info</span>(${str(b)})`,
-          (b) => `${indent}notes.<span class="idea-fn">append</span>(${str(b)})`,
-          (b) => `${indent}<span class="idea-kw">assert</span> ${str(b)}`,
-          (b) => `${indent}ctx.<span class="idea-fn">reply</span>(${str(b)})`,
-          (b) => `${indent}msg = ${str(b)}`
-        ]
-      : [
-          (b) =>
-            `${indent}<span class="idea-fn">log</span>.<span class="idea-fn">info</span>(${str(b)});`,
-          (b) => `${indent}notes.<span class="idea-fn">add</span>(${str(b)});`,
-          (b) => `${indent}<span class="idea-kw">assert</span> ${str(b)}.<span class="idea-fn">length</span>() > 0;`,
-          (b) => `${indent}ctx.<span class="idea-fn">reply</span>(${str(b)});`,
-          (b) => `${indent}<span class="idea-kw">var</span> msg = ${str(b)};`
-        ];
-
-    const linkTemplate = isPy
-      ? (b) => `${indent}ctx.<span class="idea-fn">open</span>(${str(b)})`
-      : (b) => `${indent}ctx.<span class="idea-fn">open</span>(${str(b)});`;
-
-    const listTemplate = isPy
-      ? (b) => `${indent}items.<span class="idea-fn">append</span>(${str(b)})`
-      : (b) => `${indent}items.<span class="idea-fn">add</span>(${str(b)});`;
-
-    const quoteTemplate = isPy
-      ? (b) => `${indent}<span class="idea-cmt"># quoted: ${b}</span>`
-      : (b) => `${indent}<span class="idea-cmt">// quoted: ${b}</span>`;
+    const plainTemplates = product.replyPlain;
+    const linkTemplate = product.replyLink;
+    const listTemplate = product.replyList;
+    const quoteTemplate = product.replyQuote;
 
     function paint(body, kind = "plain") {
       const text = body || "";
-      if (kind === "link" || /<a\s/i.test(text)) return linkTemplate(text);
-      if (kind === "list") return listTemplate(text.replace(/^(\d+\.\s+|- )/, ""));
-      if (kind === "quote") return quoteTemplate(text);
+      if (kind === "link" || /<a\s/i.test(text)) return linkTemplate(indent, str, text);
+      if (kind === "list") return listTemplate(indent, str, text.replace(/^(\d+\.\s+|- )/, ""));
+      if (kind === "quote") return quoteTemplate(indent, comment, text);
       if (Array.from(text.replace(/<[^>]+>/g, "")).length <= 18) {
-        return plainTemplates[2](text); // short → assert
+        return plainTemplates[2](indent, str, text); // short → assert
       }
       const tpl = plainTemplates[seq % plainTemplates.length];
       seq += 1;
-      return tpl(text);
+      return tpl(indent, str, text);
     }
 
     return {
@@ -2782,9 +3032,9 @@
 
   function collectCookedLineHtml(cooked, asReply) {
     const lines = [];
-    const style = langStyle();
-    const productId = getProductId();
-    const painter = asReply ? createReplyPainter(productId) : null;
+    const product = getProduct();
+    const style = langStyle(product);
+    const painter = asReply ? createReplyPainter(product) : null;
     const commentPrefix = asReply ? style.replyComment : style.bodyComment;
 
     const appendBlocks = (root) => {
@@ -2864,16 +3114,14 @@
           const codeText = child.textContent || "";
           if (asReply) {
             lines.push(
-              productId === "pycharm"
-                ? `    <span class="idea-cmt"># snippet</span>`
-                : `  <span class="idea-cmt">// snippet</span>`
+              `${product.indent}<span class="idea-cmt">${product.comment.line} snippet</span>`
             );
           } else {
             lines.push(`<span class="idea-cmt">${commentPrefix}----- code -----</span>`);
           }
           for (const row of codeText.replace(/\r/g, "").split("\n")) {
             lines.push(
-              `${asReply ? (productId === "pycharm" ? "    " : "  ") : ""}` +
+              `${asReply ? product.indent : ""}` +
                 `<span class="idea-str">${escapeHtml(row)}</span>`
             );
           }
@@ -2893,32 +3141,16 @@
     if (!lines.length) {
       return asReply ? [painter.blank()] : [emptyComment];
     }
-    if (asReply) padShortReplyBody(lines, productId);
+    if (asReply) padShortReplyBody(lines, product);
     return lines;
   }
 
-  function padShortReplyBody(lines, productId) {
+  function padShortReplyBody(lines, product = getProduct()) {
     const MIN_BODY = 5;
     const bodyCount = lines.filter((l) => String(l || "").trim()).length;
     if (bodyCount >= MIN_BODY) return;
 
-    const isPy = productId === "pycharm";
-    const fillers = isPy
-      ? [
-          `    <span class="idea-kw">if</span> <span class="idea-kw">not</span> msg:`,
-          `        <span class="idea-kw">return</span>`,
-          `    ctx.<span class="idea-fn">touch</span>()`,
-          `    notes.<span class="idea-fn">sort</span>()`,
-          `    metrics.<span class="idea-fn">inc</span>(<span class="idea-str">"reply"</span>)`
-        ]
-      : [
-          `  <span class="idea-kw">if</span> (msg == <span class="idea-kw">null</span> || msg.<span class="idea-fn">isBlank</span>()) {`,
-          `    <span class="idea-kw">return</span>;`,
-          `  }`,
-          `  ctx.<span class="idea-fn">touch</span>();`,
-          `  notes.<span class="idea-fn">sort</span>(<span class="idea-kw">null</span>);`,
-          `  Metrics.<span class="idea-fn">inc</span>(<span class="idea-str">"reply"</span>);`
-        ];
+    const fillers = product.replyFillers;
 
     const seed = bodyCount + lines.join("").length;
     let i = seed % fillers.length;
@@ -2969,46 +3201,10 @@
     const time = getPostTimeText(post);
     const floor = getPostFloorLabel(post);
     const replyTo = getReplyToLabel(post);
-    const className = sanitizeFileStem(getTopicTitleText());
+    const stem = sanitizeFileStem(getTopicTitleText());
 
     if (postNumber === "1") {
-      if (product.id === "pycharm") {
-        return [
-          `<span class="idea-cmt">"""linux.do.topics</span>`,
-          ``,
-          `<span class="idea-cmt"><span class="idea-ann">@author</span> ${escapeHtml(name)}</span>`,
-          floor
-            ? `<span class="idea-cmt"><span class="idea-ann">@floor</span> ${escapeHtml(floor)}</span>`
-            : ``,
-          time
-            ? `<span class="idea-cmt"><span class="idea-ann">@since</span> ${escapeHtml(time)}</span>`
-            : ``,
-          `<span class="idea-cmt">"""</span>`,
-          ``,
-          `<span class="idea-kw">from</span> <span class="idea-str">community.discourse</span> <span class="idea-kw">import</span> *`,
-          ``,
-          `<span class="idea-kw">class</span> <span class="idea-fn">${escapeHtml(className)}</span>:`,
-          ``
-        ];
-      }
-
-      return [
-        `<span class="idea-kw">package</span> <span class="idea-str">linux.do.topics</span>;`,
-        ``,
-        `<span class="idea-kw">import</span> <span class="idea-str">community.discourse.*</span>;`,
-        ``,
-        `<span class="idea-cmt">/**</span>`,
-        `<span class="idea-cmt"> * <span class="idea-ann">@author</span> ${escapeHtml(name)}</span>`,
-        floor
-          ? `<span class="idea-cmt"> * <span class="idea-ann">@floor</span> ${escapeHtml(floor)}</span>`
-          : `<span class="idea-cmt"> *</span>`,
-        time
-          ? `<span class="idea-cmt"> * <span class="idea-ann">@since</span> ${escapeHtml(time)}</span>`
-          : `<span class="idea-cmt"> *</span>`,
-        `<span class="idea-cmt"> */</span>`,
-        `<span class="idea-kw">public class</span> <span class="idea-fn">${escapeHtml(className)}</span> {`,
-        ``
-      ];
+      return product.headerTopic({ name, floor, time, stem });
     }
 
     const methodName = `reply_${sanitizeFileStem(name) || "user"}_${postNumber}`.replace(
@@ -3023,33 +3219,14 @@
       .filter(Boolean)
       .join(" ");
 
-    if (product.id === "pycharm") {
-      return [
-        ``,
-        `<span class="idea-cmt"># ${escapeHtml(meta)}</span>`,
-        `<span class="idea-kw">def</span> <span class="idea-fn">${escapeHtml(methodName)}</span>():`
-      ];
-    }
-
-    return [
-      ``,
-      `<span class="idea-cmt">// ${escapeHtml(meta)}</span>`,
-      `<span class="idea-ann">@Reply</span>`,
-      `<span class="idea-kw">void</span> <span class="idea-fn">${escapeHtml(methodName)}</span>() {`
-    ];
+    return product.headerReply({ methodName, meta, name, floor, time, replyTo, postNumber });
   }
 
   function buildFooterLines(post) {
     const product = getProduct();
     const postNumber = post.getAttribute("data-post-number") || "?";
-    if (postNumber === "1") {
-      if (product.id === "pycharm") {
-        return [``, `<span class="idea-cmt"># end of topic</span>`];
-      }
-      return [``, `<span class="idea-kw">}</span> <span class="idea-cmt">// end of topic</span>`];
-    }
-    if (product.id === "pycharm") return [];
-    return [`<span class="idea-kw">}</span>`];
+    if (postNumber === "1") return product.footerTopic();
+    return product.footerReply();
   }
 
   function renderGutter(gutter, lineCount) {
@@ -3503,13 +3680,21 @@
     }
   }
 
+  function syncProductClasses(root = document.documentElement) {
+    const product = getProduct();
+    root.dataset.ideaProduct = product.id;
+    for (const id of Object.keys(PRODUCTS)) {
+      root.classList.toggle(`idea-product-${id}`, id === product.id);
+    }
+    root.style.setProperty("--idea-status-text", JSON.stringify(product.statusText));
+    root.style.setProperty("--idea-tab-icon", product.tabIcon);
+    return product;
+  }
+
   function applyTheme() {
     injectStyle();
     document.documentElement.classList.add("idea-ide-theme");
-    const product = getProduct();
-    document.documentElement.dataset.ideaProduct = product.id;
-    document.documentElement.classList.toggle("idea-product-idea", product.id === "idea");
-    document.documentElement.classList.toggle("idea-product-pycharm", product.id === "pycharm");
+    syncProductClasses();
     applyColorMode();
     restyleSplash();
     if (!document.body) return;
@@ -3581,10 +3766,7 @@
     );
     injectStyle();
     document.documentElement.classList.add("idea-ide-theme");
-    const bootProduct = getProduct();
-    document.documentElement.dataset.ideaProduct = bootProduct.id;
-    document.documentElement.classList.toggle("idea-product-idea", bootProduct.id === "idea");
-    document.documentElement.classList.toggle("idea-product-pycharm", bootProduct.id === "pycharm");
+    syncProductClasses();
     applyColorMode();
     restyleSplash();
 
@@ -3614,6 +3796,25 @@
     document.addEventListener("turbo:load", scheduleApply);
     document.addEventListener("page:changed", scheduleApply);
     scheduleApply();
+  }
+
+  if (globalThis.__LINUXDO_IDEA_EXPORT__) {
+    globalThis.__LINUXDO_IDEA__ = {
+      PRODUCTS,
+      PRODUCT_ORDER,
+      DEFAULT_PRODUCT_ID,
+      getProductId,
+      getProduct,
+      nextProductId,
+      setProductId,
+      langStyle,
+      exportedIdent,
+      sectionTreeLabel,
+      createReplyPainter,
+      padShortReplyBody,
+      buildHeaderLines,
+      buildFooterLines
+    };
   }
 
   bootstrap();
