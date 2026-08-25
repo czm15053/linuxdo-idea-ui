@@ -532,21 +532,14 @@
 
   function cookedToGoBody(cooked) {
     if (!cooked) return "";
-    const extras = [];
-    for (const img of cooked.querySelectorAll?.("img") || []) {
-      const src = getImageSrc(img);
-      if (src) extras.push(`[image] ${src}`);
-    }
     let text = "";
     if (typeof cooked.innerText === "string" && cooked.innerText) text = cooked.innerText;
     else text = cooked.textContent || "";
-    text = String(text)
+    return String(text)
       .replace(/\u00a0/g, " ")
       .replace(/\r/g, "")
       .replace(/[ \t]+\n/g, "\n")
       .trim();
-    if (extras.length) text = text ? `${text}\n\n${extras.join("\n")}` : extras.join("\n");
-    return text;
   }
 
   function productNamesLabel() {
@@ -3095,6 +3088,13 @@
     return count;
   }
 
+  function collectCookedImageLines(cooked, prefix = "// ") {
+    const lines = [];
+    if (!cooked) return lines;
+    pushImageNodes(lines, cooked, prefix);
+    return lines;
+  }
+
   function isImageContainer(node) {
     if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
     const tag = node.tagName.toLowerCase();
@@ -3419,13 +3419,15 @@
       const product = getProduct();
       const embedBody = product.paintBody === "raw-string";
       const paintReplyAsCode = isReply && !embedBody;
+      const imageLines = embedBody ? collectCookedImageLines(cooked, "// ") : [];
       const allLines = [
         ...buildHeaderLines(post),
         ...(embedBody ? [] : collectCookedLineHtml(cooked, paintReplyAsCode)),
-        ...buildFooterLines(post)
+        ...buildFooterLines(post),
+        ...(imageLines.length ? ["", ...imageLines] : [])
       ];
 
-      const signature = `v8:${getProductId()}\n${allLines.join("\n")}`;
+      const signature = `v9:${getProductId()}\n${allLines.join("\n")}`;
       if (codeLines.dataset.signature !== signature) {
         codeLines.dataset.signature = signature;
         codeLines.innerHTML = allLines
@@ -3957,6 +3959,8 @@
       goRawStringDisplayLines,
       goBodyFieldLines,
       cookedToGoBody,
+      collectCookedImageLines,
+      buildImageCodeLine,
       sectionTreeLabel,
       createReplyPainter,
       padShortReplyBody,
