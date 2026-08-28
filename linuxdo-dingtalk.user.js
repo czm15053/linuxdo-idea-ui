@@ -313,13 +313,30 @@
     return `${date.getMonth() + 1}月${date.getDate()}日 ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
   }
 
+  function sanitizeCookedField(obj) {
+    if (!obj || typeof obj !== "object") return obj;
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+      if (key === "cooked" && typeof val === "string") {
+        obj[key] = val
+          .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+          .replace(/\son\w+\s*=\s*"[^"]*"/gi, "")
+          .replace(/\son\w+\s*=\s*'[^']*'/gi, "")
+          .replace(/(href|src)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, "$1=$2#$2");
+      } else if (val && typeof val === "object") {
+        sanitizeCookedField(val);
+      }
+    }
+    return obj;
+  }
+
   async function api(path) {
     const resp = await fetch(path, {
       headers: { Accept: "application/json" },
       credentials: "same-origin"
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    return resp.json();
+    return sanitizeCookedField(await resp.json());
   }
 
   let cachedUsername = null;
