@@ -175,6 +175,73 @@ export async function toggleLike(postId, triggerEl) {
 
 /* ============================== 钉钉式沉浸图片浮窗灯箱 ============================== */
 
+/* ============================== 书签（直连 API，与原生书签菜单一致） ============================== */
+
+// 本会话 postId -> bookmarkId（取消收藏需要 bookmark id）
+const bookmarkIds = new Map();
+
+function setBookmarkedUi(msg, on) {
+  if (!msg) return;
+  msg.dataset.bookmarked = on ? "1" : "0";
+  const btn = msg.querySelector('.im-msg-tool[data-action="bookmark"]');
+  if (btn) {
+    btn.classList.toggle("bookmarked", on);
+    btn.innerHTML = on ? (ICONS.bookmarkFill || ICONS.bookmark) : ICONS.bookmark;
+    btn.title = on ? "取消收藏" : "收藏";
+  }
+}
+
+export async function toggleBookmark(postId, triggerEl) {
+  if (!postId) return;
+  const msg = triggerEl?.closest?.(".im-msg");
+  const bookmarked = msg?.dataset.bookmarked === "1";
+  const headers = {
+    "X-CSRF-Token": csrfToken(),
+    "X-Requested-With": "XMLHttpRequest"
+  };
+  try {
+    if (!bookmarked) {
+      const resp = await fetch("/bookmarks.json", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { ...headers, "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+        body: `reminder_at=&auto_delete_preference=3&bookmarkable_id=${postId}&bookmarkable_type=Post`
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        // 已收藏过：服务端 422，按已收藏对齐 UI
+        if (resp.status === 422) {
+          setBookmarkedUi(msg, true);
+          showImToast("已收藏过，再点一次可取消", triggerEl);
+          return;
+        }
+        throw new Error(data.errors?.[0] || `HTTP ${resp.status}`);
+      }
+      if (data.id) bookmarkIds.set(postId, data.id);
+      setBookmarkedUi(msg, true);
+      showImToast("已收藏", triggerEl);
+      return;
+    }
+    // 取消：优先本会话记录的 bookmark id，否则拉列表反查
+    let bookmarkId = bookmarkIds.get(postId);
+    if (!bookmarkId) {
+      const list = await (await fetch("/bookmarks.json", { credentials: "same-origin", headers: { Accept: "application/json" } })).json();
+      const hit = (list.bookmarks || []).find((b) => b.bookmarkable_type === "Post" && Number(b.bookmarkable_id) === Number(postId));
+      bookmarkId = hit?.id;
+    }
+    if (!bookmarkId) {
+      showImToast("找不到对应书签，请到书签列表操作", triggerEl);
+      return;
+    }
+    const resp = await fetch(`/bookmarks/${bookmarkId}.json`, { method: "DELETE", credentials: "same-origin", headers });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    bookmarkIds.delete(postId);
+    setBookmarkedUi(msg, false);
+    showImToast("已取消收藏", triggerEl);
+  } catch (err) {
+    showImToast(`收藏操作失败：${err.message || "未知错误"}`, triggerEl);
+  }
+}
 
 // chatHooks 自注册（入口 import 即生效）
-Object.assign(chatHooks, { toast: showImToast, toggleLike, cantUndoText: getNativeCantUndoText });
+Object.assign(chatHooks, { toast: showImToast, toggleLike, toggleBookmark, cantUndoText: getNativeCantUndoText });

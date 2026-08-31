@@ -6588,6 +6588,9 @@ html.im-theme {
     proj: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 8h14v10.5A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5V8Z" stroke="currentColor" stroke-width="1.7"/><path d="M9 8V6.5A1.5 1.5 0 0 1 10.5 5h3A1.5 1.5 0 0 1 15 6.5V8" stroke="currentColor" stroke-width="1.7"/></svg>`,
     mail: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="4" y="6" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M5 8l7 5 7-5" stroke="currentColor" stroke-width="1.7"/></svg>`,
     bookmark: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>`,
+    link: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10.5 13.5a4.2 4.2 0 0 0 6.34.46l2.4-2.4a4.2 4.2 0 0 0-5.94-5.94l-1.4 1.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M13.5 10.5a4.2 4.2 0 0 0-6.34-.46l-2.4 2.4a4.2 4.2 0 0 0 5.94 5.94l1.4-1.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`,
+    flag: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 20V5s1.2-1 3.5-1 4 1.2 6 1.2 3-.7 3-.7v9.5s-.8.7-3 .7-3.7-1.2-6-1.2S5 14.5 5 14.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    smile: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 14s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="9.2" cy="9.8" r="1" fill="currentColor"/><circle cx="14.8" cy="9.8" r="1" fill="currentColor"/></svg>`,
     apps: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="7" cy="7" r="2.1" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="7" r="2.1" stroke="currentColor" stroke-width="1.7"/><circle cx="7" cy="17" r="2.1" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="17" r="2.1" stroke="currentColor" stroke-width="1.7"/></svg>`,
     build: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7 19V9l5-4 5 4v10" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 19v-5h4v5" stroke="currentColor" stroke-width="1.7"/></svg>`,
     more: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="18" cy="12" r="1.4" fill="currentColor"/></svg>`,
@@ -6634,7 +6637,8 @@ html.im-theme {
     sun: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
     heartOutline: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8 11V20H6a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h2Zm0 0 3.2-6.2A2 2 0 0 1 13 3.6V8h5.2a2 2 0 0 1 1.96 2.4l-1.2 6A2 2 0 0 1 17 18h-9" stroke="currentColor" stroke-width="1.6"/></svg>`,
     heartFilled: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 14.36 2 11.28 2 7.5 2 4.42 4.42 2 7.5 2c1.74 0 3.41.81 4.5 2.09C13.09 2.81 14.76 2 16.5 2 19.58 2 22 4.42 22 7.5c0 3.78-3.4 6.86-8.55 12.54L12 21.35Z"/></svg>`,
-    scrollTop: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    scrollTop: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    bookmarkFill: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3.5h10A1.2 1.2 0 0 1 18.2 4.7v14.8c0 .9-1 1.4-1.7.9L12 16.9l-4.5 3.5c-.7.5-1.7 0-1.7-.9V4.7A1.2 1.2 0 0 1 7 3.5Z"/></svg>`
   };
   ICONS.chat = ICONS.msg;
   ICONS.list = ICONS.msg;
@@ -6657,7 +6661,6 @@ html.im-theme {
   ICONS.msgFill = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4c-4.7 0-8.4 3-8.4 7 0 2.2 1.1 4.2 2.9 5.5l-.6 3 3.5-1.7c.8.2 1.7.3 2.6.3 4.7 0 8.4-3 8.4-7S16.7 4 12 4Z"/></svg>`;
   ICONS.bellFill = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a6.2 6.2 0 0 0-6.2 6.2v2.9l-1.5 2.8c-.4.7.1 1.6 1 1.6h13.4c.9 0 1.4-.9 1-1.6l-1.5-2.8V9.2A6.2 6.2 0 0 0 12 3Z"/><path d="M9.7 18.6a2.4 2.4 0 0 0 4.6 0h-4.6Z"/></svg>`;
   ICONS.mailFill = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M4 7A2.5 2.5 0 0 1 6.5 4.5h11A2.5 2.5 0 0 1 20 7v.5l-8 4.4-8-4.4V7Z"/><path d="M4 9.9v7.1a2.5 2.5 0 0 0 2.5 2.5h11a2.5 2.5 0 0 0 2.5-2.5V9.9l-7.5 4.1a1 1 0 0 1-1 0L4 9.9Z"/></svg>`;
-  ICONS.bookmarkFill = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3.5h10A1.2 1.2 0 0 1 18.2 4.7v14.8c0 .9-1 1.4-1.7.9L12 16.9l-4.5 3.5c-.7.5-1.7 0-1.7-.9V4.7A1.2 1.2 0 0 1 7 3.5Z"/></svg>`;
   ICONS.usersFill = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="8.4" r="3.3"/><path d="M3.3 18.6c.4-3 2.8-5 5.7-5s5.3 2 5.7 5l.1.7H3.2l.1-.7Z"/><circle cx="16.9" cy="9.2" r="2.5"/><path d="M16.6 13.8c2.3.3 4 2 4.3 4.3l.1.7h-4.4l-.1-.7c-.2-1.7-1-3.2-2.2-4.1.5-.2 1-.2 1.6-.2h.7Z"/></svg>`;
   ICONS.docFill = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 3h7.3L19 8.2V20a1 1 0 0 1-1 1H6.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M13.8 3.4V8.2h4.8L13.8 3.4Z" fill="#FFFFFF" opacity=".4"/></svg>`;
   ICONS.aitableFill = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg>`;
@@ -7718,7 +7721,7 @@ html.im-theme {
   }, true);
   function bindChatPanelEvents(panel) {
     panel.addEventListener("click", (e) => {
-      var _a2, _b2;
+      var _a2, _b2, _c;
       if (e.target.closest(".im-chat-metrics")) {
         e.preventDefault();
         e.stopPropagation();
@@ -7847,6 +7850,14 @@ html.im-theme {
         e.preventDefault();
         e.stopPropagation();
         chatHooks.replyToPost(Number(msg.dataset.postNumber));
+      } else if (toolBtn.dataset.action === "bookmark") {
+        e.preventDefault();
+        e.stopPropagation();
+        (_c = chatHooks.toggleBookmark) == null ? void 0 : _c.call(chatHooks, Number(msg.dataset.postId), toolBtn);
+      } else if (NATIVE_ACTION_SEL[toolBtn.dataset.action]) {
+        e.preventDefault();
+        e.stopPropagation();
+        clickNativePostAction(Number(msg.dataset.postNumber), toolBtn.dataset.action, toolBtn);
       }
     });
     panel.addEventListener("click", (e) => {
@@ -8042,6 +8053,28 @@ html.im-theme {
       return cooked;
     }
   }
+  const NATIVE_ACTION_SEL = {
+    "copy-link": ".post-action-menu__copy-link",
+    "flag": ".post-action-menu__flag"
+  };
+  function clickNativePostAction(postNumber, action, trigger) {
+    var _a2, _b2, _c;
+    const root2 = document.querySelector(`#post_${postNumber}`);
+    if (!root2) {
+      (_a2 = chatHooks.toast) == null ? void 0 : _a2.call(chatHooks, "原生楼层未加载，请先滚到该楼层", trigger);
+      return;
+    }
+    let btn = root2.querySelector(NATIVE_ACTION_SEL[action]);
+    if (!btn) {
+      (_b2 = root2.querySelector(".show-more-actions")) == null ? void 0 : _b2.click();
+      btn = root2.querySelector(NATIVE_ACTION_SEL[action]);
+    }
+    if (btn) {
+      btn.click();
+      return;
+    }
+    (_c = chatHooks.toast) == null ? void 0 : _c.call(chatHooks, "该楼层不支持此操作", trigger);
+  }
   function bubbleHtml(post, myName) {
     var _a2, _b2;
     const me = isMyPost(post, myName);
@@ -8099,7 +8132,7 @@ html.im-theme {
     </span>`;
     const boostBar = ((_b2 = chatHooks.renderBoosts) == null ? void 0 : _b2.call(chatHooks, post)) || "";
     return `
-    <div class="im-msg im-msg-${side}" data-post-number="${post.post_number}"${post.id ? ` data-post-id="${post.id}"` : ""}${me ? ' data-mine="1"' : ""} data-username="${escapeHtml(post.username || "")}">
+    <div class="im-msg im-msg-${side}" data-post-number="${post.post_number}"${post.id ? ` data-post-id="${post.id}"` : ""}${me ? ' data-mine="1"' : ""} data-username="${escapeHtml(post.username || "")}" data-bookmarked="${post.bookmarked ? "1" : "0"}">
       <span class="im-msg-avatar" style="background:${avatarBg}">${avatar}</span>
       <div class="im-msg-content">
         <span class="im-msg-name">${escapeHtml(displayName)}</span>
@@ -8117,6 +8150,9 @@ html.im-theme {
           <button class="im-msg-tool${liked}${!canUndo ? " cannot-undo" : ""}" data-action="like" data-can-undo="${canUndo ? "1" : "0"}" title="${likeTooltip}">${isLiked ? ICONS.heartFilled : ICONS.heartOutline}</button>
           <button class="im-msg-tool" data-action="boost" title="小火箭">${ICONS.rocket}</button>
           <button class="im-msg-tool" data-action="reply" title="回复">${ICONS.reply}</button>
+          <button class="im-msg-tool" data-action="copy-link" title="复制链接">${ICONS.link}</button>
+          <button class="im-msg-tool${post.bookmarked ? " bookmarked" : ""}" data-action="bookmark" title="${post.bookmarked ? "取消收藏" : "收藏"}">${post.bookmarked ? ICONS.bookmarkFill || ICONS.bookmark : ICONS.bookmark}</button>
+          <button class="im-msg-tool" data-action="flag" title="举报">${ICONS.flag}</button>
         </div>
       </div>
     </div>`;
@@ -12921,7 +12957,68 @@ ${data.raw}
       }
     }
   }
-  Object.assign(chatHooks, { toast: showImToast, toggleLike, cantUndoText: getNativeCantUndoText });
+  const bookmarkIds = /* @__PURE__ */ new Map();
+  function setBookmarkedUi(msg, on) {
+    if (!msg) return;
+    msg.dataset.bookmarked = on ? "1" : "0";
+    const btn = msg.querySelector('.im-msg-tool[data-action="bookmark"]');
+    if (btn) {
+      btn.classList.toggle("bookmarked", on);
+      btn.innerHTML = on ? ICONS.bookmarkFill || ICONS.bookmark : ICONS.bookmark;
+      btn.title = on ? "取消收藏" : "收藏";
+    }
+  }
+  async function toggleBookmark(postId, triggerEl) {
+    var _a2, _b2;
+    if (!postId) return;
+    const msg = (_a2 = triggerEl == null ? void 0 : triggerEl.closest) == null ? void 0 : _a2.call(triggerEl, ".im-msg");
+    const bookmarked = (msg == null ? void 0 : msg.dataset.bookmarked) === "1";
+    const headers = {
+      "X-CSRF-Token": csrfToken(),
+      "X-Requested-With": "XMLHttpRequest"
+    };
+    try {
+      if (!bookmarked) {
+        const resp2 = await fetch("/bookmarks.json", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { ...headers, "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+          body: `reminder_at=&auto_delete_preference=3&bookmarkable_id=${postId}&bookmarkable_type=Post`
+        });
+        const data = await resp2.json().catch(() => ({}));
+        if (!resp2.ok) {
+          if (resp2.status === 422) {
+            setBookmarkedUi(msg, true);
+            showImToast("已收藏过，再点一次可取消", triggerEl);
+            return;
+          }
+          throw new Error(((_b2 = data.errors) == null ? void 0 : _b2[0]) || `HTTP ${resp2.status}`);
+        }
+        if (data.id) bookmarkIds.set(postId, data.id);
+        setBookmarkedUi(msg, true);
+        showImToast("已收藏", triggerEl);
+        return;
+      }
+      let bookmarkId = bookmarkIds.get(postId);
+      if (!bookmarkId) {
+        const list = await (await fetch("/bookmarks.json", { credentials: "same-origin", headers: { Accept: "application/json" } })).json();
+        const hit = (list.bookmarks || []).find((b) => b.bookmarkable_type === "Post" && Number(b.bookmarkable_id) === Number(postId));
+        bookmarkId = hit == null ? void 0 : hit.id;
+      }
+      if (!bookmarkId) {
+        showImToast("找不到对应书签，请到书签列表操作", triggerEl);
+        return;
+      }
+      const resp = await fetch(`/bookmarks/${bookmarkId}.json`, { method: "DELETE", credentials: "same-origin", headers });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      bookmarkIds.delete(postId);
+      setBookmarkedUi(msg, false);
+      showImToast("已取消收藏", triggerEl);
+    } catch (err) {
+      showImToast(`收藏操作失败：${err.message || "未知错误"}`, triggerEl);
+    }
+  }
+  Object.assign(chatHooks, { toast: showImToast, toggleLike, toggleBookmark, cantUndoText: getNativeCantUndoText });
   function formatBoostCooked(cooked) {
     if (!cooked) return "";
     try {

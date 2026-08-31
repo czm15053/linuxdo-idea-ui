@@ -275,6 +275,15 @@ function bindChatPanelEvents(panel) {
       e.preventDefault();
       e.stopPropagation();
       chatHooks.replyToPost(Number(msg.dataset.postNumber));
+    } else if (toolBtn.dataset.action === "bookmark") {
+      e.preventDefault();
+      e.stopPropagation();
+      chatHooks.toggleBookmark?.(Number(msg.dataset.postId), toolBtn);
+    } else if (NATIVE_ACTION_SEL[toolBtn.dataset.action]) {
+      // 回应摘要 / 复制链接 / 书签 / 举报：转发点击到原生楼层按钮，行为与原站一致
+      e.preventDefault();
+      e.stopPropagation();
+      clickNativePostAction(Number(msg.dataset.postNumber), toolBtn.dataset.action, toolBtn);
     }
   });
   panel.addEventListener("click", (e) => {
@@ -480,6 +489,29 @@ function cookedWithQuoteBars(post) {
     return cooked;
   }
 }
+/** 原生楼层操作按钮（复制链接/举报）→ #post_N 内的对应选择器；书签改走直连 API */
+const NATIVE_ACTION_SEL = {
+  "copy-link": ".post-action-menu__copy-link",
+  "flag": ".post-action-menu__flag"
+};
+
+function clickNativePostAction(postNumber, action, trigger) {
+  const root = document.querySelector(`#post_${postNumber}`);
+  if (!root) {
+    chatHooks.toast?.("原生楼层未加载，请先滚到该楼层", trigger);
+    return;
+  }
+  let btn = root.querySelector(NATIVE_ACTION_SEL[action]);
+  if (!btn) {
+    root.querySelector(".show-more-actions")?.click(); // 折叠态先展开「…」
+    btn = root.querySelector(NATIVE_ACTION_SEL[action]);
+  }
+  if (btn) {
+    btn.click();
+    return;
+  }
+  chatHooks.toast?.("该楼层不支持此操作", trigger);
+}
 function bubbleHtml(post, myName) {
   const me = isMyPost(post, myName);
   const side = me ? "me" : "other";
@@ -542,7 +574,7 @@ function bubbleHtml(post, myName) {
 
   const boostBar = chatHooks.renderBoosts?.(post) || "";
   return `
-    <div class="im-msg im-msg-${side}" data-post-number="${post.post_number}"${post.id ? ` data-post-id="${post.id}"` : ""}${me ? ' data-mine="1"' : ""} data-username="${escapeHtml(post.username || "")}">
+    <div class="im-msg im-msg-${side}" data-post-number="${post.post_number}"${post.id ? ` data-post-id="${post.id}"` : ""}${me ? ' data-mine="1"' : ""} data-username="${escapeHtml(post.username || "")}" data-bookmarked="${post.bookmarked ? "1" : "0"}">
       <span class="im-msg-avatar" style="background:${avatarBg}">${avatar}</span>
       <div class="im-msg-content">
         <span class="im-msg-name">${escapeHtml(displayName)}</span>
@@ -560,6 +592,9 @@ function bubbleHtml(post, myName) {
           <button class="im-msg-tool${liked}${!canUndo ? " cannot-undo" : ""}" data-action="like" data-can-undo="${canUndo ? "1" : "0"}" title="${likeTooltip}">${isLiked ? ICONS.heartFilled : ICONS.heartOutline}</button>
           <button class="im-msg-tool" data-action="boost" title="小火箭">${ICONS.rocket}</button>
           <button class="im-msg-tool" data-action="reply" title="回复">${ICONS.reply}</button>
+          <button class="im-msg-tool" data-action="copy-link" title="复制链接">${ICONS.link}</button>
+          <button class="im-msg-tool${post.bookmarked ? " bookmarked" : ""}" data-action="bookmark" title="${post.bookmarked ? "取消收藏" : "收藏"}">${post.bookmarked ? (ICONS.bookmarkFill || ICONS.bookmark) : ICONS.bookmark}</button>
+          <button class="im-msg-tool" data-action="flag" title="举报">${ICONS.flag}</button>
         </div>
       </div>
     </div>`;
