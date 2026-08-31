@@ -7928,7 +7928,7 @@ html.im-theme {
   }
   let inFlightNewPostsFetch = false;
   let currentSubscribedTopicChannel = null;
-  let chatRealtimeTickerId = null;
+  let chatRealtimeBound = false;
   async function fetchLatestNewPosts(topicId) {
     var _a2;
     if (!topicId || chatState.topicId !== topicId || inFlightNewPostsFetch) return;
@@ -7936,7 +7936,7 @@ html.im-theme {
     if (!body || body.querySelector(".im-chat-loading")) return;
     inFlightNewPostsFetch = true;
     try {
-      const data = await api(`/t/${topicId}/last.json`);
+      const data = await api(`/t/${topicId}/last.json?track_visit=false`);
       if (chatState.topicId !== topicId) return;
       const posts = data.post_stream && data.post_stream.posts || [];
       const stream = data.post_stream && data.post_stream.stream || posts.map((p) => p.id);
@@ -8004,12 +8004,13 @@ html.im-theme {
     }
   }
   function startRealtimeChatPolling() {
-    if (chatRealtimeTickerId) return;
-    chatRealtimeTickerId = setInterval(() => {
+    if (chatRealtimeBound) return;
+    chatRealtimeBound = true;
+    document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible" && chatState.topicId && !chatState.loading) {
         fetchLatestNewPosts(chatState.topicId);
       }
-    }, 4e3);
+    });
   }
   function cookedWithQuoteBars(post) {
     var _a2, _b2;

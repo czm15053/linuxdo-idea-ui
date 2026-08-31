@@ -354,7 +354,7 @@ function renderChatError(message) {
 
 let inFlightNewPostsFetch = false;
 let currentSubscribedTopicChannel = null;
-let chatRealtimeTickerId = null;
+let chatRealtimeBound = false;
 
 async function fetchLatestNewPosts(topicId) {
   if (!topicId || chatState.topicId !== topicId || inFlightNewPostsFetch) return;
@@ -363,7 +363,7 @@ async function fetchLatestNewPosts(topicId) {
 
   inFlightNewPostsFetch = true;
   try {
-    const data = await api(`/t/${topicId}/last.json`);
+    const data = await api(`/t/${topicId}/last.json?track_visit=false`);
     if (chatState.topicId !== topicId) return;
 
     const posts = (data.post_stream && data.post_stream.posts) || [];
@@ -438,12 +438,13 @@ export function subscribeTopicRealtime(topicId) {
   }
 }
 export function startRealtimeChatPolling() {
-  if (chatRealtimeTickerId) return;
-  chatRealtimeTickerId = setInterval(() => {
+  if (chatRealtimeBound) return;
+  chatRealtimeBound = true;
+  document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible" && chatState.topicId && !chatState.loading) {
       fetchLatestNewPosts(chatState.topicId);
     }
-  }, 4000);
+  });
 }
 /** Discourse 原生引用块（<aside class="quote" data-username data-post>）→ IM 引用条。
  *  「回复谁」的可靠信号在 cooked 里：点「回复」按钮的帖子服务端都会在正文内嵌
