@@ -9369,7 +9369,8 @@ ${data.raw}
       const err = ((_a2 = payload.errors) == null ? void 0 : _a2[0]) || payload.error || `HTTP ${response.status}`;
       throw new Error(err);
     }
-    const upload = payload.upload || (Array.isArray(payload.uploads) ? payload.uploads[0] : null);
+    let upload = payload.upload || (Array.isArray(payload.uploads) ? payload.uploads[0] : null);
+    if (!upload && payload && payload.id && payload.url) upload = payload;
     if (!upload) throw new Error("站点未返回图片地址");
     return upload;
   }

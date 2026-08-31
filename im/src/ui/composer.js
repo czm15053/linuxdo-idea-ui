@@ -677,7 +677,9 @@ async function uploadImageFile(file) {
     const err = payload.errors?.[0] || payload.error || `HTTP ${response.status}`;
     throw new Error(err);
   }
-  const upload = payload.upload || (Array.isArray(payload.uploads) ? payload.uploads[0] : null);
+  // Discourse 三种返回形态：扁平对象（新版）/ upload 包裹 / uploads 数组
+  let upload = payload.upload || (Array.isArray(payload.uploads) ? payload.uploads[0] : null);
+  if (!upload && payload && payload.id && payload.url) upload = payload;
   if (!upload) throw new Error("站点未返回图片地址");
   return upload;
 }
