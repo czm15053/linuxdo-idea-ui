@@ -2,7 +2,7 @@
 
 /* global __IM_VERSION__ */
 
-import { SKIN_ID, otherThemeActive, migratePrefs } from "./config/skins.js";
+import { SKIN_ID, SKINS, otherThemeActive, migratePrefs } from "./config/skins.js";
 
 import {
   STYLE_ID, ROOT_CLASS, DARK_CLASS, LOCK_CLASS
@@ -229,6 +229,8 @@ export function run() {
     applyListWidth(getListWidth());
     syncListNav();
     ensureSkinToggle();
+    // IM 模式浏览器 tab：列表/资料页固定显示皮肤名；话题页由 chat-panel 拼「主题 - 皮肤名」
+    if (!isTopic) document.title = SKINS[SKIN_ID].label;
     if (SKIN_ID === "wecom") ensureDarkModeToggle(document.querySelector(".im-rail"));
     ensureRelativeTimeTicker();
     startRealtimeChatPolling();

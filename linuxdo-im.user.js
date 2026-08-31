@@ -8177,7 +8177,7 @@ html.im-theme {
     const t = displayTitle();
     const titleEl = document.querySelector(".im-chat-title");
     if (titleEl) titleEl.textContent = t;
-    document.title = `${t} - Linux DO`;
+    document.title = SKINS[SKIN_ID].label;
     const composeBtn = document.querySelector(".im-chat-compose");
     if (composeBtn) {
       delete composeBtn.dataset.defaultLabel;
@@ -13882,6 +13882,7 @@ ${data.raw}
       applyListWidth(getListWidth());
       syncListNav();
       ensureSkinToggle();
+      if (!isTopic) document.title = SKINS[SKIN_ID].label;
       if (SKIN_ID === "wecom") ensureDarkModeToggle(document.querySelector(".im-rail"));
       ensureRelativeTimeTicker();
       startRealtimeChatPolling();

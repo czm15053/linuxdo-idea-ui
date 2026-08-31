@@ -10,6 +10,7 @@ import { topicIdFromPath, postNumberFromPath, navigateInApp } from "../bridge/ro
 import { setViewMode } from "../state/view-state.js";
 import { loadCategories, categoryById } from "../bridge/categories.js";
 import { skinHooks } from "../skins/hooks.js";
+import { SKIN_ID, SKINS } from "../config/skins.js";
 import { chatHooks } from "./hooks.js";
 import { likedPosts } from "../features/liked-posts.js";
 import { formatTime, formatClock } from "./shared/time.js";
@@ -625,7 +626,7 @@ function paintChatHeaderChrome() {
   const t = displayTitle();
   const titleEl = document.querySelector(".im-chat-title");
   if (titleEl) titleEl.textContent = t;
-  document.title = `${t} - Linux DO`;
+  document.title = SKINS[SKIN_ID].label;
   // 输入框占位：发送给 {话题标题}（v2 占位走 data-placeholder，旧版 span 已不存在）
   const composeBtn = document.querySelector(".im-chat-compose");
   if (composeBtn) {
