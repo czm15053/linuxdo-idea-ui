@@ -1,10 +1,28 @@
-# Linux DO · JetBrains / 飞书 / 钉钉 / 终端 TUI 风格外观
+# Linux DO · IM / JetBrains / 飞书 / 钉钉 / 终端 TUI 风格外观
 
-把 [linux.do](https://linux.do/) 换成 **JetBrains IDE**、**飞书 IM**、**钉钉 PC IM** 或**终端 TUI（Claude Code / Codex CLI）**风格。只换皮，不碰数据——内容、链接、按钮与交互全部保留。
+把 [linux.do](https://linux.do/) 换成 **IM（钉钉 / 飞书 / 企业微信）**、**JetBrains IDE**、**飞书 IM**、**钉钉 PC IM** 或**终端 TUI（Claude Code / Codex CLI）**风格。只换皮，不碰数据——内容、链接、按钮与交互全部保留。
 
-> ⚠️ 四个脚本**互斥**，同一时刻只启用一个。同时启用时后装脚本会自动避让（控制台有提示）。
+> ⚠️ 五个脚本**互斥**，同一时刻只启用一个。同时启用时后装脚本会自动避让（控制台有提示）。
 
-## 脚本一：JetBrains / Darcula 外观（`linuxdo-idea.user.js`）
+## 脚本一：IM 三合一外观（`linuxdo-im.user.js`）
+
+一套脚本内置 **钉钉 / 飞书 / 企业微信** 三套 IM 皮肤，一键切换。附带完整互动内核：投票、小火箭、图片灯箱、引用跳转、全局搜索（⌘/Ctrl+K）、用户卡片、原生编辑器原地嵌入、实时刷新。
+
+### 安装
+
+1. 安装 [Tampermonkey](https://www.tampermonkey.net/)（或 Violentmonkey）
+2. 打开 [`linuxdo-im.user.js`](./linuxdo-im.user.js)，点 **Raw** 后安装
+3. 访问 <https://linux.do/>；脚本更新后请硬刷新一次
+
+Raw 直链（仓库公开后可用）：
+
+```text
+https://github.com/czm15053/linuxdo-idea-ui/raw/main/linuxdo-im.user.js
+```
+
+功能详解、截图与开发说明详见 [`im/README.md`](./im/README.md)。
+
+## 脚本二：JetBrains / Darcula 外观（`linuxdo-idea.user.js`）
 
 换成 **JetBrains IDE / Darcula** 风格。
 
@@ -43,7 +61,7 @@ https://github.com/czm15053/linuxdo-idea-ui/raw/main/linuxdo-idea.user.js
 | 话题 · PyCharm | ![话题 · PyCharm](./snapshot/topic-pycharm.png) |
 | Hover 链接显示图片 | ![Hover 链接显示图片](./snapshot/image-hover.png) |
 
-## 脚本二：飞书 IM 外观（`linuxdo-feishu.user.js`）
+## 脚本三：飞书 IM 外观（`linuxdo-feishu.user.js`）
 
 换成**飞书即时消息**风格，无顶栏、三栏主从同屏。
 
@@ -79,7 +97,7 @@ https://github.com/czm15053/linuxdo-idea-ui/raw/main/linuxdo-feishu.user.js
 | hover 头像通知 | ![hover 头像通知](./snapshot/hover%20头像通知.png) |
 | 一键切换隐私头像 | ![一键切换隐私头像](./snapshot/一键切换隐私头像.png) |
 
-## 脚本三：钉钉 IM 外观（`linuxdo-dingtalk.user.js`）
+## 脚本四：钉钉 IM 外观（`linuxdo-dingtalk.user.js`）
 
 换成**新版钉钉 PC 即时消息**风格：蓝紫渐变顶栏 + 110px 图标文字导航 + 会话列表 + 聊天区。
 
@@ -114,7 +132,7 @@ https://github.com/czm15053/linuxdo-idea-ui/raw/main/linuxdo-dingtalk.user.js
 | hover 头像通知 | ![hover 头像通知](./snapshot/hover%20头像通知-ding.png) |
 | 一键切换隐私头像 | ![一键切换隐私头像](./snapshot/一键切换隐私头像-ding.png) |
 
-## 脚本四：终端 TUI 外观 — Claude Code / Codex CLI（`linuxdo-terminal.user.js`）
+## 脚本五：终端 TUI 外观 — Claude Code / Codex CLI（`linuxdo-terminal.user.js`）
 
 把 LinuxDo 伪装成 **Claude Code** 或 **OpenAI Codex CLI** 的终端会话界面，黑底等宽字体、命令行式交互。
 
