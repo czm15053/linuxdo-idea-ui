@@ -429,16 +429,18 @@ async function fetchLatestNewPosts(topicId) {
   }
 }
 export function subscribeTopicRealtime(topicId) {
+  const channel = topicId ? `/topic/${topicId}` : null;
+  if (channel === currentSubscribedTopicChannel) return; // 同频道不重订阅，避免打断在途长轮询
   if (currentSubscribedTopicChannel && window.MessageBus) {
     try {
       window.MessageBus.unsubscribe(currentSubscribedTopicChannel);
     } catch {}
     currentSubscribedTopicChannel = null;
   }
-  if (topicId && window.MessageBus) {
-    currentSubscribedTopicChannel = `/topic/${topicId}`;
+  if (channel && window.MessageBus) {
+    currentSubscribedTopicChannel = channel;
     try {
-      window.MessageBus.subscribe(currentSubscribedTopicChannel, () => {
+      window.MessageBus.subscribe(channel, () => {
         if (chatState.topicId === topicId) {
           fetchLatestNewPosts(topicId);
         }
