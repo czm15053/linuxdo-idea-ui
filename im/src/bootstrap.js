@@ -60,6 +60,7 @@ import {
   ensureChatPanel, renderChatEmpty, loadTopic, syncNewPostsFromDom,
   startRealtimeChatPolling, subscribeTopicRealtime,
 } from "./ui/chat-panel.js";
+import { resetRailToChat } from "./ui/list-sources.js";
 export function run() {
   migratePrefs();
   onColorThemeChange(syncDarkModeToggle);
@@ -222,6 +223,8 @@ export function run() {
 
     ensureListPanel();
     ensureRailSources();
+    // 路由变化 → 中栏回到会话列表（通知列是临时覆盖，不应跨路由占住中栏）
+    resetRailToChat();
     if (!profile) renderActiveSource();
     bindHeaderUserMenuInterception();
     ensureChatPanel();

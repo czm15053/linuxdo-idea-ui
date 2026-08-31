@@ -10539,6 +10539,10 @@ ${data.raw}
   function activeRailKey() {
     return activeKey;
   }
+  function resetRailToChat() {
+    if (activeKey === "chat") return;
+    setActiveRailKey("chat");
+  }
   function setActiveRailKey(key, opts = {}) {
     const panel = document.querySelector(".im-list-panel");
     const force = !!opts.force && !!panel && panel.dataset.src !== "rail";
@@ -10591,6 +10595,9 @@ ${data.raw}
       chips.innerHTML = `<button type="button" class="im-chip active" data-chip="all">消息<span class="n"></span></button><button type="button" class="im-chip" data-chip="unread">未读<span class="n"></span></button>`;
     }
     renderListRows();
+    if (!isTopicPath(location.pathname) && !listState.topics.length) {
+      loadList(listApiForPath(location.pathname) || "/latest.json");
+    }
   }
   function bindSourceControls(panel) {
     if (panel.dataset.srcBound === "1") return;
@@ -13876,6 +13883,7 @@ ${data.raw}
       }
       ensureListPanel();
       ensureRailSources();
+      resetRailToChat();
       if (!profile) renderActiveSource();
       bindHeaderUserMenuInterception();
       ensureChatPanel();

@@ -1,10 +1,11 @@
 // rail 内容源注册表（DISCOURSE-INTEGRATION §5.2）：每个 rail key 一个 source，
 // 切换时仅替换 .im-list-panel 内容区（chips + body），滚动位置按 key 缓存。
 // chat = 现有会话列表（listState 不变）；notifications = 通知模块；其余 key 二期补充。
-import { renderListRows, loadMoreList } from "./list-panel.js";
+import { renderListRows, loadMoreList, loadList } from "./list-panel.js";
 import { renderNotifications, onNotificationsChip, notificationsScroll, ensureMarkRead, syncNotifStrip } from "./notifications.js";
 import { registerExtraSources } from "./topic-lists.js";
-import { navigateInApp } from "../bridge/router.js";
+import { navigateInApp, isTopicPath, listApiForPath } from "../bridge/router.js";
+import { listState } from "../state/list-state.js";
 
 const sources = new Map();
 const scrollCache = new Map(); // railKey -> body scrollTop
@@ -21,6 +22,14 @@ export function hasSource(key) {
 
 export function activeRailKey() {
   return activeKey;
+}
+
+/** URL 路由变化 → 中栏回到会话列表列。
+ *  通知列是临时覆盖：点通知进入后，任何路由跳转（头像回首页 / 顶部类别导航 /
+ *  进话题）都不应让它继续占着中栏，否则怎么点都停在通知列（activeKey 卡死）。 */
+export function resetRailToChat() {
+  if (activeKey === "chat") return;
+  setActiveRailKey("chat");
 }
 
 export function setActiveRailKey(key, opts = {}) {
@@ -85,6 +94,11 @@ function renderChatSource(panel) {
       `<button type="button" class="im-chip" data-chip="unread">未读<span class="n"></span></button>`;
   }
   renderListRows();
+  // 通知列切回 chat 时：若当前是列表页但会话列表还没拉过（进话题后一直没回列表页，
+  // listState.topics 可能是空/旧），按当前路径重新拉一次，保证回到帖子列表。
+  if (!isTopicPath(location.pathname) && !listState.topics.length) {
+    loadList(listApiForPath(location.pathname) || "/latest.json");
+  }
 }
 
 // —— chips 委托：面板壳只绑一次，替换 chips 内容后依然有效 ——
