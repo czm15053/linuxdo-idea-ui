@@ -8011,6 +8011,36 @@ html.im-theme {
       }
     }, 4e3);
   }
+  function cookedWithQuoteBars(post) {
+    var _a2, _b2;
+    const cooked = post.cooked || "";
+    if (!/<aside[\s>][^>]*class="[^"]*\bquote\b/.test(cooked)) return cooked;
+    try {
+      const doc = new DOMParser().parseFromString(cooked, "text/html");
+      let changed = false;
+      for (const aside of [...doc.body.querySelectorAll("aside.quote")]) {
+        if (aside.closest("blockquote")) continue;
+        if (post.reply_to_post_number) {
+          aside.remove();
+        } else {
+          const bar = doc.createElement("div");
+          bar.className = "im-quote-reply";
+          const postNo = Number(aside.dataset.post || 0);
+          if (postNo) bar.dataset.jumpPost = String(postNo);
+          const name = String(aside.dataset.username || (((_a2 = aside.querySelector(".title")) == null ? void 0 : _a2.textContent) || "").replace(/[:：]\s*$/, "").trim() || "引用");
+          const text = extractTextSnippet(((_b2 = aside.querySelector("blockquote")) == null ? void 0 : _b2.innerHTML) || "", 60) || "点击查看引用内容";
+          bar.innerHTML = `<div class="im-quote-name"></div><div class="im-quote-text"></div>`;
+          bar.firstChild.textContent = `${name}:`;
+          bar.lastChild.textContent = text;
+          aside.replaceWith(bar);
+        }
+        changed = true;
+      }
+      return changed ? doc.body.innerHTML : cooked;
+    } catch {
+      return cooked;
+    }
+  }
   function bubbleHtml(post, myName) {
     var _a2, _b2;
     const me = isMyPost(post, myName);
@@ -8026,10 +8056,10 @@ html.im-theme {
         snippet = extractTextSnippet(target.cooked, 60) || "点击查看引用内容";
       } else if (post.reply_to_user) {
         targetName = post.reply_to_user.name || post.reply_to_user.username || `#${post.reply_to_post_number} 楼`;
-        snippet = `回复了 #${post.reply_to_post_number} 楼的内容`;
+        snippet = post.reply_to_quote || `回复了 #${post.reply_to_post_number} 楼的内容`;
       } else {
         targetName = `#${post.reply_to_post_number} 楼`;
-        snippet = "点击跳转查看原帖";
+        snippet = post.reply_to_quote || "点击跳转查看原帖";
       }
       quoteHtml = `
       <div class="im-quote-reply" data-jump-post="${post.reply_to_post_number}" title="点击跳转到 #${post.reply_to_post_number} 楼">
@@ -8074,7 +8104,7 @@ html.im-theme {
         <span class="im-msg-name">${escapeHtml(displayName)}</span>
         <div class="im-msg-bubble">
           ${quoteHtml}
-          ${post.cooked || ""}
+          ${cookedWithQuoteBars(post)}
         </div>
         ${boostBar}
         <span class="im-msg-meta">
