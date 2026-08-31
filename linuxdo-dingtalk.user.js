@@ -21,14 +21,14 @@
   const DARK_CLASS = "dingtalk-dark";
   const LOCK_CLASS = "dingtalk-locked"; // 仅三栏路由挂载：隐藏原生主内容
   const VIEW_KEY = "linuxdo-dingtalk-view"; // "im" | "native"
-  const DARK_KEY = "linuxdo-dingtalk-dark"; // "1" = 深色
+  const COLOR_THEME_KEY = "linuxdo-dingtalk-color-theme"; // "auto" | "light" | "dark"
   const LAST_READ_KEY = "linuxdo-dingtalk-last-read";
   const LAST_READ_MAX_TOPICS = 200;
 
-  const RAIL_WIDTH = 110; // 最左图标+文字横向导航（可拖拽调宽）
+  const RAIL_WIDTH = 56; // 最左图标导航栏（钉钉原版窄条）
   const NAV2_WIDTH = 240; // 展开栏（原生侧栏原样搬入，默认收起）
   const STRIP_WIDTH = 0; // 钉钉布局无窄条
-  const LIST_WIDTH = 250; // 会话列表
+  const LIST_WIDTH = 300; // 会话列表
   const TITLEBAR_HEIGHT = 40; // 顶部蓝色 titlebar
 
   const AVATAR_COLORS = [
@@ -89,8 +89,13 @@
     aimic: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="9" y="3.5" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`,
     monitor: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M9 20.5h6M12 17v3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
     at: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M15.2 8.8v4.4a2.4 2.4 0 0 0 4.8 0V12a8 8 0 1 0-3.4 6.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+    rocket: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2.5c0 0-7 4.5-7 11.5 0 2.5 1.5 5 3 6.5l4-3 4 3c1.5-1.5 3-4 3-6.5 0-7-7-11.5-7-11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="11" r="1.5" fill="currentColor"/></svg>`,
+    trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     moon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M19 14.5A7.5 7.5 0 1 1 9.5 5a6 6 0 1 0 9.5 9.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`,
-    sun: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`
+    sun: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+    heartOutline: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8 11V20H6a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h2Zm0 0 3.2-6.2A2 2 0 0 1 13 3.6V8h5.2a2 2 0 0 1 1.96 2.4l-1.2 6A2 2 0 0 1 17 18h-9" stroke="currentColor" stroke-width="1.6"/></svg>`,
+    heartFilled: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 14.36 2 11.28 2 7.5 2 4.42 4.42 2 7.5 2c1.74 0 3.41.81 4.5 2.09C13.09 2.81 14.76 2 16.5 2 19.58 2 22 4.42 22 7.5c0 3.78-3.4 6.86-8.55 12.54L12 21.35Z"/></svg>`,
+    scrollTop: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
   };
   ICONS.chat = ICONS.msg;
   ICONS.list = ICONS.msg;
@@ -145,9 +150,19 @@
 
   /* ---------- 会话伪装头像（圆角矩形单字） ---------- */
   const MASK_AVATAR_KEY = "linuxdo-dingtalk-mask-avatar"; // "1" = 开
+  const MASK_TITLE_KEY = "linuxdo-dingtalk-mask-title";   // "1" = 开
+  const HIDE_CAT_TAGS_KEY = "linuxdo-dingtalk-hide-cat-tags"; // "1" = 开
 
   function isMaskAvatar() {
     try { return localStorage.getItem(MASK_AVATAR_KEY) === "1"; } catch { return false; }
+  }
+
+  function isMaskTitle() {
+    try { return localStorage.getItem(MASK_TITLE_KEY) === "1"; } catch { return false; }
+  }
+
+  function isHideCatTags() {
+    try { return localStorage.getItem(HIDE_CAT_TAGS_KEY) === "1"; } catch { return false; }
   }
 
   function setMaskAvatar(on) {
@@ -161,6 +176,24 @@
       // 兜底：按当前路由拉一次列表再绘
       loadList(listState.apiPath || listApiForPath(location.pathname) || "/latest.json", true);
     }
+  }
+
+  function setMaskTitle(on) {
+    try { localStorage.setItem(MASK_TITLE_KEY, on ? "1" : "0"); } catch { /* ignore */ }
+    const panel = document.querySelector(".dingtalk-list-panel");
+    ensureMaskTitleToggle(panel);
+    if (listState.topics && listState.topics.length) {
+      renderListRows();
+    } else if (panel) {
+      loadList(listState.apiPath || listApiForPath(location.pathname) || "/latest.json", true);
+    }
+  }
+
+  function setHideCatTags(hide) {
+    try { localStorage.setItem(HIDE_CAT_TAGS_KEY, hide ? "1" : "0"); } catch { /* ignore */ }
+    document.documentElement.classList.toggle("dingtalk-hide-cat-tags", hide);
+    const panel = document.querySelector(".dingtalk-list-panel");
+    ensureCatTagToggle(panel);
   }
 
 
@@ -248,11 +281,11 @@
   }
 
   function convDisplayTitle(topic) {
-    return isMaskAvatar() ? disguiseTitleForTopic(topic) : String(topic.title || "");
+    return isMaskTitle() ? disguiseTitleForTopic(topic) : String(topic.title || "");
   }
 
   function convDisplaySummary(topic, fallbackSummary) {
-    if (isMaskAvatar()) return String(topic.title || fallbackSummary || "");
+    if (isMaskAvatar() || isMaskTitle()) return String(topic.title || fallbackSummary || "");
     return fallbackSummary;
   }
 
@@ -284,6 +317,60 @@
     btn.classList.toggle("is-on", on);
   }
 
+  function ensureMaskTitleToggle(panel) {
+    if (!panel) return;
+    const actions = panel.querySelector(".dingtalk-list-actions");
+    if (!actions) return;
+    let btn = actions.querySelector(".dingtalk-mask-title-toggle");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "dingtalk-icon-btn dingtalk-mask-title-toggle";
+      btn.innerHTML = ICONS.win;
+      actions.insertBefore(btn, actions.firstChild);
+    }
+    if (btn.dataset.bound !== "1") {
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+        setMaskTitle(!isMaskTitle());
+      });
+    }
+    const on = isMaskTitle();
+    btn.title = on ? "伪装标题：开（点击恢复真实标题）" : "伪装标题：关（点击开启）";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.classList.toggle("is-on", on);
+  }
+
+  function ensureCatTagToggle(panel) {
+    if (!panel) return;
+    const actions = panel.querySelector(".dingtalk-list-actions");
+    if (!actions) return;
+    let btn = actions.querySelector(".dingtalk-cat-tag-toggle");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "dingtalk-icon-btn dingtalk-cat-tag-toggle";
+      btn.innerHTML = ICONS.filter;
+      actions.insertBefore(btn, actions.firstChild);
+    }
+    if (btn.dataset.bound !== "1") {
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+        setHideCatTags(!isHideCatTags());
+      });
+    }
+    const on = isHideCatTags();
+    btn.title = on ? "隐藏分类标签：开（点击显示）" : "隐藏分类标签：关（点击隐藏）";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.classList.toggle("is-on", on);
+  }
+
   function fullAvatarUrl(template) {
     if (!template) return "";
     const url = template.replace("{size}", "96");
@@ -311,6 +398,35 @@
     const date = new Date(iso);
     if (Number.isNaN(date.getTime())) return "";
     return `${date.getMonth() + 1}月${date.getDate()}日 ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  }
+
+  /** 批量刷新所有会话列表项与聊天气泡评论的相对时间（增量更新，0 性能开销） */
+  function refreshAllRelativeTimes() {
+    const timeEls = document.querySelectorAll(".dingtalk-conv-time[data-timestamp], .dingtalk-msg-time[data-timestamp]");
+    for (const el of timeEls) {
+      const ts = el.dataset.timestamp;
+      if (!ts) continue;
+      const nextText = formatTime(ts);
+      if (nextText && el.textContent !== nextText) {
+        el.textContent = nextText;
+      }
+    }
+  }
+
+  let relativeTimeTickerId = null;
+  function ensureRelativeTimeTicker() {
+    if (relativeTimeTickerId) return;
+    relativeTimeTickerId = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        refreshAllRelativeTimes();
+      }
+    }, 15000);
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        refreshAllRelativeTimes();
+      }
+    });
   }
 
   async function api(path) {
@@ -1534,6 +1650,656 @@
     .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-titlebar .dingtalk-rail-avatar.is-notif-pinned {
       box-shadow: 0 0 0 2px var(--dd-bg), 0 0 0 4px var(--dd-accent);
     }
+
+    /* ============================== 投票组件 ============================== */
+    .${ROOT_CLASS} .dingtalk-poll-options {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      margin-bottom: 10px !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-option {
+      position: relative !important;
+      display: flex !important;
+      align-items: center !important;
+      padding: 10px 14px !important;
+      border-radius: 8px !important;
+      border: 1.5px solid transparent !important;
+      cursor: pointer !important;
+      overflow: hidden !important;
+      transition: all 0.18s ease !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-option:hover {
+      background: rgba(26, 135, 255, 0.06) !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-radio {
+      width: 18px !important;
+      height: 18px !important;
+      min-width: 18px !important;
+      margin-right: 12px !important;
+      flex-shrink: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-sizing: border-box !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-title {
+      flex: 1 !important;
+      font-size: 13.5px !important;
+      font-weight: 500 !important;
+      line-height: 1.4 !important;
+      z-index: 1 !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-count {
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      margin-left: 10px !important;
+      z-index: 1 !important;
+      white-space: nowrap !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-bar {
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      bottom: 0 !important;
+      pointer-events: none !important;
+      z-index: 0 !important;
+      transition: width 0.35s ease !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-actions {
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px !important;
+      margin-top: 12px !important;
+      padding-top: 10px !important;
+      border-top: 1px dashed rgba(0,0,0,0.08) !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-poll-actions {
+      border-top-color: rgba(255,255,255,0.1) !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-submit-btn,
+    .${ROOT_CLASS} .dingtalk-poll-undo-btn {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      height: 32px !important;
+      padding: 0 16px !important;
+      border-radius: 6px !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      border: none !important;
+      cursor: pointer !important;
+      box-sizing: border-box !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-submit-btn {
+      background: #1A87FF !important;
+      color: #FFFFFF !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-submit-btn:disabled {
+      opacity: 0.5 !important;
+      cursor: not-allowed !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-undo-btn {
+      background: transparent !important;
+      border: 1px solid rgba(0,0,0,0.15) !important;
+      color: #646A73 !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-poll-undo-btn {
+      border-color: rgba(255,255,255,0.2) !important;
+      color: #A0A5B2 !important;
+    }
+    .${ROOT_CLASS} .dingtalk-poll-status-tip {
+      font-size: 12px !important;
+      color: #8F959E !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-poll-status-tip {
+      color: #8A8F99 !important;
+    }
+
+    /* ============================== 小火箭跟评 ============================== */
+    .${ROOT_CLASS} .dingtalk-rocket-bar {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-items: center !important;
+      gap: 6px !important;
+      margin-top: 6px !important;
+      padding: 0 4px !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-chip {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 5px !important;
+      padding: 4px 10px 4px 4px !important;
+      border-radius: 14px !important;
+      background: rgba(0,0,0,0.04) !important;
+      border: 1px solid rgba(0,0,0,0.06) !important;
+      font-size: 12px !important;
+      color: #1F2329 !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+      max-width: 100% !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-rocket-chip {
+      background: rgba(255,255,255,0.06) !important;
+      border-color: rgba(255,255,255,0.08) !important;
+      color: #E6E8EB !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-chip:hover {
+      background: rgba(0,0,0,0.08) !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-rocket-chip:hover {
+      background: rgba(255,255,255,0.1) !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-chip.is-my-boost {
+      padding-right: 4px !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-chip.is-my-boost:hover .dingtalk-rocket-trash {
+      display: inline-flex !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-avatar-box {
+      width: 18px !important;
+      height: 18px !important;
+      min-width: 18px !important;
+      border-radius: 50% !important;
+      overflow: hidden !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #E5E6EB !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-rocket-avatar-box {
+      background: #3A3F4B !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-avatar-box img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-avatar-box .fallback-letter {
+      width: 100% !important;
+      height: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 10px !important;
+      color: #fff !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-text {
+      max-width: 200px !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+      line-height: 1.3 !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-trash {
+      display: none !important;
+      width: 18px !important;
+      height: 18px !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 !important;
+      margin-left: 2px !important;
+      border: none !important;
+      background: transparent !important;
+      color: #8A8F99 !important;
+      cursor: pointer !important;
+      border-radius: 50% !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-trash:hover {
+      color: #EF4444 !important;
+      background: rgba(239, 68, 68, 0.1) !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-btn {
+      width: 22px !important;
+      height: 22px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 !important;
+      border: none !important;
+      border-radius: 50% !important;
+      background: rgba(26, 135, 255, 0.1) !important;
+      color: #1A87FF !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+    }
+    .${ROOT_CLASS} .dingtalk-rocket-btn:hover {
+      background: rgba(26, 135, 255, 0.2) !important;
+      transform: scale(1.05) !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-rocket-btn {
+      background: rgba(26, 135, 255, 0.18) !important;
+    }
+
+    /* 小火箭输入条 */
+    .${ROOT_CLASS} .dingtalk-boost-composer {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      margin: 8px 0 4px !important;
+      padding: 8px 10px !important;
+      border-radius: 10px !important;
+      background: rgba(0,0,0,0.03) !important;
+      border: 1px solid rgba(0,0,0,0.06) !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-boost-composer {
+      background: rgba(255,255,255,0.04) !important;
+      border-color: rgba(255,255,255,0.08) !important;
+    }
+    .${ROOT_CLASS} .dingtalk-boost-avatar {
+      width: 26px !important;
+      height: 26px !important;
+      min-width: 26px !important;
+      border-radius: 50% !important;
+      overflow: hidden !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #E5E6EB !important;
+      font-size: 11px !important;
+      color: #1F2329 !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-boost-avatar {
+      background: #3A3F4B !important;
+      color: #E6E8EB !important;
+    }
+    .${ROOT_CLASS} .dingtalk-boost-avatar img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+    }
+    .${ROOT_CLASS} .dingtalk-boost-input {
+      flex: 1 !important;
+      min-width: 0 !important;
+      height: 32px !important;
+      padding: 0 10px !important;
+      border: 1px solid rgba(0,0,0,0.1) !important;
+      border-radius: 16px !important;
+      background: #FFFFFF !important;
+      color: #1F2329 !important;
+      font-size: 13px !important;
+      outline: none !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-boost-input {
+      background: #23262E !important;
+      border-color: rgba(255,255,255,0.12) !important;
+      color: #E6E8EB !important;
+    }
+    .${ROOT_CLASS} .dingtalk-boost-input:focus {
+      border-color: #1A87FF !important;
+    }
+    .${ROOT_CLASS} .dingtalk-boost-emojis {
+      display: flex !important;
+      gap: 4px !important;
+      flex-shrink: 0 !important;
+    }
+    .${ROOT_CLASS} .dingtalk-quick-emoji {
+      width: 24px !important;
+      height: 24px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 14px !important;
+      cursor: pointer !important;
+      border-radius: 50% !important;
+      transition: all 0.12s ease !important;
+    }
+    .${ROOT_CLASS} .dingtalk-quick-emoji:hover {
+      background: rgba(0,0,0,0.06) !important;
+      transform: scale(1.15) !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-quick-emoji:hover {
+      background: rgba(255,255,255,0.08) !important;
+    }
+    .${ROOT_CLASS} .dingtalk-boost-btn {
+      width: 28px !important;
+      height: 28px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 !important;
+      border: none !important;
+      border-radius: 50% !important;
+      cursor: pointer !important;
+      flex-shrink: 0 !important;
+    }
+    .${ROOT_CLASS} .dingtalk-boost-submit {
+      background: #1A87FF !important;
+      color: #FFFFFF !important;
+    }
+    .${ROOT_CLASS} .dingtalk-boost-submit:hover {
+      background: #0A6FE0 !important;
+    }
+    .${ROOT_CLASS} .dingtalk-boost-cancel {
+      background: transparent !important;
+      color: #8A8F99 !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-boost-cancel {
+      color: #A0A5B2 !important;
+    }
+    .${ROOT_CLASS} .dingtalk-boost-btn svg {
+      width: 16px !important;
+      height: 16px !important;
+    }
+
+    /* ============================== 引用返回按钮 ============================== */
+    .${ROOT_CLASS} .dingtalk-jump-back-btn {
+      position: absolute !important;
+      left: 50% !important;
+      bottom: 72px !important;
+      transform: translateX(-50%) !important;
+      z-index: 50 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      height: 34px !important;
+      padding: 0 14px !important;
+      border-radius: 17px !important;
+      border: none !important;
+      background: #1A87FF !important;
+      color: #FFFFFF !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      box-shadow: 0 4px 14px rgba(26, 135, 255, 0.35) !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+    }
+    .${ROOT_CLASS} .dingtalk-jump-back-btn:hover {
+      background: #0A6FE0 !important;
+      transform: translateX(-50%) translateY(-1px) !important;
+    }
+    .${ROOT_CLASS} .dingtalk-jump-back-close {
+      margin-left: 4px !important;
+      width: 18px !important;
+      height: 18px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 50% !important;
+      font-size: 12px !important;
+      color: rgba(255,255,255,0.85) !important;
+    }
+    .${ROOT_CLASS} .dingtalk-jump-back-close:hover {
+      background: rgba(255,255,255,0.2) !important;
+      color: #FFFFFF !important;
+    }
+    .${ROOT_CLASS} .dingtalk-msg-highlight {
+      animation: dingtalk-msg-pulse 1.2s ease !important;
+    }
+    @keyframes dingtalk-msg-pulse {
+      0% { background-color: transparent; }
+      40% { background-color: rgba(26, 135, 255, 0.18); }
+      100% { background-color: transparent; }
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-msg-highlight {
+      animation-name: dingtalk-msg-pulse-dark !important;
+    }
+    @keyframes dingtalk-msg-pulse-dark {
+      0% { background-color: transparent; }
+      40% { background-color: rgba(26, 135, 255, 0.28); }
+      100% { background-color: transparent; }
+    }
+
+    /* ============================== 分类标签隐藏 ============================== */
+    .${ROOT_CLASS}.dingtalk-hide-cat-tags .dingtalk-conv-tag,
+    .${ROOT_CLASS}.dingtalk-hide-cat-tags .dingtalk-chat-chips {
+      display: none !important;
+    }
+
+    /* ---------- 钉钉风格跟随气泡 Toast ---------- */
+    .${ROOT_CLASS} .dingtalk-toast {
+      position: fixed;
+      z-index: 100000;
+      background: rgba(33, 36, 44, 0.96);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12.5px;
+      font-weight: 500;
+      line-height: 1.4;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      transform: translateY(0);
+      opacity: 1;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+    .${ROOT_CLASS} .dingtalk-toast.fade-out {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+
+    /* ---------- 点赞胶囊徽章与心形动效 ---------- */
+    .${ROOT_CLASS} .dingtalk-like-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 20px;
+      padding: 0 7px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      color: var(--dd-text-3);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.18s ease;
+      margin-left: 6px;
+      vertical-align: middle;
+      box-sizing: border-box;
+    }
+    .${ROOT_CLASS} .dingtalk-like-badge:hover {
+      background: rgba(245, 74, 69, 0.08);
+      color: #F54A45;
+      border-color: rgba(245, 74, 69, 0.2);
+    }
+    .${ROOT_CLASS} .dingtalk-like-badge.liked {
+      background: rgba(245, 74, 69, 0.1) !important;
+      border-color: rgba(245, 74, 69, 0.25) !important;
+      color: #F54A45 !important;
+    }
+    .${ROOT_CLASS} .dingtalk-like-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .${ROOT_CLASS} .dingtalk-like-icon svg {
+      width: 12px;
+      height: 12px;
+      display: block;
+    }
+    .${ROOT_CLASS} .dingtalk-like-badge.pop .dingtalk-like-icon,
+    .${ROOT_CLASS} .dingtalk-msg-tool.pop svg {
+      animation: dingtalk-heart-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes dingtalk-heart-pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.45); }
+      100% { transform: scale(1); }
+    }
+    .${ROOT_CLASS} .dingtalk-msg-tool.liked {
+      color: #F54A45 !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-like-badge {
+      background: #23262E !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+      color: #A0A5B2 !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-like-badge:hover {
+      background: rgba(245, 74, 69, 0.15) !important;
+      color: #FF6B66 !important;
+      border-color: rgba(245, 74, 69, 0.3) !important;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-like-badge.liked {
+      background: rgba(245, 74, 69, 0.2) !important;
+      border-color: rgba(245, 74, 69, 0.4) !important;
+      color: #FF6B66 !important;
+    }
+
+    /* ---------- 钉钉式引用回复卡片 ---------- */
+    .${ROOT_CLASS} .dingtalk-quote-reply {
+      border-left: 2px solid rgba(0, 0, 0, 0.28);
+      padding: 3px 0 3px 8px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      border-radius: 1px;
+      transition: background 0.15s, border-color 0.15s;
+      user-select: none;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .${ROOT_CLASS} .dingtalk-quote-reply:hover {
+      background: rgba(0, 0, 0, 0.04);
+      border-left-color: var(--dd-blue);
+    }
+    .${ROOT_CLASS} .dingtalk-quote-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--dd-text-2);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .${ROOT_CLASS} .dingtalk-quote-text {
+      font-size: 12px;
+      color: var(--dd-text-3);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+    .${ROOT_CLASS} .dingtalk-msg-me .dingtalk-quote-reply {
+      border-left-color: rgba(26, 135, 255, 0.6);
+    }
+    .${ROOT_CLASS} .dingtalk-msg-me .dingtalk-quote-name {
+      color: #0A6FE0;
+    }
+    .${ROOT_CLASS} .dingtalk-msg-me .dingtalk-quote-text {
+      color: #4A6E9B;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-quote-reply {
+      border-left-color: rgba(255, 255, 255, 0.25);
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-quote-reply:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-left-color: var(--dd-blue);
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-quote-name {
+      color: #B0B5BE;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-quote-text {
+      color: #8A8F99;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-msg-me .dingtalk-quote-reply {
+      border-left-color: rgba(26, 135, 255, 0.7);
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-msg-me .dingtalk-quote-name {
+      color: #4AA2FF;
+    }
+    .${ROOT_CLASS}.${DARK_CLASS} .dingtalk-msg-me .dingtalk-quote-text {
+      color: #7AA3D6;
+    }
+
+    /* ---------- 钉钉式图片浮窗灯箱 ---------- */
+    .${ROOT_CLASS} .dingtalk-img-modal {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 100000 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      user-select: none !important;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease !important;
+    }
+    .${ROOT_CLASS} .dingtalk-img-modal.is-active {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+    .${ROOT_CLASS} .dingtalk-img-modal.is-closing {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    .${ROOT_CLASS} .dingtalk-img-modal-backdrop {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: rgba(0, 0, 0, 0.78) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      z-index: 1 !important;
+    }
+    .${ROOT_CLASS} .dingtalk-img-modal-toolbar {
+      position: absolute !important;
+      top: 24px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      z-index: 10 !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      background: rgba(30, 32, 38, 0.85) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      padding: 6px 12px !important;
+      border-radius: 24px !important;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+    }
+    .${ROOT_CLASS} .dingtalk-img-btn {
+      width: 34px !important;
+      height: 34px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border: none !important;
+      background: transparent !important;
+      color: #D3D6DC !important;
+      border-radius: 50% !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+      text-decoration: none !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+    }
+    .${ROOT_CLASS} .dingtalk-img-btn:hover {
+      background: rgba(255, 255, 255, 0.15) !important;
+      color: #FFFFFF !important;
+    }
+    .${ROOT_CLASS} .dingtalk-img-btn.dingtalk-img-close:hover {
+      background: #E02424 !important;
+      color: #FFFFFF !important;
+    }
+    .${ROOT_CLASS} .dingtalk-img-modal-stage {
+      position: relative !important;
+      z-index: 5 !important;
+      width: 100% !important;
+      height: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
+    }
+    .${ROOT_CLASS} .dingtalk-img-modal-img {
+      max-width: 90vw !important;
+      max-height: 86vh !important;
+      object-fit: contain !important;
+      border-radius: 6px !important;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6) !important;
+      cursor: zoom-in;
+      transform-origin: center center;
+    }
   `;
 
   /* ============================== 基础设施 ============================== */
@@ -1650,27 +2416,45 @@
   let schemeObserver = null;
   let forcingScheme = false;
 
-  function isDarkPreferred() {
-    try { return localStorage.getItem(DARK_KEY) === "1"; } catch { return false; }
+  function getColorTheme() {
+    try {
+      const mode = localStorage.getItem(COLOR_THEME_KEY);
+      return mode === "dark" || mode === "light" ? mode : "auto";
+    } catch {
+      return "auto";
+    }
   }
 
-  function setDarkPreferred(on) {
-    try { localStorage.setItem(DARK_KEY, on ? "1" : "0"); } catch { /* ignore */ }
+  function isDarkEffective() {
+    const mode = getColorTheme();
+    if (mode === "dark") return true;
+    if (mode === "light") return false;
+    return !!(typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+
+  function setColorTheme(mode) {
+    try {
+      localStorage.setItem(COLOR_THEME_KEY, mode);
+    } catch { /* ignore */ }
     applyColorMode();
     forceSiteScheme();
     syncDarkModeToggle();
   }
 
+  function toggleColorTheme() {
+    const next = isDarkEffective() ? "light" : "dark";
+    setColorTheme(next);
+  }
+
   function applyColorMode() {
-    const dark = isDarkPreferred();
+    const dark = isDarkEffective();
     document.documentElement.classList.toggle(DARK_CLASS, dark);
   }
 
-  /** Discourse 用 link.light-scheme / link.dark-scheme 的 media 切换明暗 */
   function forceSiteScheme() {
     if (otherThemeActive()) return;
 
-    const dark = isDarkPreferred();
+    const dark = isDarkEffective();
     forcingScheme = true;
     try {
       const scheme = dark ? "dark" : "light";
@@ -1736,11 +2520,15 @@
   function syncDarkModeToggle() {
     const btn = document.querySelector(".dingtalk-dark-toggle");
     if (!btn) return;
-    const on = isDarkPreferred();
-    btn.title = on ? "深色模式：开（点击切回浅色）" : "深色模式：关（点击开启）";
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
-    btn.classList.toggle("is-on", on);
-    btn.innerHTML = on ? ICONS.sun : ICONS.moon;
+    const mode = getColorTheme();
+    const dark = isDarkEffective();
+    let label;
+    if (mode === "auto") label = `主题：跟随系统(${dark ? "深" : "浅"})`;
+    else label = `主题：${dark ? "深色" : "浅色"}`;
+    btn.title = `${label}（点击切换）`;
+    btn.setAttribute("aria-pressed", dark ? "true" : "false");
+    btn.classList.toggle("is-on", dark);
+    btn.innerHTML = dark ? ICONS.sun : ICONS.moon;
   }
 
   function ensureDarkModeToggle(bar) {
@@ -1759,10 +2547,22 @@
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setDarkPreferred(!isDarkPreferred());
+        toggleColorTheme();
       });
     }
     syncDarkModeToggle();
+  }
+
+  if (typeof window !== "undefined" && window.matchMedia) {
+    try {
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+        if (getColorTheme() === "auto") {
+          applyColorMode();
+          forceSiteScheme();
+          syncDarkModeToggle();
+        }
+      });
+    } catch { /* ignore */ }
   }
 
   /* ============================== 最左图标 rail ============================== */
@@ -1972,49 +2772,6 @@
     });
     return rz;
   }
-
-  function bindRailSearch(rail) {
-    if (!rail) return;
-    let wrap = rail.querySelector(".dingtalk-rail-search");
-    if (!wrap) {
-      wrap = document.createElement("div");
-      wrap.className = "dingtalk-rail-search";
-      const head = rail.querySelector(".dingtalk-rail-head");
-      if (head && head.nextSibling) rail.insertBefore(wrap, head.nextSibling);
-      else rail.prepend(wrap);
-    }
-    // 旧版装饰块 / 缺 input 时升级为可输入搜索
-    if (!wrap.querySelector("input")) {
-      wrap.innerHTML = `
-        <form action="/search" method="get" role="search">
-          ${ICONS.search}
-          <input type="search" name="q" placeholder="搜索" autocomplete="off" enterkeyhint="search" aria-label="搜索">
-        </form>`;
-      delete rail.dataset.searchBound;
-    }
-    if (rail.dataset.searchBound === "1") return;
-    const form = wrap.querySelector("form");
-    const input = wrap.querySelector("input");
-    if (!form || !input) return;
-    rail.dataset.searchBound = "1";
-
-    input.addEventListener("input", () => {
-      syncSearchToNative(input.value);
-    });
-    input.addEventListener("focus", () => {
-      syncSearchToNative(input.value);
-      const native = getNativeSearchInput();
-      if (native && native !== input) {
-        try { native.dispatchEvent(new FocusEvent("focus", { bubbles: true })); } catch { /* ignore */ }
-      }
-    });
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      submitNativeSearch(input.value);
-    });
-  }
-
 
   /* ============================== 顶部蓝色 titlebar ============================== */
 
@@ -2526,25 +3283,12 @@
     });
   }
 
-  /* ============================== 窄图标条：假 icon（纯装饰） ============================== */
-
-  const STRIP_ITEMS = [
-    { icon: "menu" },
-    { icon: "chat", badge: 19 },
-    { icon: "calendar", badge: 1 },
-    { icon: "contacts" },
-    { icon: "wiki" },
-    { icon: "cloud" },
-    { icon: "task", badge: 11 },
-    { icon: "more" }
-  ];
-
-  function stripFakeHtml() {
-    return STRIP_ITEMS.map((it) =>
-      `<div class="dingtalk-strip-item">${ICONS[it.icon]}` +
-      (it.badge ? `<span class="dingtalk-strip-badge">${it.badge}</span>` : "") +
-      `</div>`
-    ).join("");
+  /** 从 HTML 中剥离标签，仅保留纯文本 */
+  function stripHtml(html) {
+    if (!html) return "";
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return (div.textContent || "").replace(/\s+/g, " ").trim();
   }
 
   function ensureStrip() {
@@ -2807,6 +3551,8 @@
     if (panel) {
       bindListPanelClicks(panel);
       ensureMaskAvatarToggle(panel);
+      ensureMaskTitleToggle(panel);
+      ensureCatTagToggle(panel);
       applyListNavDom();
       return panel;
     }
@@ -2821,6 +3567,8 @@
         </div>
         <div class="dingtalk-list-actions">
           <button type="button" class="dingtalk-icon-btn dingtalk-mask-avatar-toggle" title="伪装头像：关（点击开启）" aria-pressed="false">${ICONS.disguise}</button>
+          <button type="button" class="dingtalk-icon-btn dingtalk-mask-title-toggle" title="伪装标题：关（点击开启）" aria-pressed="false">${ICONS.win}</button>
+          <button type="button" class="dingtalk-icon-btn dingtalk-cat-tag-toggle" title="隐藏分类标签：关（点击隐藏）" aria-pressed="false">${ICONS.menu}</button>
         </div>
       </div>
       <div class="dingtalk-list-nav" role="navigation" aria-label="话题筛选"></div>
@@ -2829,6 +3577,8 @@
     document.body.appendChild(panel);
     bindListPanelClicks(panel);
     ensureMaskAvatarToggle(panel);
+    ensureMaskTitleToggle(panel);
+    ensureCatTagToggle(panel);
     panel.querySelectorAll(".dingtalk-chip").forEach((chip) => {
       chip.addEventListener("click", () => {
         panel.querySelectorAll(".dingtalk-chip").forEach((c) => c.classList.remove("active"));
@@ -2869,7 +3619,7 @@
   }
 
   function convCategoryTag(topic) {
-    if (!categoriesCache || !topic.category_id) return "";
+    if (isHideCatTags() || !categoriesCache || !topic.category_id) return "";
     const cat = categoryById(topic.category_id);
     if (!cat) return "";
     return `<span class="dingtalk-conv-tag">${escapeHtml(cat.name)}</span>`;
@@ -3038,6 +3788,21 @@
     title: ""
   };
 
+  const topicPostsMap = new Map(); // post_number -> post data，用于投票/小火箭等组件反查
+
+  function extractTextSnippet(html, maxLen = 60) {
+    if (!html) return "";
+    try {
+      const temp = document.createElement("div");
+      temp.innerHTML = html;
+      temp.querySelectorAll("blockquote, aside, svg, .lightbox, .badge").forEach((el) => el.remove());
+      const text = (temp.textContent || temp.innerText || "").trim().replace(/\s+/g, " ");
+      return text.length > maxLen ? text.slice(0, maxLen) + "…" : text;
+    } catch {
+      return "";
+    }
+  }
+
   function ensureChatPanel() {
     let panel = document.querySelector(".dingtalk-chat-panel");
     if (panel && (!panel.querySelector(".dingtalk-chat-compose") || !panel.querySelector(".dingtalk-composer-card"))) {
@@ -3082,6 +3847,7 @@
         </div>
         <div class="dingtalk-chat-tools">${headTools}</div>
         <div class="dingtalk-chat-actions">
+          <button class="dingtalk-icon-btn dingtalk-chat-scrolltop" title="回到顶部">${ICONS.scrollTop}</button>
           <button class="dingtalk-icon-btn dingtalk-chat-refresh" title="刷新本话题">${ICONS.refresh}</button>
           <button class="dingtalk-icon-btn dingtalk-chat-native" title="切换原生视图">${ICONS.external}</button>
         </div>
@@ -3175,6 +3941,14 @@
         location.reload();
         return;
       }
+      if (e.target.closest(".dingtalk-chat-scrolltop")) {
+        const body = panel.querySelector(".dingtalk-chat-body");
+        if (body) {
+          body.scrollTo({ top: 0, behavior: "smooth" });
+          if (chatState.hasOlder) loadOlderPosts();
+        }
+        return;
+      }
       if (e.target.closest(".dingtalk-chat-compose, .dingtalk-composer-tools, .dingtalk-composer-target")) {
         return;
       }
@@ -3187,16 +3961,138 @@
         navigateInApp(chipLink.getAttribute("href"));
         return;
       }
+      // 消息气泡内引用链接：站内软跳转并记录返回点
+      const quoteLink = e.target.closest("a[href^='/t/']");
+      if (quoteLink && panel.contains(quoteLink)) {
+        const href = quoteLink.getAttribute("href") || "";
+        const sameTopic = href.startsWith(`/t/${chatState.topicId}/`) || href === `/t/${chatState.topicId}`;
+        const anchorMatch = href.match(/#?post-(\d+)$/);
+        const targetPostNumber = anchorMatch ? Number(anchorMatch[1]) : null;
+        if (sameTopic && targetPostNumber) {
+          e.preventDefault();
+          e.stopPropagation();
+          const msg = quoteLink.closest(".dingtalk-msg");
+          const sourcePostNumber = msg ? Number(msg.dataset.postNumber) : null;
+          const body = panel.querySelector(".dingtalk-chat-body");
+          const sourceScrollTop = body ? body.scrollTop : 0;
+          if (scrollChatToPost(body, targetPostNumber, true)) {
+            pushQuoteJump(sourcePostNumber, sourceScrollTop);
+          }
+          return;
+        }
+      }
+      // 返回原处按钮
+      const jumpBack = e.target.closest(".dingtalk-jump-back-btn");
+      if (jumpBack && panel.contains(jumpBack)) {
+        const isClose = e.target.closest(".dingtalk-jump-back-close");
+        if (isClose) {
+          e.preventDefault();
+          e.stopPropagation();
+          clearQuoteJumpHistory();
+        } else {
+          e.preventDefault();
+          e.stopPropagation();
+          popAndReturnQuoteJump();
+        }
+        return;
+      }
+      // 点击钉钉式引用回复卡片
+      const quoteBtn = e.target.closest(".dingtalk-quote-reply");
+      if (quoteBtn && panel.contains(quoteBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const jumpNum = quoteBtn.dataset.jumpPost;
+        if (jumpNum) {
+          const body = panel.querySelector(".dingtalk-chat-body");
+          const currentMsg = quoteBtn.closest(".dingtalk-msg");
+          const currentPostNum = currentMsg ? Number(currentMsg.dataset.postNumber) : null;
+          const currentScroll = body ? body.scrollTop : 0;
+          pushQuoteJump(currentPostNum, currentScroll);
+          if (scrollChatToPost(body, Number(jumpNum), true)) {
+            const targetMsg = panel.querySelector(`.dingtalk-msg[data-post-number="${jumpNum}"]`);
+            if (targetMsg) {
+              targetMsg.classList.remove("dingtalk-msg-highlight");
+              void targetMsg.offsetWidth;
+              targetMsg.classList.add("dingtalk-msg-highlight");
+            }
+          } else {
+            showDingtalkToast(`已记录原楼层，正在查找 #${jumpNum} 楼…`, quoteBtn);
+          }
+        }
+        return;
+      }
+      // 点击点赞徽章
+      const likeBadge = e.target.closest(".dingtalk-like-badge");
+      if (likeBadge && panel.contains(likeBadge)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const postId = likeBadge.dataset.postId;
+        if (postId) toggleLike(Number(postId), likeBadge);
+        return;
+      }
+      // 聊天正文图片 / Discourse 灯箱：以沉浸浮窗展开
+      const clickedImg = e.target.closest("img");
+      const clickedLightbox = e.target.closest("a.lightbox, .lightbox-wrapper");
+      if ((clickedImg || clickedLightbox) && panel.contains(e.target)) {
+        const isAvatar = e.target.closest(".dingtalk-msg-avatar, .dingtalk-rail, .dingtalk-chat-avatar, .fallback-letter, .avatar");
+        const isEmoji = e.target.classList.contains("emoji") || e.target.closest(".emoji, .dingtalk-quick-emoji, .dingtalk-emoji-item");
+        const isUiIcon = e.target.closest("button, .dingtalk-icon-btn, .dingtalk-rocket-chip, .dingtalk-like-badge");
+        if (!isAvatar && !isEmoji && !isUiIcon) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+          const link = e.target.closest("a.lightbox, a[href*='/uploads/'], a[href*='.jpg'], a[href*='.jpeg'], a[href*='.png'], a[href*='.gif'], a[href*='.webp']");
+          const highResSrc = (link && link.href) ||
+            (clickedImg && (clickedImg.dataset.origSrc || clickedImg.dataset.largeUrl || clickedImg.src)) ||
+            (clickedLightbox && clickedLightbox.querySelector("a.lightbox")?.href);
+          if (highResSrc) {
+            openDingtalkImageModal(highResSrc, clickedImg);
+            return;
+          }
+        }
+      }
       const toolBtn = e.target.closest(".dingtalk-msg-tool");
       if (!toolBtn || !panel.contains(toolBtn)) return;
       const msg = toolBtn.closest(".dingtalk-msg");
       if (!msg) return;
       if (toolBtn.dataset.action === "like") {
         toggleLike(Number(msg.dataset.postId), toolBtn);
+      } else if (toolBtn.dataset.action === "boost") {
+        e.preventDefault();
+        e.stopPropagation();
+        openDingtalkBoostComposer(msg);
       } else if (toolBtn.dataset.action === "reply") {
         e.preventDefault();
         e.stopPropagation();
         replyToPost(Number(msg.dataset.postNumber));
+      }
+    });
+    panel.addEventListener("click", (e) => {
+      // 小火箭胶囊 hover 显示删除，点击删除
+      const chip = e.target.closest(".dingtalk-rocket-chip.is-my-boost");
+      if (chip && panel.contains(chip)) {
+        const msg = chip.closest(".dingtalk-msg");
+        const postId = msg ? msg.dataset.postId : null;
+        const boostId = chip.dataset.boostId;
+        if (e.target.closest(".dingtalk-rocket-trash")) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (postId) deleteDingtalkBoost(Number(postId), boostId || null, chip);
+        } else {
+          // 点击胶囊本身也打开输入条
+          e.preventDefault();
+          e.stopPropagation();
+          if (msg) openDingtalkBoostComposer(msg);
+        }
+        return;
+      }
+      const rocketBtn = e.target.closest(".dingtalk-rocket-btn");
+      if (rocketBtn && panel.contains(rocketBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const msg = rocketBtn.closest(".dingtalk-msg");
+        if (msg) openDingtalkBoostComposer(msg);
+        return;
       }
     });
     panel.querySelector(".dingtalk-chat-body").addEventListener("scroll", () => {
@@ -3244,11 +4140,129 @@
   }
 
   const likedPosts = new Set();
+  let inFlightNewPostsFetch = false;
+  let currentSubscribedTopicChannel = null;
+  let chatRealtimeTickerId = null;
+
+  async function fetchLatestNewPosts(topicId) {
+    if (!topicId || chatState.topicId !== topicId || inFlightNewPostsFetch) return;
+    const body = document.querySelector(".dingtalk-chat-body");
+    if (!body || body.querySelector(".dingtalk-chat-loading")) return;
+
+    inFlightNewPostsFetch = true;
+    try {
+      const data = await api(`/t/${topicId}/last.json`);
+      if (chatState.topicId !== topicId) return;
+
+      const posts = (data.post_stream && data.post_stream.posts) || [];
+      const stream = (data.post_stream && data.post_stream.stream) || posts.map((p) => p.id);
+      if (stream.length) chatState.stream = stream;
+
+      const newPosts = posts.filter((p) => {
+        return p.post_number > chatState.renderedLastNumber && !body.querySelector(`.dingtalk-msg[data-post-number="${p.post_number}"]`);
+      });
+
+      if (newPosts.length) {
+        const isNearBottom = (body.scrollHeight - body.scrollTop - body.clientHeight) < 180;
+        const myName = getCurrentUsername();
+
+        body.insertAdjacentHTML("beforeend", renderBubbles(newPosts, myName));
+        enhanceAllPolls(body);
+
+        chatState.renderedLastNumber = Math.max(
+          chatState.renderedLastNumber,
+          ...newPosts.map((p) => p.post_number || 0)
+        );
+        chatState.renderedLastIdx = chatState.stream.length - 1;
+        chatState.hasNewer = false;
+
+        if (isNearBottom) {
+          body.scrollTo({ top: body.scrollHeight, behavior: "smooth" });
+        }
+
+        const sub = document.querySelector(".dingtalk-chat-sub");
+        if (sub && sub.textContent.includes("·")) {
+          const prefix = sub.textContent.split("·")[0].trim();
+          sub.textContent = `${prefix} · ${data.posts_count || stream.length} 条回复`;
+        }
+
+        const listItem = document.querySelector(`.dingtalk-conv[data-topic-id="${topicId}"]`);
+        if (listItem) {
+          const lastPost = newPosts[newPosts.length - 1];
+          const timeEl = listItem.querySelector(".dingtalk-conv-time");
+          const msgEl = listItem.querySelector(".dingtalk-conv-msg");
+          if (timeEl) {
+            timeEl.textContent = formatTime(lastPost.created_at);
+            timeEl.dataset.timestamp = lastPost.created_at;
+          }
+          if (msgEl) {
+            const author = userDisplayName(lastPost, lastPost.username || lastPost.name || "");
+            msgEl.textContent = `${author}: ${stripHtml(lastPost.cooked || "")}`;
+          }
+        }
+      }
+    } catch {
+      // 忽略临时网络波动
+    } finally {
+      inFlightNewPostsFetch = false;
+    }
+  }
+
+  function subscribeTopicRealtime(topicId) {
+    if (currentSubscribedTopicChannel && window.MessageBus) {
+      try {
+        window.MessageBus.unsubscribe(currentSubscribedTopicChannel);
+      } catch {}
+      currentSubscribedTopicChannel = null;
+    }
+    if (topicId && window.MessageBus) {
+      currentSubscribedTopicChannel = `/topic/${topicId}`;
+      try {
+        window.MessageBus.subscribe(currentSubscribedTopicChannel, () => {
+          if (chatState.topicId === topicId) {
+            fetchLatestNewPosts(topicId);
+          }
+        });
+      } catch {}
+    }
+  }
+
+  function startRealtimeChatPolling() {
+    if (chatRealtimeTickerId) return;
+    chatRealtimeTickerId = setInterval(() => {
+      if (document.visibilityState === "visible" && chatState.topicId && !chatState.loading) {
+        fetchLatestNewPosts(chatState.topicId);
+      }
+    }, 4000);
+  }
 
   function bubbleHtml(post, myName) {
     const me = isMyPost(post, myName);
     const side = me ? "me" : "other";
     const displayName = userDisplayName(post, post.username || "?");
+
+    let quoteHtml = "";
+    if (post.reply_to_post_number) {
+      const target = topicPostsMap.get(post.reply_to_post_number);
+      let targetName = "";
+      let snippet = "";
+      if (target) {
+        targetName = userDisplayName(target, target.username || "某用户");
+        snippet = extractTextSnippet(target.cooked, 60) || "点击查看引用内容";
+      } else if (post.reply_to_user) {
+        targetName = post.reply_to_user.name || post.reply_to_user.username || `#${post.reply_to_post_number} 楼`;
+        snippet = `回复了 #${post.reply_to_post_number} 楼的内容`;
+      } else {
+        targetName = `#${post.reply_to_post_number} 楼`;
+        snippet = "点击跳转查看原帖";
+      }
+      quoteHtml = `
+        <div class="dingtalk-quote-reply" data-jump-post="${post.reply_to_post_number}" title="点击跳转到 #${post.reply_to_post_number} 楼">
+          <div class="dingtalk-quote-name">${escapeHtml(targetName)}:</div>
+          <div class="dingtalk-quote-text">${escapeHtml(snippet)}</div>
+        </div>`;
+    }
+
     let avatar;
     let avatarBg = avatarColor(displayName);
     if (isMaskAvatar()) {
@@ -3259,19 +4273,42 @@
     } else {
       avatar = escapeHtml(avatarLetter(displayName));
     }
-    const liked = post.id && likedPosts.has(post.id) ? " liked" : "";
+
+    const actLike = (post.actions_summary || []).find((a) => a.id === 2);
+    if (post.id && actLike && actLike.acted) likedPosts.add(post.id);
+    const isLiked = post.id && likedPosts.has(post.id);
+    const canUndo = actLike ? actLike.can_undo !== false : true;
+    const liked = isLiked ? " liked" : "";
+    const likeCount = actLike && actLike.count ? Number(actLike.count) : (post.reaction_users_count || 0);
+    const showBadge = likeCount > 0 || isLiked;
+    const likeTooltip = isLiked
+      ? (canUndo ? "已点赞，点击取消" : getNativeCantUndoText(post.post_number))
+      : "点赞";
+    const badgeHtml = `
+      <span class="dingtalk-like-badge${liked}${!canUndo ? " cannot-undo" : ""}" data-post-id="${post.id || ''}" data-post-number="${post.post_number}" data-can-undo="${canUndo ? "1" : "0"}" data-likes="${likeCount}" title="${likeTooltip}" style="${showBadge ? '' : 'display:none;'}">
+        <span class="dingtalk-like-icon">${isLiked ? ICONS.heartFilled : ICONS.heartOutline}</span>
+        <span class="dingtalk-like-count">${likeCount > 0 ? likeCount : ''}</span>
+      </span>`;
+
+    const boostBar = renderBoostsHtml(post);
     return `
       <div class="dingtalk-msg dingtalk-msg-${side}" data-post-number="${post.post_number}"${post.id ? ` data-post-id="${post.id}"` : ""}${me ? ' data-mine="1"' : ""}>
         <span class="dingtalk-msg-avatar" style="background:${avatarBg}">${avatar}</span>
         <div class="dingtalk-msg-content">
           <span class="dingtalk-msg-name">${escapeHtml(displayName)}</span>
-          <div class="dingtalk-msg-bubble">${post.cooked || ""}</div>
+          <div class="dingtalk-msg-bubble">
+            ${quoteHtml}
+            ${post.cooked || ""}
+          </div>
+          ${boostBar}
           <span class="dingtalk-msg-meta">
             <span>#${post.post_number}</span>
             <span>${escapeHtml(formatTime(post.created_at))}</span>
+            ${badgeHtml}
           </span>
           <div class="dingtalk-msg-tools">
-            <button class="dingtalk-msg-tool${liked}" data-action="like" title="点赞">${ICONS.like}</button>
+            <button class="dingtalk-msg-tool${liked}${!canUndo ? " cannot-undo" : ""}" data-action="like" data-can-undo="${canUndo ? "1" : "0"}" title="${likeTooltip}">${isLiked ? ICONS.heartFilled : ICONS.heartOutline}</button>
+            <button class="dingtalk-msg-tool" data-action="boost" title="小火箭">${ICONS.rocket}</button>
             <button class="dingtalk-msg-tool" data-action="reply" title="回复">${ICONS.reply}</button>
           </div>
         </div>
@@ -3283,36 +4320,1012 @@
     return meta ? meta.content : "";
   }
 
-  async function toggleLike(postId, btn) {
-    if (!postId) return;
-    const wasLiked = likedPosts.has(postId);
-    // 乐观更新，失败回滚
-    if (wasLiked) likedPosts.delete(postId); else likedPosts.add(postId);
-    btn.classList.toggle("liked", !wasLiked);
+  /* ============================== 投票（来自 mangen 版） ============================== */
+
+  async function apiVotePoll(postId, pollName, optionIds) {
+    if (!postId || !optionIds.length) return null;
+    const body = new URLSearchParams();
+    body.append("post_id", String(postId));
+    body.append("poll_name", String(pollName || "poll"));
+    for (const opt of optionIds) {
+      body.append("options[]", String(opt));
+    }
+    const resp = await fetch("/polls/vote", {
+      method: "PUT",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRF-Token": csrfToken(),
+        "X-Requested-With": "XMLHttpRequest",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: body.toString()
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
+  }
+
+  async function apiUndoVotePoll(postId, pollName) {
+    if (!postId) return null;
+    const body = new URLSearchParams();
+    body.append("post_id", String(postId));
+    body.append("poll_name", String(pollName || "poll"));
+    const resp = await fetch("/polls/vote", {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRF-Token": csrfToken(),
+        "X-Requested-With": "XMLHttpRequest",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: body.toString()
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
+  }
+
+  function applyPollResult(poll, pollData) {
+    if (!poll || !pollData) return;
+    const options = pollData.options || [];
+    const totalVotes = options.reduce((sum, o) => sum + (Number(o.votes) || 0), 0);
+    const infoNumber = poll.querySelector(".poll-info .info-number");
+    if (infoNumber) infoNumber.textContent = String(pollData.voters != null ? pollData.voters : totalVotes);
+
+    for (const opt of options) {
+      const optEl = poll.querySelector(`.dingtalk-poll-option[data-poll-option-id="${opt.id}"]`);
+      if (!optEl) continue;
+      const votes = Number(opt.votes) || 0;
+      const pct = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+      const countEl = optEl.querySelector(".dingtalk-poll-count");
+      if (countEl) {
+        countEl.textContent = `${votes} 票 (${pct}%)`;
+        countEl.style.display = "";
+      }
+      const barEl = optEl.querySelector(".dingtalk-poll-bar");
+      if (barEl) {
+        barEl.style.width = `${pct}%`;
+      }
+    }
+  }
+
+  function getVotedOptionIds(postId, pollName, postData) {
+    if (postData && postData.polls_votes && postData.polls_votes[pollName]) {
+      const v = postData.polls_votes[pollName];
+      return Array.isArray(v) ? v.map(String) : [String(v)];
+    }
     try {
-      const resp = await fetch(
-        wasLiked ? `/post_actions/${postId}?post_action_type_id=2` : "/post_actions",
-        wasLiked
-          ? {
-              method: "DELETE",
-              credentials: "same-origin",
-              headers: { "X-CSRF-Token": csrfToken(), "X-Requested-With": "XMLHttpRequest" }
+      const cache = localStorage.getItem(`dingtalk_poll_${postId}_${pollName}`);
+      if (cache) return JSON.parse(cache).map(String);
+    } catch { /* ignore */ }
+    return [];
+  }
+
+  function saveVotedOptionIds(postId, pollName, optionIds) {
+    try {
+      localStorage.setItem(`dingtalk_poll_${postId}_${pollName}`, JSON.stringify(optionIds));
+    } catch { /* ignore */ }
+  }
+
+  function clearVotedOptionIds(postId, pollName) {
+    try {
+      localStorage.removeItem(`dingtalk_poll_${postId}_${pollName}`);
+    } catch { /* ignore */ }
+  }
+
+  function initPollComponent(poll, postData) {
+    if (!poll || poll.querySelector(".dingtalk-poll-options")) return;
+
+    const items = poll.querySelectorAll("li[data-poll-option-id]");
+    if (!items.length) return;
+
+    const msg = poll.closest(".dingtalk-msg");
+    const postId = msg ? msg.dataset.postId : null;
+    const isDark = isDarkEffective();
+    const pollName = poll.dataset.pollName || "poll";
+    const isMultiple = poll.dataset.pollType === "multiple";
+    const pollInfo = postData && postData.polls && postData.polls.find((p) => p.name === pollName);
+    const optionsData = (pollInfo && pollInfo.options) || [];
+    const totalVotes = optionsData.reduce((sum, o) => sum + (Number(o.votes) || 0), 0);
+    const totalVoters = (pollInfo && pollInfo.voters != null) ? pollInfo.voters : totalVotes;
+
+    const infoNumber = poll.querySelector(".poll-info .info-number");
+    if (infoNumber && totalVoters > 0) {
+      infoNumber.textContent = String(totalVoters);
+    }
+
+    const votedOptionIds = getVotedOptionIds(postId, pollName, postData);
+    const hasVoted = votedOptionIds.length > 0;
+
+    poll.style.cssText = `
+      background: ${isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)"} !important;
+      border: 1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"} !important;
+      border-radius: 10px !important;
+      padding: 14px 16px !important;
+      margin: 12px 0 !important;
+      user-select: none !important;
+      display: block !important;
+    `;
+
+    const optionsBox = document.createElement("div");
+    optionsBox.className = "dingtalk-poll-options";
+    optionsBox.style.cssText = "display:flex !important; flex-direction:column !important; gap:8px !important; margin-bottom:10px !important;";
+
+    items.forEach((li) => {
+      const optId = li.dataset.pollOptionId;
+      let rawText = (li.textContent || "").trim();
+      rawText = rawText.replace(/\s*\d+\s*票\s*\(\d+%\)$/, "").trim();
+
+      const matchedOpt = optionsData.find((o) => o.id === optId);
+      const votes = matchedOpt ? Number(matchedOpt.votes) || 0 : 0;
+      const pct = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+      const countText = totalVotes > 0 ? `${votes} 票 (${pct}%)` : "";
+      const isSelected = votedOptionIds.includes(optId);
+
+      const optCard = document.createElement("div");
+      optCard.className = `dingtalk-poll-option${isSelected ? " selected" : ""}`;
+      optCard.dataset.pollOptionId = optId;
+      optCard.style.cssText = `
+        display: flex !important;
+        align-items: center !important;
+        padding: 10px 14px !important;
+        border-radius: 8px !important;
+        background: ${isSelected ? (isDark ? "rgba(26, 135, 255, 0.18)" : "rgba(26, 135, 255, 0.08)") : (isDark ? "#23262E" : "#FFFFFF")} !important;
+        border: 1.5px solid ${isSelected ? "#1A87FF" : (isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)")} !important;
+        cursor: pointer !important;
+        position: relative !important;
+        overflow: hidden !important;
+        transition: all 0.18s ease !important;
+      `;
+
+      optCard.innerHTML = `
+        <span class="dingtalk-poll-radio" style="
+          width: 18px !important;
+          height: 18px !important;
+          min-width: 18px !important;
+          border-radius: ${isMultiple ? "4px" : "50%"} !important;
+          border: 2px solid ${isSelected ? "#1A87FF" : (isDark ? "#7C8290" : "#8A8F99")} !important;
+          background: ${isSelected ? "#1A87FF" : "transparent"} !important;
+          margin-right: 12px !important;
+          flex-shrink: 0 !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          box-sizing: border-box !important;
+        ">${isSelected ? `<span style="width:6px; height:6px; border-radius:${isMultiple ? "1px" : "50%"}; background:#FFFFFF; display:block;"></span>` : ""}</span>
+        <span class="dingtalk-poll-title" style="
+          flex: 1 !important;
+          font-size: 13.5px !important;
+          font-weight: 500 !important;
+          color: ${isDark ? "#E6E8EB" : "#1F2329"} !important;
+          line-height: 1.4 !important;
+          z-index: 1 !important;
+        ">${escapeHtml(rawText)}</span>
+        <span class="dingtalk-poll-count" style="
+          font-size: 12px !important;
+          font-weight: 600 !important;
+          color: ${isDark ? "#9AA0AE" : "#646A73"} !important;
+          margin-left: 10px !important;
+          z-index: 1 !important;
+          white-space: nowrap !important;
+          ${countText ? "" : "display:none !important;"}
+        ">${escapeHtml(countText)}</span>
+        <div class="dingtalk-poll-bar" style="
+          position: absolute !important;
+          left: 0 !important; top: 0 !important; bottom: 0 !important;
+          background: ${isDark ? "rgba(43, 140, 255, 0.2)" : "rgba(26, 135, 255, 0.14)"} !important;
+          pointer-events: none !important;
+          width: ${pct}% !important;
+          transition: width 0.35s ease !important;
+          z-index: 0 !important;
+        "></div>
+      `;
+
+      optCard.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!isMultiple) {
+          optionsBox.querySelectorAll(".dingtalk-poll-option").forEach((el) => {
+            if (el !== optCard) {
+              el.classList.remove("selected");
+              el.style.borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
+              el.style.background = isDark ? "#23262E" : "#FFFFFF";
+              const r = el.querySelector(".dingtalk-poll-radio");
+              if (r) {
+                r.style.background = "transparent";
+                r.style.borderColor = isDark ? "#7C8290" : "#8A8F99";
+                r.innerHTML = "";
+              }
             }
-          : {
-              method: "POST",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRF-Token": csrfToken(),
-                "X-Requested-With": "XMLHttpRequest",
-                "Content-Type": "application/x-www-form-urlencoded"
-              },
-              body: `id=${postId}&post_action_type_id=2`
-            }
-      );
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          });
+        }
+
+        const toggled = optCard.classList.toggle("selected");
+        const radio = optCard.querySelector(".dingtalk-poll-radio");
+        if (toggled) {
+          optCard.style.borderColor = "#1A87FF";
+          optCard.style.background = isDark ? "rgba(26, 135, 255, 0.18)" : "rgba(26, 135, 255, 0.08)";
+          if (radio) {
+            radio.style.background = "#1A87FF";
+            radio.style.borderColor = "#1A87FF";
+            radio.innerHTML = `<span style="width:6px; height:6px; border-radius:${isMultiple ? "1px" : "50%"}; background:#FFFFFF; display:block;"></span>`;
+          }
+        } else {
+          optCard.style.borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
+          optCard.style.background = isDark ? "#23262E" : "#FFFFFF";
+          if (radio) {
+            radio.style.background = "transparent";
+            radio.style.borderColor = isDark ? "#7C8290" : "#8A8F99";
+            radio.innerHTML = "";
+          }
+        }
+
+        const hasSelected = !!optionsBox.querySelector(".dingtalk-poll-option.selected");
+        const submitBtn = poll.querySelector(".dingtalk-poll-submit-btn");
+        if (submitBtn && submitBtn.textContent === "投票") {
+          submitBtn.disabled = !hasSelected;
+          submitBtn.style.opacity = hasSelected ? "1" : "0.5";
+          submitBtn.style.cursor = hasSelected ? "pointer" : "not-allowed";
+        }
+      });
+
+      optionsBox.appendChild(optCard);
+    });
+
+    const ul = poll.querySelector("ul");
+    if (ul) {
+      ul.replaceWith(optionsBox);
+    } else {
+      poll.appendChild(optionsBox);
+    }
+
+    if (!poll.querySelector(".dingtalk-poll-actions")) {
+      const actions = document.createElement("div");
+      actions.className = "dingtalk-poll-actions";
+      actions.style.cssText = "display:flex !important; align-items:center !important; gap:12px !important; margin-top:12px !important; padding-top:10px !important; border-top:1px dashed rgba(255,255,255,0.1) !important;";
+
+      actions.innerHTML = `
+        <button type="button" class="dingtalk-poll-submit-btn" ${hasVoted ? "" : "disabled"} style="
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          height: 32px !important;
+          line-height: 1 !important;
+          padding: 0 20px !important;
+          border-radius: 6px !important;
+          font-size: 13px !important;
+          font-weight: 500 !important;
+          cursor: ${hasVoted ? "default" : "not-allowed"} !important;
+          border: none !important;
+          background: #1A87FF !important;
+          color: #FFFFFF !important;
+          opacity: ${hasVoted ? "1" : "0.5"} !important;
+          box-sizing: border-box !important;
+          transition: all 0.2s !important;
+        ">${hasVoted ? "已投票" : "投票"}</button>
+        <button type="button" class="dingtalk-poll-undo-btn" style="
+          display: ${hasVoted ? "inline-flex" : "none"} !important;
+          align-items: center !important;
+          justify-content: center !important;
+          height: 32px !important;
+          line-height: 1 !important;
+          padding: 0 16px !important;
+          border-radius: 6px !important;
+          font-size: 13px !important;
+          cursor: pointer !important;
+          box-sizing: border-box !important;
+          border: 1px solid ${isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.15)"} !important;
+          background: transparent !important;
+          color: ${isDark ? "#A0A5B2" : "#646A73"} !important;
+        ">撤销投票</button>
+        <span class="dingtalk-poll-status-tip" style="font-size:12px; color:${isDark ? "#8A8F99" : "#8F959E"}; margin-left:8px;">${hasVoted ? "✓ 您已参与投票" : ""}</span>
+      `;
+      poll.appendChild(actions);
+
+      const submitBtn = actions.querySelector(".dingtalk-poll-submit-btn");
+      const undoBtn = actions.querySelector(".dingtalk-poll-undo-btn");
+      const tip = actions.querySelector(".dingtalk-poll-status-tip");
+
+      submitBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (submitBtn.textContent === "已投票") return;
+
+        const selected = Array.from(optionsBox.querySelectorAll(".dingtalk-poll-option.selected")).map((el) => el.dataset.pollOptionId);
+        if (!selected.length || !postId) return;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "正在提交…";
+        try {
+          const res = await apiVotePoll(postId, pollName, selected);
+          saveVotedOptionIds(postId, pollName, selected);
+          submitBtn.textContent = "已投票";
+          submitBtn.style.cursor = "default";
+          submitBtn.style.opacity = "1";
+          if (undoBtn) undoBtn.style.display = "inline-flex";
+          if (tip) tip.textContent = "✓ 投票成功";
+          if (res && res.poll) applyPollResult(poll, res.poll);
+        } catch (err) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "投票";
+          if (tip) tip.textContent = `投票失败: ${err.message}`;
+          console.error(err);
+        }
+      });
+
+      undoBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        undoBtn.disabled = true;
+        try {
+          const res = await apiUndoVotePoll(postId, pollName);
+          clearVotedOptionIds(postId, pollName);
+          undoBtn.style.display = "none";
+          undoBtn.disabled = false;
+          submitBtn.textContent = "投票";
+          const hasSelected = !!optionsBox.querySelector(".dingtalk-poll-option.selected");
+          submitBtn.disabled = !hasSelected;
+          submitBtn.style.opacity = hasSelected ? "1" : "0.5";
+          submitBtn.style.cursor = hasSelected ? "pointer" : "not-allowed";
+          if (tip) tip.textContent = "已撤销投票";
+          if (res && res.poll) applyPollResult(poll, res.poll);
+        } catch (err) {
+          undoBtn.disabled = false;
+          if (tip) tip.textContent = "撤销失败";
+          console.error(err);
+        }
+      });
+    }
+  }
+
+  function enhanceAllPolls(container) {
+    if (!container) return;
+    try {
+      const polls = container.querySelectorAll(".poll");
+      for (const poll of polls) {
+        try {
+          const msg = poll.closest(".dingtalk-msg");
+          const postNum = msg ? Number(msg.dataset.postNumber) : null;
+          const postData = postNum ? topicPostsMap.get(postNum) : null;
+          initPollComponent(poll, postData);
+        } catch (innerErr) {
+          console.warn("[linuxdo-dingtalk] initPollComponent warning:", innerErr);
+        }
+      }
+    } catch (err) {
+      console.warn("[linuxdo-dingtalk] enhanceAllPolls warning:", err);
+    }
+  }
+
+  /* ============================== 小火箭跟评（来自 mangen 版） ============================== */
+
+  function formatBoostCooked(cooked) {
+    if (!cooked) return "";
+    try {
+      const div = document.createElement("div");
+      div.innerHTML = cooked;
+      div.querySelectorAll("p, div").forEach(p => {
+        const span = document.createElement("span");
+        span.innerHTML = p.innerHTML + " ";
+        p.replaceWith(span);
+      });
+      div.querySelectorAll("*:not(img.emoji):not(span)").forEach(el => el.remove());
+      div.querySelectorAll("img.emoji").forEach(img => {
+        img.style.width = "18px";
+        img.style.height = "18px";
+        img.style.verticalAlign = "text-bottom";
+        img.style.margin = "0 2px";
+        img.style.display = "inline-block";
+      });
+      return div.innerHTML.trim();
     } catch {
+      return escapeHtml(extractTextSnippet(cooked, 50) || "");
+    }
+  }
+
+  function renderBoostsHtml(post, myName) {
+    if (!myName) myName = getCurrentUsername();
+    if (!post) return "";
+    const boosts = post.boosts || [];
+    if (!boosts.length && post.post_number !== 1) return "";
+
+    let chips = "";
+    for (const b of boosts) {
+      const contentHtml = formatBoostCooked(b.cooked);
+      const text = extractTextSnippet(b.cooked, 35) || "";
+      const u = b.user || {};
+      const uName = u.name || u.username || "佬友";
+
+      let avatarSrc = "";
+      if (u.animated_avatar) {
+        avatarSrc = u.animated_avatar.startsWith("//") ? "https:" + u.animated_avatar : u.animated_avatar;
+      } else if (u.avatar_template) {
+        avatarSrc = fullAvatarUrl(u.avatar_template);
+      }
+
+      let avatarHtml = "";
+      if (avatarSrc) {
+        avatarHtml = `<span class="dingtalk-rocket-avatar-box"><img src="${escapeHtml(avatarSrc)}" alt="" loading="lazy"></span>`;
+      } else {
+        const letter = avatarLetter(uName);
+        avatarHtml = `<span class="dingtalk-rocket-avatar-box"><span class="fallback-letter" style="background:${avatarColor(letter)}">${escapeHtml(letter)}</span></span>`;
+      }
+
+      const isMyBoost = (u.username && myName && u.username.toLowerCase() === myName.toLowerCase()) || b.can_delete;
+      chips += `<span class="dingtalk-rocket-chip${isMyBoost ? " is-my-boost" : ""}" title="${escapeHtml(uName)}: ${escapeHtml(text)}" data-boost-id="${b.id || ''}">` +
+        `${avatarHtml}<span class="dingtalk-rocket-text">${contentHtml || escapeHtml(text)}</span>` +
+        (isMyBoost ? `<button type="button" class="dingtalk-rocket-trash" title="删除跟评" style="display:none;">${ICONS.trash}</button>` : "") +
+        `</span>`;
+    }
+
+    return `
+      <div class="dingtalk-rocket-bar" data-post-number="${post.post_number}">
+        ${chips}
+        <button type="button" class="dingtalk-rocket-btn" title="发射小火箭">${ICONS.rocket || "🚀"}</button>
+      </div>`;
+  }
+
+  async function submitDingtalkBoost(postId, _postNum, content, msgEl, composerEl) {
+    if (!postId || !content) return;
+    const submitBtn = composerEl.querySelector(".dingtalk-boost-submit");
+    if (submitBtn) submitBtn.style.opacity = "0.5";
+
+    try {
+      const token = csrfToken();
+      let ok = false;
+      let newBoostId = null;
+
+      try {
+        const r1 = await fetch(`/discourse-boosts/posts/${postId}/boosts`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRF-Token": token,
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({ raw: content })
+        });
+        if (r1.ok) {
+          ok = true;
+          const data = await r1.json().catch(() => ({}));
+          newBoostId = (data && (data.id || data.boost?.id)) || null;
+        }
+      } catch { /* ignore */ }
+
+      if (!ok) {
+        try {
+          const r2 = await fetch(`/discourse-boosts/posts/${postId}/boosts`, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+              "X-CSRF-Token": token,
+              "X-Requested-With": "XMLHttpRequest",
+              "Content-Type": "application/x-www-form-urlencoded",
+              "Accept": "application/json"
+            },
+            body: `raw=${encodeURIComponent(content)}`
+          });
+          if (r2.ok) {
+            ok = true;
+            const data = await r2.json().catch(() => ({}));
+            newBoostId = (data && (data.id || data.boost?.id)) || null;
+          }
+        } catch { /* ignore */ }
+      }
+
+      if (!ok) {
+        throw new Error("服务端拒绝了小火箭发送请求");
+      }
+
+      composerEl.remove();
+      showDingtalkToast("✓ 小火箭跟评发送成功", msgEl);
+
+      let rocketBar = msgEl.querySelector(".dingtalk-rocket-bar");
+      if (!rocketBar) {
+        rocketBar = document.createElement("div");
+        rocketBar.className = "dingtalk-rocket-bar";
+        const bubble = msgEl.querySelector(".dingtalk-msg-bubble");
+        if (bubble) bubble.appendChild(rocketBar);
+      }
+
+      let myAvatarUrl = "";
+      try {
+        const u = safeLookup(getEmberOwner(), "service:current-user")?.currentUser || window.Discourse?.User?.current();
+        if (u && u.avatar_template) myAvatarUrl = fullAvatarUrl(u.avatar_template);
+      } catch { /* ignore */ }
+
+      const newChip = document.createElement("span");
+      newChip.className = "dingtalk-rocket-chip is-my-boost";
+      if (newBoostId) newChip.dataset.boostId = String(newBoostId);
+      newChip.innerHTML = `
+        <span class="dingtalk-rocket-avatar-box">
+          ${myAvatarUrl ? `<img src="${escapeHtml(myAvatarUrl)}" alt="">` : `<span style="font-size:10px;">我</span>`}
+        </span>
+        <span class="dingtalk-rocket-text">${escapeHtml(content)}</span>
+        <button type="button" class="dingtalk-rocket-trash" title="删除跟评" style="display:none;">${ICONS.trash}</button>
+      `;
+
+      const plusBtn = rocketBar.querySelector(".dingtalk-rocket-btn");
+      if (plusBtn) {
+        rocketBar.insertBefore(newChip, plusBtn);
+      } else {
+        rocketBar.appendChild(newChip);
+      }
+    } catch (err) {
+      console.error("[linuxdo-dingtalk] submitDingtalkBoost error:", err);
+      if (submitBtn) submitBtn.style.opacity = "1";
+      showDingtalkToast("跟评发送失败，请重试", composerEl);
+    }
+  }
+
+  async function deleteDingtalkBoost(_postId, boostId, chipEl) {
+    if (!boostId) {
+      const chipText = chipEl.querySelector(".dingtalk-rocket-text")?.textContent.trim() || "";
+      const targetCooked = Array.from(document.querySelectorAll(".discourse-boosts__cooked")).find((b) => b.textContent.includes(chipText));
+      if (targetCooked) {
+        let nativeDel = targetCooked.parentElement?.querySelector("button.discourse-boosts__delete");
+        if (!nativeDel) {
+          targetCooked.click();
+          await new Promise((r) => setTimeout(r, 60));
+          nativeDel = targetCooked.parentElement?.querySelector("button.discourse-boosts__delete");
+        }
+        if (nativeDel) {
+          nativeDel.click();
+          chipEl.remove();
+          showDingtalkToast("✓ 跟评已删除", chipEl);
+          return;
+        }
+      }
+      showDingtalkToast("删除失败，未获取到跟评编号", chipEl);
+      return;
+    }
+
+    const trashBtn = chipEl.querySelector(".dingtalk-rocket-trash");
+    if (trashBtn) trashBtn.style.opacity = "0.4";
+
+    try {
+      const token = csrfToken();
+      const headers = {
+        "X-CSRF-Token": token,
+        "X-Requested-With": "XMLHttpRequest",
+        "Accept": "application/json"
+      };
+
+      const resp = await fetch(`/discourse-boosts/boosts/${boostId}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers
+      });
+
+      if (!resp.ok && resp.status !== 200 && resp.status !== 204) {
+        throw new Error(`HTTP ${resp.status}`);
+      }
+
+      chipEl.style.transition = "all 0.2s ease";
+      chipEl.style.opacity = "0";
+      chipEl.style.transform = "scale(0.8)";
+      setTimeout(() => chipEl.remove(), 200);
+      showDingtalkToast("✓ 跟评已删除", chipEl);
+    } catch (err) {
+      console.error("[linuxdo-dingtalk] deleteDingtalkBoost error:", err);
+      if (trashBtn) trashBtn.style.opacity = "1";
+      showDingtalkToast("删除失败，请刷新重试", chipEl);
+    }
+  }
+
+  function openDingtalkBoostComposer(msgEl) {
+    if (!msgEl) return;
+    const existing = msgEl.querySelector(".dingtalk-boost-composer");
+    if (existing) {
+      existing.querySelector(".dingtalk-boost-input")?.focus();
+      return;
+    }
+
+    document.querySelectorAll(".dingtalk-boost-composer").forEach((el) => el.remove());
+
+    const postId = msgEl.dataset.postId;
+    const postNum = msgEl.dataset.postNumber;
+    const authorName = msgEl.querySelector(".dingtalk-msg-name")?.textContent.trim() || "";
+
+    let myAvatar = "";
+    try {
+      const owner = getEmberOwner();
+      const u = safeLookup(owner, "service:current-user")?.currentUser || window.Discourse?.User?.current();
+      if (u && u.avatar_template) {
+        myAvatar = `<img src="${escapeHtml(fullAvatarUrl(u.avatar_template))}" alt="">`;
+      } else if (u && u.username) {
+        myAvatar = escapeHtml(u.username.slice(0, 1).toUpperCase());
+      }
+    } catch { /* ignore */ }
+    if (!myAvatar) {
+      myAvatar = "我";
+    }
+
+    const composer = document.createElement("div");
+    composer.className = "dingtalk-boost-composer";
+    composer.innerHTML = `
+      <div class="dingtalk-boost-avatar">${myAvatar}</div>
+      <input type="text" class="dingtalk-boost-input" placeholder="Boost ${escapeHtml(authorName)}..." autocomplete="off" enterkeyhint="send">
+      <div class="dingtalk-boost-emojis">
+        <span class="dingtalk-quick-emoji" title="火箭">🚀</span>
+        <span class="dingtalk-quick-emoji" title="点赞">👍</span>
+        <span class="dingtalk-quick-emoji" title="爱心">❤️</span>
+        <span class="dingtalk-quick-emoji" title="大笑">🤣</span>
+        <span class="dingtalk-quick-emoji" title="庆祝">🎉</span>
+        <span class="dingtalk-quick-emoji" title="火">🔥</span>
+        <span class="dingtalk-quick-emoji" title="牛">🐮</span>
+        <span class="dingtalk-quick-emoji" title="眼睛">👀</span>
+      </div>
+      <button type="button" class="dingtalk-boost-btn dingtalk-boost-submit" title="发送跟评">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+      <button type="button" class="dingtalk-boost-btn dingtalk-boost-cancel" title="取消">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    `;
+
+    const bubble = msgEl.querySelector(".dingtalk-msg-bubble");
+    if (bubble && bubble.nextSibling) {
+      msgEl.querySelector(".dingtalk-msg-content")?.insertBefore(composer, bubble.nextSibling);
+    } else {
+      msgEl.querySelector(".dingtalk-msg-content")?.appendChild(composer);
+    }
+
+    const input = composer.querySelector(".dingtalk-boost-input");
+    composer.querySelectorAll(".dingtalk-quick-emoji").forEach(em => {
+      em.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (input) {
+          input.value += em.textContent.trim();
+          input.focus();
+        }
+      });
+    });
+    input?.focus();
+
+    const doSubmit = () => {
+      const text = (input?.value || "").trim();
+      if (!text) {
+        input?.focus();
+        return;
+      }
+      submitDingtalkBoost(postId, postNum, text, msgEl, composer);
+    };
+
+    composer.querySelector(".dingtalk-boost-submit")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      doSubmit();
+    });
+
+    composer.querySelector(".dingtalk-boost-cancel")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      composer.remove();
+    });
+
+    input?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        doSubmit();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        composer.remove();
+      }
+    });
+  }
+
+  /** 动态获取 Discourse 官方的不可撤销点赞原生提示语 */
+  function getNativeCantUndoText(postNumber) {
+    if (postNumber) {
+      const nativeBtn = document.querySelector(
+        `#post_${postNumber} button.btn-toggle-reaction-like, #post_${postNumber} button[class*='like'], #post_${postNumber} button[class*='reaction']`
+      );
+      const nativeTitle = nativeBtn?.getAttribute("title") || nativeBtn?.getAttribute("data-tooltip");
+      if (nativeTitle && !nativeTitle.startsWith("[")) return nativeTitle;
+    }
+    try {
+      if (typeof window !== "undefined" && window.I18n && typeof window.I18n.t === "function") {
+        const candidates = [
+          "js.discourse_reactions.state.cant_remove_reaction",
+          "discourse_reactions.state.cant_remove_reaction",
+          "js.discourse_reactions.cant_remove_reaction",
+          "discourse_reactions.cant_remove_reaction"
+        ];
+        for (const k of candidates) {
+          const res = window.I18n.t(k);
+          if (res && typeof res === "string" && !res.startsWith("[") && !res.includes("missing")) {
+            return res;
+          }
+        }
+      }
+    } catch { /* ignore */ }
+    return "您无法再移除您自己的回应了";
+  }
+
+  function showDingtalkToast(message, targetEl) {
+    if (!message) return;
+    document.querySelectorAll(".dingtalk-toast").forEach((el) => el.remove());
+
+    const toast = document.createElement("div");
+    toast.className = "dingtalk-toast";
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    if (targetEl && targetEl.getBoundingClientRect) {
+      const rect = targetEl.getBoundingClientRect();
+      const toastW = toast.offsetWidth || 180;
+      const toastH = toast.offsetHeight || 32;
+
+      let left = rect.left + rect.width / 2 - toastW / 2;
+      left = Math.max(12, Math.min(window.innerWidth - toastW - 12, left));
+
+      let top = rect.top - toastH - 8;
+      if (top < 10) {
+        top = rect.bottom + 8;
+      }
+      toast.style.left = `${left}px`;
+      toast.style.top = `${top}px`;
+    } else {
+      toast.style.top = "60px";
+      toast.style.left = "50%";
+      toast.style.transform = "translateX(-50%)";
+    }
+
+    setTimeout(() => {
+      toast.classList.add("fade-out");
+      setTimeout(() => toast.remove(), 220);
+    }, 2400);
+  }
+
+  async function toggleLike(postId, triggerEl) {
+    if (!postId) return;
+    const msg = triggerEl.closest(".dingtalk-msg");
+    const wasLiked = likedPosts.has(postId);
+    const badge = msg ? msg.querySelector(".dingtalk-like-badge") : null;
+    const toolBtn = msg ? msg.querySelector('.dingtalk-msg-tool[data-action="like"]') : null;
+    const postNum = msg ? Number(msg.dataset.postNumber) : null;
+
+    const canUndo = (badge && badge.dataset.canUndo === "0") || (toolBtn && toolBtn.dataset.canUndo === "0") ? false : true;
+    if (wasLiked && !canUndo) {
+      showDingtalkToast(getNativeCantUndoText(postNum), triggerEl);
+      return;
+    }
+
+    let currentCount = badge ? (Number(badge.dataset.likes) || 0) : 0;
+    let nextCount = wasLiked ? Math.max(0, currentCount - 1) : currentCount + 1;
+
+    if (wasLiked) likedPosts.delete(postId); else likedPosts.add(postId);
+
+    if (badge) {
+      badge.classList.toggle("liked", !wasLiked);
+      badge.dataset.likes = String(nextCount);
+      const countEl = badge.querySelector(".dingtalk-like-count");
+      if (countEl) countEl.textContent = nextCount > 0 ? String(nextCount) : "";
+      const iconEl = badge.querySelector(".dingtalk-like-icon");
+      if (iconEl) iconEl.innerHTML = !wasLiked ? ICONS.heartFilled : ICONS.heartOutline;
+      badge.style.display = (nextCount > 0 || !wasLiked) ? "inline-flex" : "none";
+      badge.title = !wasLiked ? "已点赞，点击取消" : "点赞";
+      badge.classList.remove("pop");
+      void badge.offsetWidth;
+      badge.classList.add("pop");
+    }
+
+    if (toolBtn) {
+      toolBtn.classList.toggle("liked", !wasLiked);
+      toolBtn.innerHTML = !wasLiked ? ICONS.heartFilled : (ICONS.heartOutline || ICONS.like);
+      toolBtn.title = !wasLiked ? "已点赞，点击取消" : "点赞";
+      toolBtn.classList.remove("pop");
+      void toolBtn.offsetWidth;
+      toolBtn.classList.add("pop");
+    }
+
+    try {
+      const token = csrfToken();
+      let success = false;
+      const headers = {
+        "X-CSRF-Token": token,
+        "X-Requested-With": "XMLHttpRequest",
+        "Accept": "application/json"
+      };
+
+      const url = wasLiked
+        ? `/post_actions/${postId}.json?post_action_type_id=2`
+        : "/post_actions.json";
+
+      const opts = wasLiked
+        ? { method: "DELETE", credentials: "same-origin", headers }
+        : {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { ...headers, "Content-Type": "application/x-www-form-urlencoded" },
+            body: `id=${postId}&post_action_type_id=2`
+          };
+
+      try {
+        const resp = await fetch(url, opts);
+        if (resp.ok) success = true;
+      } catch { /* ignore */ }
+
+      if (!success) {
+        try {
+          const rToggle = await fetch(`/discourse-reactions/posts/${postId}/custom-reactions/heart/toggle.json`, {
+            method: "PUT",
+            credentials: "same-origin",
+            headers
+          });
+          if (rToggle.ok) success = true;
+        } catch { /* ignore */ }
+      }
+
+      if (!success) {
+        throw new Error(wasLiked ? getNativeCantUndoText(postNum) : "点赞操作未能完成");
+      }
+    } catch (err) {
+      console.warn("[linuxdo-dingtalk] toggleLike error, rollback:", err);
+      const tipText = wasLiked ? getNativeCantUndoText(postNum) : (err.message || "点赞操作未能完成");
+      showDingtalkToast(tipText, triggerEl);
       if (wasLiked) likedPosts.add(postId); else likedPosts.delete(postId);
-      btn.classList.toggle("liked", wasLiked);
+
+      if (badge) {
+        badge.classList.toggle("liked", wasLiked);
+        badge.dataset.likes = String(currentCount);
+        const countEl = badge.querySelector(".dingtalk-like-count");
+        if (countEl) countEl.textContent = currentCount > 0 ? String(currentCount) : "";
+        const iconEl = badge.querySelector(".dingtalk-like-icon");
+        if (iconEl) iconEl.innerHTML = wasLiked ? ICONS.heartFilled : ICONS.heartOutline;
+        badge.style.display = currentCount > 0 ? "inline-flex" : "none";
+        badge.title = wasLiked ? getNativeCantUndoText(postNum) : "点赞";
+      }
+
+      if (toolBtn) {
+        toolBtn.classList.toggle("liked", wasLiked);
+        toolBtn.innerHTML = wasLiked ? ICONS.heartFilled : (ICONS.heartOutline || ICONS.like);
+        toolBtn.title = wasLiked ? getNativeCantUndoText(postNum) : "点赞";
+      }
+    }
+  }
+
+  /* ============================== 钉钉式沉浸图片浮窗灯箱 ============================== */
+
+  let activeImgModal = null;
+
+  function openDingtalkImageModal(src, _triggerImg) {
+    if (!src) return;
+    if (activeImgModal) closeDingtalkImageModal();
+
+    let scale = 1;
+    let rotate = 0;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let translateX = 0, translateY = 0;
+
+    const modal = document.createElement("div");
+    modal.className = "dingtalk-img-modal";
+    modal.tabIndex = -1;
+
+    modal.innerHTML = `
+      <div class="dingtalk-img-modal-backdrop"></div>
+      <div class="dingtalk-img-modal-toolbar">
+        <button type="button" class="dingtalk-img-btn" data-action="zoom-in" title="放大">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </button>
+        <button type="button" class="dingtalk-img-btn" data-action="zoom-out" title="缩小">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </button>
+        <button type="button" class="dingtalk-img-btn" data-action="reset" title="还原">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button type="button" class="dingtalk-img-btn" data-action="rotate" title="旋转">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        </button>
+        <a href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer" class="dingtalk-img-btn" title="在新标签页打开原图">${ICONS.external}</a>
+        <button type="button" class="dingtalk-img-btn dingtalk-img-close" data-action="close" title="关闭 (Esc)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="dingtalk-img-modal-stage">
+        <img class="dingtalk-img-modal-img" src="${escapeHtml(src)}" alt="预览图片" draggable="false">
+      </div>`;
+
+    document.body.appendChild(modal);
+    activeImgModal = modal;
+
+    const img = modal.querySelector(".dingtalk-img-modal-img");
+    const backdrop = modal.querySelector(".dingtalk-img-modal-backdrop");
+    const stage = modal.querySelector(".dingtalk-img-modal-stage");
+
+    function updateTransform(smooth = false) {
+      if (!img) return;
+      img.style.transition = smooth ? "transform 0.2s cubic-bezier(0.2, 0, 0.2, 1)" : "none";
+      img.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale}) rotate(${rotate}deg)`;
+      img.style.cursor = scale > 1.05 ? (isDragging ? "grabbing" : "grab") : "zoom-in";
+    }
+
+    requestAnimationFrame(() => {
+      modal.classList.add("is-active");
+      updateTransform(true);
+    });
+
+    function close() {
+      if (!modal.isConnected) return;
+      modal.classList.remove("is-active");
+      modal.classList.add("is-closing");
+      setTimeout(() => {
+        modal.remove();
+        if (activeImgModal === modal) activeImgModal = null;
+      }, 200);
+      document.removeEventListener("keydown", onKeyDown);
+    }
+
+    function onKeyDown(e) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        close();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+
+    modal.addEventListener("click", (e) => {
+      const btn = e.target.closest(".dingtalk-img-btn");
+      if (btn) {
+        const action = btn.dataset.action;
+        if (action === "close") close();
+        else if (action === "zoom-in") { scale = Math.min(scale * 1.3, 5); updateTransform(true); }
+        else if (action === "zoom-out") { scale = Math.max(scale / 1.3, 0.3); updateTransform(true); }
+        else if (action === "reset") { scale = 1; translateX = 0; translateY = 0; rotate = 0; updateTransform(true); }
+        else if (action === "rotate") { rotate = (rotate + 90) % 360; updateTransform(true); }
+        return;
+      }
+      if (e.target === backdrop || e.target === stage) close();
+    });
+
+    modal.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 1.15 : 0.88;
+      scale = Math.min(Math.max(scale * delta, 0.3), 6);
+      updateTransform(false);
+    }, { passive: false });
+
+    img.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      isDragging = true;
+      startX = e.clientX - translateX;
+      startY = e.clientY - translateY;
+      img.style.cursor = "grabbing";
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      translateX = e.clientX - startX;
+      translateY = e.clientY - startY;
+      updateTransform(false);
+    });
+
+    window.addEventListener("mouseup", () => {
+      if (!isDragging) return;
+      isDragging = false;
+      updateTransform(false);
+    });
+
+    img.addEventListener("dblclick", (e) => {
+      e.preventDefault();
+      if (scale > 1.2) { scale = 1; translateX = 0; translateY = 0; }
+      else { scale = 2; }
+      updateTransform(true);
+    });
+  }
+
+  function closeDingtalkImageModal() {
+    if (activeImgModal) {
+      activeImgModal.remove();
+      activeImgModal = null;
     }
   }
 
@@ -3941,13 +5954,84 @@
     return Number(readLastReadMap()[topicId]) || 0;
   }
 
-  function scrollChatToPost(body, postNumber) {
+  function scrollChatToPost(body, postNumber, highlight = false) {
     if (!body || !postNumber) return false;
     const el = body.querySelector(`.dingtalk-msg[data-post-number="${postNumber}"]`);
     if (!el) return false;
     const delta = el.getBoundingClientRect().top - body.getBoundingClientRect().top;
     body.scrollTop = Math.max(0, body.scrollTop + delta);
+    if (highlight) {
+      el.classList.remove("dingtalk-msg-highlight");
+      void el.offsetWidth;
+      el.classList.add("dingtalk-msg-highlight");
+    }
     return true;
+  }
+
+  /* ============================== 引用楼层跳转与返回堆栈 ============================== */
+  const quoteJumpHistory = [];
+
+  function pushQuoteJump(sourcePostNumber, sourceScrollTop) {
+    if (!chatState.topicId) return;
+    if (!sourcePostNumber && typeof sourceScrollTop !== "number") return;
+    quoteJumpHistory.push({
+      topicId: chatState.topicId,
+      postNumber: sourcePostNumber,
+      scrollTop: sourceScrollTop
+    });
+    updateJumpBackButton();
+  }
+
+  function updateJumpBackButton() {
+    const panel = document.querySelector(".dingtalk-chat-panel");
+    if (!panel) return;
+    let btn = panel.querySelector(".dingtalk-jump-back-btn");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "dingtalk-jump-back-btn";
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M19 14l-7 7m0 0l-7-7m7 7V3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="dingtalk-jump-back-text">返回原处</span>
+        <span class="dingtalk-jump-back-close" title="关闭">✕</span>
+      `;
+      panel.appendChild(btn);
+    }
+    const currentTopicHistory = quoteJumpHistory.filter((item) => item.topicId === chatState.topicId);
+    if (!currentTopicHistory.length) {
+      btn.style.display = "none";
+      return;
+    }
+    const last = currentTopicHistory[currentTopicHistory.length - 1];
+    const textEl = btn.querySelector(".dingtalk-jump-back-text");
+    if (textEl) {
+      textEl.textContent = last.postNumber ? `返回 #${last.postNumber} 楼` : "返回原处";
+    }
+    btn.style.display = "inline-flex";
+  }
+
+  function clearQuoteJumpHistory() {
+    quoteJumpHistory.length = 0;
+    updateJumpBackButton();
+  }
+
+  function popAndReturnQuoteJump() {
+    if (!quoteJumpHistory.length) return;
+    const item = quoteJumpHistory.pop();
+    updateJumpBackButton();
+    if (!item || item.topicId !== chatState.topicId) return;
+    const panel = document.querySelector(".dingtalk-chat-panel");
+    const body = panel ? panel.querySelector(".dingtalk-chat-body") : null;
+    if (!body) return;
+
+    if (item.postNumber) {
+      if (scrollChatToPost(body, item.postNumber, true)) return;
+    }
+    if (typeof item.scrollTop === "number") {
+      body.scrollTo({ top: item.scrollTop, behavior: "smooth" });
+    }
   }
 
   function visibleTopicPosts(body) {
@@ -3976,6 +6060,7 @@
     const frag = [];
     let lastTime = 0;
     for (const post of posts) {
+      if (post.post_number) topicPostsMap.set(post.post_number, post);
       if (post.id && (post.actions_summary || []).some((a) => a.id === 2 && a.acted)) {
         likedPosts.add(post.id);
       }
@@ -4110,10 +6195,11 @@
       if (body) {
         body.innerHTML = renderBubbles(posts, getCurrentUsername()) ||
           `<div class="dingtalk-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
+        enhanceAllPolls(body);
         if (scrollToPost) {
-          requestAnimationFrame(() => scrollChatToPost(body, scrollToPost));
+          requestAnimationFrame(() => scrollChatToPost(body, scrollToPost, true));
         } else {
-          body.scrollTop = 0; // 从第一条消息看起
+          body.scrollTop = 0;
         }
       }
       syncListActive();
@@ -4149,6 +6235,7 @@
         const prevHeight = body.scrollHeight;
         body.insertAdjacentHTML("afterbegin", renderBubbles(posts, getCurrentUsername()));
         body.scrollTop += body.scrollHeight - prevHeight;
+        enhanceAllPolls(body);
       }
     } catch { /* 保留现状 */ } finally {
       chatState.loading = false;
@@ -4188,6 +6275,7 @@
       if (body && posts.length) {
         // 去掉可能的底部状态占位后追加
         body.insertAdjacentHTML("beforeend", renderBubbles(posts, getCurrentUsername()));
+        enhanceAllPolls(body);
       }
     } catch { /* 保留现状 */ } finally {
       chatState.loading = false;
@@ -4238,7 +6326,10 @@
       chatState.renderedLastNumber = Math.max(chatState.renderedLastNumber, number);
       appended = true;
     }
-    if (appended) body.scrollTop = body.scrollHeight;
+    if (appended) {
+      enhanceAllPolls(body);
+      body.scrollTop = body.scrollHeight;
+    }
   }
 
   /* ============================== 原生视图切换 ============================== */
@@ -4297,6 +6388,7 @@
     document.documentElement.classList.add(ROOT_CLASS);
     applyColorMode();
     document.documentElement.classList.toggle("dingtalk-nav2-open", isNav2Open());
+    document.documentElement.classList.toggle("dingtalk-hide-cat-tags", isHideCatTags());
     restyleSplash();
     makeFavicon();
     ensureModeFab();
@@ -4328,6 +6420,9 @@
     ensureListResizer();
     applyListWidth(getListWidth());
     syncListNav();
+    ensureRelativeTimeTicker();
+    startRealtimeChatPolling();
+    subscribeTopicRealtime(chatState.topicId);
 
     if (isTopic) {
       // 进帖子：保留当前会话列表，只更新选中态 + 加载右栏
