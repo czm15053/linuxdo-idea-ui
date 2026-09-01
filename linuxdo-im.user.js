@@ -6985,13 +6985,19 @@ html.im-theme {
     div.innerHTML = html;
     return (div.textContent || "").replace(/\s+/g, " ").trim();
   }
-  async function api(path) {
+  async function api(path, extraHeaders) {
     const resp = await fetch(path, {
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...extraHeaders },
       credentials: "same-origin"
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     return resp.json();
+  }
+  function trackViewHeaders(topicId) {
+    return {
+      "Discourse-Track-View": "true",
+      "Discourse-Track-View-Topic-Id": String(topicId)
+    };
   }
   function csrfToken() {
     const meta = document.querySelector("meta[name='csrf-token']");
@@ -8294,17 +8300,18 @@ html.im-theme {
       const routePost = postNumberFromPath(location.pathname);
       const rememberedPost = getRememberedPost(topicId);
       const anchorPost = routePost > 1 ? routePost : rememberedPost;
+      const trackHeaders = trackViewHeaders(topicId);
       let data;
       let scrollToPost = 0;
       if (anchorPost > 1) {
         try {
-          data = await api(`/t/${topicId}/${anchorPost}.json`);
+          data = await api(`/t/${topicId}/${anchorPost}.json`, trackHeaders);
           scrollToPost = anchorPost;
         } catch {
-          data = await api(`/t/${topicId}.json`);
+          data = await api(`/t/${topicId}.json`, trackHeaders);
         }
       } else {
-        data = await api(`/t/${topicId}.json`);
+        data = await api(`/t/${topicId}.json`, trackHeaders);
       }
       if (chatState.topicId !== topicId) return;
       let posts = data.post_stream && data.post_stream.posts || [];
@@ -13520,6 +13527,102 @@ ${data.raw}
     }
   }
   Object.assign(chatHooks, { pushQuoteJump, clearQuoteJumpHistory, popQuoteJump: popAndReturnQuoteJump });
+  const TICK_MS = 1e3;
+  const PAUSE_UNLESS_SCROLLED = 3 * 60 * 1e3;
+  const MAX_TRACKING_TIME = 6 * 60 * 1e3;
+  const FLUSH_INTERVAL = 60 * 1e3;
+  const MAX_TICK_GAP = 60 * 1e3;
+  let activeTopicId = null;
+  let timings = /* @__PURE__ */ new Map();
+  let totalTimings = /* @__PURE__ */ new Map();
+  let topicTime = 0;
+  let lastTick = Date.now();
+  let lastScrolled = Date.now();
+  let sinceFlush = 0;
+  let flushing = false;
+  function currentVisiblePosts() {
+    const panel = document.querySelector(".im-chat-panel");
+    if (!panel || panel.dataset.empty === "1") return [];
+    return visibleTopicPosts(panel.querySelector(".im-chat-body"));
+  }
+  async function flush() {
+    if (flushing || !timings.size || !activeTopicId) return;
+    if (!getCurrentUsername()) return;
+    const id = activeTopicId;
+    const batch = [];
+    for (const [n, ms] of timings) {
+      const total = totalTimings.get(n) || 0;
+      if (ms > 0 && total < MAX_TRACKING_TIME) {
+        totalTimings.set(n, total + ms);
+        batch.push([n, ms]);
+      }
+    }
+    timings = /* @__PURE__ */ new Map();
+    const time = topicTime;
+    topicTime = 0;
+    sinceFlush = 0;
+    if (!batch.length) return;
+    flushing = true;
+    const params = batch.map(([n, ms]) => `timings[${n}]=${Math.round(ms)}`).join("&");
+    const body = `${params}&topic_time=${Math.round(time)}&topic_id=${id}`;
+    try {
+      await fetch("/topics/timings", {
+        method: "POST",
+        credentials: "same-origin",
+        keepalive: true,
+        // pagehide 时也尽量发出
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "X-CSRF-Token": csrfToken(),
+          "X-Requested-With": "XMLHttpRequest",
+          "X-SILENCE-LOGGER": "true",
+          "Discourse-Background": "true"
+        },
+        body
+      });
+    } catch {
+    } finally {
+      flushing = false;
+    }
+  }
+  function tick() {
+    const now = Date.now();
+    const diff = now - lastTick;
+    lastTick = now;
+    if (diff <= 0) return;
+    if (chatState.topicId !== activeTopicId) {
+      flush();
+      activeTopicId = chatState.topicId;
+      timings = /* @__PURE__ */ new Map();
+      totalTimings = /* @__PURE__ */ new Map();
+      topicTime = 0;
+      sinceFlush = 0;
+    }
+    if (!activeTopicId) return;
+    if (now - lastScrolled > PAUSE_UNLESS_SCROLLED) return;
+    if (document.visibilityState !== "visible") return;
+    if (diff > MAX_TICK_GAP) return;
+    sinceFlush += diff;
+    if (sinceFlush > FLUSH_INTERVAL) flush();
+    const posts = currentVisiblePosts();
+    if (!posts.length) return;
+    topicTime += diff;
+    for (const n of posts) timings.set(n, (timings.get(n) || 0) + diff);
+  }
+  function startReadTracking() {
+    document.addEventListener("scroll", (e) => {
+      if (e.target instanceof Element && e.target.closest(".im-chat-body")) {
+        lastScrolled = Date.now();
+      }
+    }, true);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") flush();
+      lastTick = Date.now();
+    });
+    window.addEventListener("pagehide", () => flush());
+    setInterval(tick, TICK_MS);
+  }
+  startReadTracking();
   function ensureTitlebar() {
     var _a2, _b2;
     let bar = document.querySelector(".im-titlebar");

@@ -4,7 +4,7 @@ import { ICONS } from "../config/icons.js";
 import { EDITOR_ICONS } from "../config/icons-editor.js";
 import { escapeHtml, stripHtml } from "../utils/html.js";
 import { debounce } from "../utils/dom.js";
-import { api } from "../bridge/api.js";
+import { api, trackViewHeaders } from "../bridge/api.js";
 import { getCurrentUsername, isMyPost, normalizeUsername } from "../bridge/user.js";
 import { topicIdFromPath, postNumberFromPath, navigateInApp } from "../bridge/router.js";
 import { setViewMode } from "../state/view-state.js";
@@ -643,7 +643,7 @@ export function scrollChatToPost(body, postNumber, highlight = false) {
   return true;
 }
 
-function visibleTopicPosts(body) {
+export function visibleTopicPosts(body) {
   if (!body) return [];
   const rect = body.getBoundingClientRect();
   const posts = [];
@@ -748,17 +748,19 @@ export async function loadTopic(topicId) {
     const routePost = postNumberFromPath(location.pathname);
     const rememberedPost = getRememberedPost(topicId);
     const anchorPost = routePost > 1 ? routePost : rememberedPost;
+    // 自发拉话题主体时补浏览上报头（IM 直入话题不经原生路由时，阅读量/浏览行为与原生一致）
+    const trackHeaders = trackViewHeaders(topicId);
     let data;
     let scrollToPost = 0;
     if (anchorPost > 1) {
       try {
-        data = await api(`/t/${topicId}/${anchorPost}.json`);
+        data = await api(`/t/${topicId}/${anchorPost}.json`, trackHeaders);
         scrollToPost = anchorPost;
       } catch {
-        data = await api(`/t/${topicId}.json`);
+        data = await api(`/t/${topicId}.json`, trackHeaders);
       }
     } else {
-      data = await api(`/t/${topicId}.json`);
+      data = await api(`/t/${topicId}.json`, trackHeaders);
     }
     if (chatState.topicId !== topicId) return; // 路由已切走
     let posts = (data.post_stream && data.post_stream.posts) || [];

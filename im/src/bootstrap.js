@@ -40,6 +40,7 @@ import "./features/boost.js";
 import "./features/interactions.js";
 import "./features/lightbox.js";
 import "./features/quote-jump.js";
+import "./features/read-track.js";
 import { ensureTitlebar } from "./ui/titlebar.js";
 import { ensureModeFab } from "./ui/mode-fab.js";
 import {
