@@ -2,12 +2,13 @@
 // @name         Linux DO · IM 外观（钉钉 / 飞书 / 企业微信）
 // @namespace    https://linux.do/
 // @author       czm15053
-// @version      1.0.0
+// @version      1.2.0
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，列表按钮一键切换。公共内核：投票、小火箭、图片灯箱、引用跳转、实时刷新、三态深色、伪装模式。
 // @match        https://linux.do/*
 // @noframes     资料页等原生页走 iframe 嵌入，脚本只在顶层 frame 运行
 // @icon         https://linux.do/favicon.ico
-// @grant        none
+// @grant        GM_xmlhttpRequest
+// @connect      connect.linux.do
 // @run-at       document-start
 // ==/UserScript==
 
@@ -4821,6 +4822,111 @@ color: #7AA3D6;
     }
     .im-rail-collapsed .im-rail-dot { top: 5px; right: 8px; transform: none; }
     .im-rail-collapsed .im-rail-collapse svg { transform: rotate(180deg); }
+
+    /* ============ 等级徽章 + 升级进度浮层 ============ */
+    .__ROOT_CLASS__ .im-level-btn {
+      border: none; cursor: pointer; border-radius: 6px; padding: 0 8px; height: 24px;
+      background: var(--im-accent-soft); color: var(--im-accent);
+      font-size: 12px; font-weight: 600; font-family: var(--im-font);
+      letter-spacing: 0.2px; white-space: nowrap;
+    }
+    .__ROOT_CLASS__ .im-level-btn:hover { filter: brightness(0.95); }
+    .__ROOT_CLASS__ .im-level-pop {
+      position: fixed; z-index: 1300; width: 300px; max-height: min(72vh, 520px); overflow-y: auto;
+      border-radius: 12px; background: var(--im-bg); border: 1px solid var(--im-border);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18); padding: 14px 16px;
+      color: var(--im-text); font-size: 12.5px; font-family: var(--im-font);
+    }
+    .__ROOT_CLASS__ .im-level-head { display: flex; align-items: center; gap: 8px; }
+    .__ROOT_CLASS__ .im-level-cur { font-size: 16px; font-weight: 700; color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-name { font-size: 13px; font-weight: 600; }
+    .__ROOT_CLASS__ .im-level-pill {
+      margin-left: auto; font-size: 10.5px; font-weight: 600; white-space: nowrap;
+      padding: 2px 8px; border-radius: 999px;
+      background: var(--im-hover); color: var(--im-text-2); border: 1px solid var(--im-border);
+    }
+    .__ROOT_CLASS__ .im-level-pill.ok {
+      background: var(--im-accent-soft); color: var(--im-accent); border-color: transparent;
+    }
+    .__ROOT_CLASS__ .im-level-sub { margin-top: 6px; color: var(--im-text-2); font-size: 12px; line-height: 1.5; }
+    .__ROOT_CLASS__ .im-level-sec { margin-top: 12px; }
+    .__ROOT_CLASS__ .im-level-sec-title {
+      font-size: 11px; font-weight: 600; color: var(--im-text-3); margin-bottom: 8px;
+    }
+    /* 环形（活跃程度） */
+    .__ROOT_CLASS__ .im-level-rings { display: flex; gap: 4px; justify-content: space-between; }
+    .__ROOT_CLASS__ .im-level-ring { position: relative; width: 80px; text-align: center; }
+    .__ROOT_CLASS__ .im-level-ring svg {
+      width: 56px; height: 56px; display: block; margin: 0 auto; transform: rotate(-90deg);
+    }
+    .__ROOT_CLASS__ .im-level-ring .track { fill: none; stroke: var(--im-accent-soft); stroke-width: 5; }
+    .__ROOT_CLASS__ .im-level-ring .fill {
+      fill: none; stroke: var(--im-accent); stroke-width: 5; stroke-linecap: round;
+      transition: stroke-dashoffset 0.3s ease;
+    }
+    .__ROOT_CLASS__ .im-level-ring-num {
+      position: absolute; top: 0; left: 0; right: 0; height: 56px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      line-height: 1.15; pointer-events: none;
+    }
+    .__ROOT_CLASS__ .im-level-ring-num b {
+      font-size: 12px; font-weight: 700; color: var(--im-text); font-variant-numeric: tabular-nums;
+    }
+    .__ROOT_CLASS__ .im-level-ring.done .im-level-ring-num b { color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-ring-num span {
+      font-size: 9.5px; color: var(--im-text-3); font-variant-numeric: tabular-nums;
+    }
+    .__ROOT_CLASS__ .im-level-ring-label { margin-top: 3px; font-size: 10.5px; color: var(--im-text-2); }
+    /* 条形（互动参与） */
+    .__ROOT_CLASS__ .im-level-row { margin-bottom: 9px; }
+    .__ROOT_CLASS__ .im-level-row-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 4px; color: var(--im-text-2);
+    }
+    .__ROOT_CLASS__ .im-level-row.done .im-level-row-head { color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-num { font-variant-numeric: tabular-nums; color: var(--im-text-3); }
+    .__ROOT_CLASS__ .im-level-row.done .im-level-num { color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-approx {
+      font-style: normal; font-size: 10px; color: var(--im-text-3);
+      border: 1px solid var(--im-border); border-radius: 4px; padding: 0 3px; margin-left: 4px;
+      vertical-align: 1px; cursor: help;
+    }
+    .__ROOT_CLASS__ .im-level-bar {
+      height: 5px; border-radius: 3px; background: var(--im-accent-soft); overflow: hidden;
+    }
+    .__ROOT_CLASS__ .im-level-bar > i {
+      display: block; height: 100%; border-radius: 3px; background: var(--im-accent);
+      transition: width 0.3s ease;
+    }
+    /* 合规：配额超标（坏）与否决项 */
+    .__ROOT_CLASS__ .im-level-row.bad .im-level-row-head,
+    .__ROOT_CLASS__ .im-level-row.bad .im-level-num { color: var(--im-danger); }
+    .__ROOT_CLASS__ .im-level-row.bad .im-level-bar > i { background: var(--im-danger); }
+    .__ROOT_CLASS__ .im-level-veto {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--im-hover); border: 1px solid var(--im-border); border-radius: 8px;
+      padding: 6px 10px; font-size: 12px; margin-top: 6px; color: var(--im-text-2);
+    }
+    .__ROOT_CLASS__ .im-level-veto b { font-variant-numeric: tabular-nums; color: var(--im-text); }
+    .__ROOT_CLASS__ .im-level-veto.ok span { color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-veto.ok b { color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-veto.bad span,
+    .__ROOT_CLASS__ .im-level-veto.bad b { color: var(--im-danger); }
+    /* 说明与合规 */
+    .__ROOT_CLASS__ .im-level-tip { color: var(--im-text-3); font-size: 11.5px; line-height: 1.5; margin-top: 2px; }
+    .__ROOT_CLASS__ .im-level-note-box {
+      background: var(--im-hover); border: 1px solid var(--im-border); border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .__ROOT_CLASS__ .im-level-note-box .im-level-tip { margin-top: 0; }
+    .__ROOT_CLASS__ .im-level-max { color: var(--im-text-2); line-height: 1.6; padding: 6px 0 2px; }
+    .__ROOT_CLASS__ .im-level-foot {
+      margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--im-border);
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      font-size: 11px; color: var(--im-text-3);
+    }
+    .__ROOT_CLASS__ .im-level-foot a { color: var(--im-accent); text-decoration: none; white-space: nowrap; }
+    .__ROOT_CLASS__ .im-level-foot a:hover { text-decoration: underline; }
 `;
   const CSS_WECOM = String.raw`
     /* ---------- Token（企业微信 5.x 展开导航版基准） ---------- */
@@ -6814,9 +6920,10 @@ html.im-theme {
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.classList.toggle("is-on", on);
   }
+  const pg = globalThis.unsafeWindow || window;
   function discourseRequire(moduleId) {
     try {
-      if (typeof window.require === "function") return window.require(moduleId);
+      if (typeof pg.require === "function") return pg.require(moduleId);
     } catch {
     }
     return null;
@@ -6832,8 +6939,8 @@ html.im-theme {
   function getEmberOwner() {
     var _a2, _b2;
     try {
-      if ((_a2 = window.Discourse) == null ? void 0 : _a2.__container__) return window.Discourse.__container__;
-      const Ember = window.Ember;
+      if ((_a2 = pg.Discourse) == null ? void 0 : _a2.__container__) return pg.Discourse.__container__;
+      const Ember = pg.Ember;
       const namespaces = (_b2 = Ember == null ? void 0 : Ember.Namespace) == null ? void 0 : _b2.NAMESPACES;
       if (Array.isArray(namespaces)) {
         const app = namespaces.find(
@@ -6844,7 +6951,7 @@ html.im-theme {
       }
       const mod = discourseRequire("discourse-common/lib/get-owner") || discourseRequire("discourse/lib/get-owner");
       if (mod) {
-        const owner = typeof mod.getOwnerWithFallback === "function" && mod.getOwnerWithFallback(window.Discourse) || typeof mod.getOwner === "function" && mod.getOwner(window.Discourse) || null;
+        const owner = typeof mod.getOwnerWithFallback === "function" && mod.getOwnerWithFallback(pg.Discourse) || typeof mod.getOwner === "function" && mod.getOwner(pg.Discourse) || null;
         if (owner) return owner;
       }
       try {
@@ -6941,8 +7048,8 @@ html.im-theme {
     } catch {
     }
     try {
-      if (typeof ((_b2 = (_a2 = window.Discourse) == null ? void 0 : _a2.URL) == null ? void 0 : _b2.routeTo) === "function") {
-        window.Discourse.URL.routeTo(url);
+      if (typeof ((_b2 = (_a2 = pg.Discourse) == null ? void 0 : _a2.URL) == null ? void 0 : _b2.routeTo) === "function") {
+        pg.Discourse.URL.routeTo(url);
         return true;
       }
     } catch {
@@ -7096,8 +7203,8 @@ html.im-theme {
         return cachedUsername;
       }
       try {
-        const owner = ((_a2 = window.Discourse) == null ? void 0 : _a2.__container__) || ((_c = (_b2 = document.querySelector(".ember-application")) == null ? void 0 : _b2.__ember_meta__) == null ? void 0 : _c.owner);
-        const user = ((_d = owner == null ? void 0 : owner.lookup) == null ? void 0 : _d.call(owner, "service:current-user")) || ((_g = (_f = (_e = window.Discourse) == null ? void 0 : _e.User) == null ? void 0 : _f.current) == null ? void 0 : _g.call(_f));
+        const owner = ((_a2 = pg.Discourse) == null ? void 0 : _a2.__container__) || ((_c = (_b2 = document.querySelector(".ember-application")) == null ? void 0 : _b2.__ember_meta__) == null ? void 0 : _c.owner);
+        const user = ((_d = owner == null ? void 0 : owner.lookup) == null ? void 0 : _d.call(owner, "service:current-user")) || ((_g = (_f = (_e = pg.Discourse) == null ? void 0 : _e.User) == null ? void 0 : _f.current) == null ? void 0 : _g.call(_f));
         const name = (user == null ? void 0 : user.username) || ((_h = user == null ? void 0 : user.get) == null ? void 0 : _h.call(user, "username"));
         if (name) {
           cachedUsername = name;
@@ -7410,23 +7517,23 @@ html.im-theme {
     return fallbackSummary;
   }
   const TTL$3 = 3e4;
-  const cache = /* @__PURE__ */ new Map();
+  const cache$1 = /* @__PURE__ */ new Map();
   let maskEl = null;
   let cardEl = null;
   let closeListeners = null;
   let seq = 0;
   const CLOSE_SVG$1 = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
   async function fetchCard(username) {
-    const cached = cache.get(username);
+    const cached = cache$1.get(username);
     if (cached && Date.now() - cached.loadedAt < TTL$3) return cached;
     try {
       const data = await api(`/u/${encodeURIComponent(username)}.json`);
       const next = { user: data.user || {}, loadedAt: Date.now(), error: null };
-      cache.set(username, next);
+      cache$1.set(username, next);
       return next;
     } catch (err) {
       const next = { user: null, loadedAt: Date.now(), error: (err == null ? void 0 : err.message) || "网络异常" };
-      cache.set(username, next);
+      cache$1.set(username, next);
       return next;
     }
   }
@@ -7532,16 +7639,16 @@ html.im-theme {
   }
   function bindClose() {
     const onMask = () => closeCard();
-    const onKey = (e) => {
+    const onKey2 = (e) => {
       if (e.key === "Escape") closeCard();
     };
     const onScroll = () => closeCard();
     maskEl.addEventListener("click", onMask);
-    document.addEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey2);
     window.addEventListener("resize", onScroll);
     window.addEventListener("scroll", onScroll, true);
     closeListeners = () => {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", onKey2);
       window.removeEventListener("resize", onScroll);
       window.removeEventListener("scroll", onScroll, true);
     };
@@ -7683,6 +7790,7 @@ html.im-theme {
       </div>
       <div class="im-chat-tools"></div>
       <div class="im-chat-actions">
+        <button class="im-level-btn" title="等级进度" style="display:none"></button>
         <button class="im-icon-btn im-chat-scrolltop" title="回到顶部">${ICONS.scrollTop}</button>
         <button class="im-icon-btn im-chat-refresh" title="刷新本话题">${ICONS.refresh}</button>
         <button class="im-icon-btn im-chat-native" title="切换原生视图">${ICONS.external}</button>
@@ -8003,17 +8111,17 @@ html.im-theme {
   function subscribeTopicRealtime(topicId) {
     const channel = topicId ? `/topic/${topicId}` : null;
     if (channel === currentSubscribedTopicChannel) return;
-    if (currentSubscribedTopicChannel && window.MessageBus) {
+    if (currentSubscribedTopicChannel && pg.MessageBus) {
       try {
-        window.MessageBus.unsubscribe(currentSubscribedTopicChannel);
+        pg.MessageBus.unsubscribe(currentSubscribedTopicChannel);
       } catch {
       }
       currentSubscribedTopicChannel = null;
     }
-    if (channel && window.MessageBus) {
+    if (channel && pg.MessageBus) {
       currentSubscribedTopicChannel = channel;
       try {
-        window.MessageBus.subscribe(channel, () => {
+        pg.MessageBus.subscribe(channel, () => {
           if (chatState.topicId === topicId) {
             fetchLatestNewPosts(topicId);
           }
@@ -10949,7 +11057,7 @@ ${data.raw}
     var _a2, _b2, _c;
     try {
       const owner = getEmberOwner();
-      const user = safeLookup(owner, "service:current-user") || ((_c = (_b2 = (_a2 = window.Discourse) == null ? void 0 : _a2.User) == null ? void 0 : _b2.current) == null ? void 0 : _c.call(_b2)) || null;
+      const user = safeLookup(owner, "service:current-user") || ((_c = (_b2 = (_a2 = pg.Discourse) == null ? void 0 : _a2.User) == null ? void 0 : _b2.current) == null ? void 0 : _c.call(_b2)) || null;
       if (user) {
         const pick = (key) => {
           var _a3;
@@ -11031,7 +11139,7 @@ ${data.raw}
     var _a2, _b2, _c;
     try {
       const owner = getEmberOwner();
-      const user = safeLookup(owner, "service:current-user") || ((_c = (_b2 = (_a2 = window.Discourse) == null ? void 0 : _a2.User) == null ? void 0 : _b2.current) == null ? void 0 : _c.call(_b2)) || null;
+      const user = safeLookup(owner, "service:current-user") || ((_c = (_b2 = (_a2 = pg.Discourse) == null ? void 0 : _a2.User) == null ? void 0 : _b2.current) == null ? void 0 : _c.call(_b2)) || null;
       const pick = (key) => {
         var _a3;
         try {
@@ -12825,7 +12933,7 @@ ${data.raw}
       if (nativeTitle && !nativeTitle.startsWith("[")) return nativeTitle;
     }
     try {
-      if (typeof window !== "undefined" && window.I18n && typeof window.I18n.t === "function") {
+      if (pg.I18n && typeof pg.I18n.t === "function") {
         const candidates = [
           "js.discourse_reactions.state.cant_remove_reaction",
           "discourse_reactions.state.cant_remove_reaction",
@@ -12833,7 +12941,7 @@ ${data.raw}
           "discourse_reactions.cant_remove_reaction"
         ];
         for (const k of candidates) {
-          const res = window.I18n.t(k);
+          const res = pg.I18n.t(k);
           if (res && typeof res === "string" && !res.startsWith("[") && !res.includes("missing")) {
             return res;
           }
@@ -13147,7 +13255,7 @@ ${data.raw}
       }
       let myAvatarUrl = "";
       try {
-        const u = ((_c = safeLookup(getEmberOwner(), "service:current-user")) == null ? void 0 : _c.currentUser) || ((_e = (_d = window.Discourse) == null ? void 0 : _d.User) == null ? void 0 : _e.current());
+        const u = ((_c = safeLookup(getEmberOwner(), "service:current-user")) == null ? void 0 : _c.currentUser) || ((_e = (_d = pg.Discourse) == null ? void 0 : _d.User) == null ? void 0 : _e.current());
         if (u && u.avatar_template) myAvatarUrl = fullAvatarUrl(u.avatar_template);
       } catch {
       }
@@ -13238,7 +13346,7 @@ ${data.raw}
     let myAvatar = "";
     try {
       const owner = getEmberOwner();
-      const u = ((_c = safeLookup(owner, "service:current-user")) == null ? void 0 : _c.currentUser) || ((_e = (_d = window.Discourse) == null ? void 0 : _d.User) == null ? void 0 : _e.current());
+      const u = ((_c = safeLookup(owner, "service:current-user")) == null ? void 0 : _c.currentUser) || ((_e = (_d = pg.Discourse) == null ? void 0 : _d.User) == null ? void 0 : _e.current());
       if (u && u.avatar_template) {
         myAvatar = `<img src="${escapeHtml(fullAvatarUrl(u.avatar_template))}" alt="">`;
       } else if (u && u.username) {
@@ -14016,6 +14124,371 @@ ${data.raw}
     }, 0);
   }
   skinHooks.darkToggle = ensureDarkModeToggle;
+  const TL_NAMES = ["新用户", "基本用户", "成员", "常客", "领导者"];
+  const CACHE_TTL = 5 * 60 * 1e3;
+  const CONNECT_URL = "https://connect.linux.do/";
+  const regMins = (u) => (Date.now() - new Date(u.created_at).getTime()) / 6e4;
+  const readMins = (s) => Math.floor((s.time_read || 0) / 60);
+  const replyTopics = (s) => Math.max(0, (s.post_count || 0) - (s.topic_count || 0));
+  const fmtNum = (n) => Number(n || 0).toLocaleString("en-US");
+  const fmtCompact = (n) => {
+    const v = Number(n) || 0;
+    if (v >= 1e4) return `${+(v / 1e4).toFixed(1)}万`;
+    return fmtNum(v);
+  };
+  const fmtDur = (mins) => {
+    const m = Math.floor(Number(mins) || 0);
+    if (m < 60) return `${m}分钟`;
+    if (m < 1440) return `${+(m / 60).toFixed(1)}小时`;
+    return `${Math.floor(m / 1440)}天`;
+  };
+  const APPROX_NOTE = "全周期口径，服务端按近 100 天滚动窗口考核，仅作参考";
+  const SEC_TL1 = [
+    {
+      title: "活跃程度",
+      kind: "ring",
+      items: [
+        { label: "浏览话题", target: 5, value: (s) => s.topics_entered || 0 },
+        { label: "已读帖子", target: 30, value: (s) => s.posts_read_count || 0 }
+      ]
+    },
+    {
+      title: "互动参与",
+      kind: "bar",
+      items: [
+        { label: "阅读时间", target: 10, unit: "分钟", value: (s) => readMins(s) },
+        { label: "注册时长", target: 10, unit: "分钟", value: (_s, u) => Math.floor(regMins(u)) }
+      ]
+    }
+  ];
+  const SEC_TL2 = [
+    {
+      title: "活跃程度",
+      kind: "ring",
+      items: [
+        { label: "访问天数", target: 15, value: (s) => s.days_visited || 0 },
+        { label: "浏览话题", target: 20, value: (s) => s.topics_entered || 0 },
+        { label: "已读帖子", target: 100, value: (s) => s.posts_read_count || 0 }
+      ]
+    },
+    {
+      title: "互动参与",
+      kind: "bar",
+      items: [
+        { label: "给出赞", target: 1, value: (s) => s.likes_given || 0 },
+        { label: "获得赞", target: 1, value: (s) => s.likes_received || 0 },
+        {
+          label: "回复话题",
+          target: 3,
+          approx: true,
+          note: "服务端考核「回复的不同话题数」，此处按回复帖数近似",
+          value: (s) => replyTopics(s)
+        },
+        { label: "阅读时间", target: 60, unit: "分钟", value: (s) => readMins(s) },
+        { label: "注册时长", target: 60, unit: "分钟", value: (_s, u) => Math.floor(regMins(u)) }
+      ]
+    }
+  ];
+  const SEC_TL3 = [
+    {
+      title: "活跃程度（近 100 天）",
+      kind: "ring",
+      items: [
+        { label: "访问天数", target: 50, approx: true, note: APPROX_NOTE, value: (s) => s.days_visited || 0 },
+        { label: "浏览话题", target: 500, approx: true, note: `窗口内新话题的 25%（封顶 500）；${APPROX_NOTE}`, value: (s) => s.topics_entered || 0 },
+        { label: "浏览帖子", target: 2e4, approx: true, note: `窗口内新帖的 25%（封顶 20000）；${APPROX_NOTE}`, value: (s) => s.posts_read_count || 0 }
+      ]
+    },
+    {
+      title: "互动参与",
+      kind: "bar",
+      items: [
+        { label: "回复话题", target: 10, approx: true, note: `服务端考核窗口内回复的不同话题数，此处按回复帖数近似；${APPROX_NOTE}`, value: (s) => replyTopics(s) },
+        { label: "点赞", target: 30, approx: true, note: APPROX_NOTE, value: (s) => s.likes_given || 0 },
+        { label: "获赞", target: 20, approx: true, note: APPROX_NOTE, value: (s) => s.likes_received || 0 },
+        { label: "浏览话题（全周期）", target: 200, value: (s) => s.topics_entered || 0 },
+        { label: "已读帖子（全周期）", target: 500, value: (s) => s.posts_read_count || 0 },
+        { text: "另有窗口项：获赞天数 ≥7、获赞用户 ≥5（同源接口无此口径）" }
+      ]
+    },
+    {
+      title: "合规记录",
+      kind: "note",
+      items: [
+        { text: "近 100 天被举报帖子 ≤5、举报用户 ≤5；近 6 个月无禁言 / 封禁。由系统自动判定，同源接口不可读。" }
+      ]
+    }
+  ];
+  function gmGet(url) {
+    return new Promise((resolve, reject) => {
+      const gm = globalThis.GM_xmlhttpRequest;
+      if (typeof gm !== "function") return reject(new Error("GM_xmlhttpRequest 不可用"));
+      gm({
+        method: "GET",
+        url,
+        timeout: 15e3,
+        withCredentials: true,
+        headers: { Accept: "text/html,application/xhtml+xml", Referer: CONNECT_URL },
+        onload: (r) => r.status >= 200 && r.status < 300 ? resolve(r.responseText) : reject(new Error(`HTTP ${r.status}`)),
+        onerror: () => reject(new Error("network")),
+        ontimeout: () => reject(new Error("timeout"))
+      });
+    });
+  }
+  const parsePageNum = (t) => parseFloat(String(t ?? "0").replace(/[,\s]/g, "")) || 0;
+  function parseConnectCard(doc) {
+    var _a2, _b2, _c;
+    const card = [...doc.querySelectorAll("div.card, .card")].find(
+      (div) => {
+        var _a3;
+        return /信任级别.*的要求/.test(((_a3 = div.querySelector("h2, [class*='card-title']")) == null ? void 0 : _a3.textContent) || "");
+      }
+    );
+    if (!card) return null;
+    const targetLevel = Number(
+      (_b2 = (((_a2 = card.querySelector("h2, [class*='card-title']")) == null ? void 0 : _a2.textContent) || "").match(/信任级别\s*(\d+)/)) == null ? void 0 : _b2[1]
+    ) || null;
+    const achieved = /已达到|已达标/.test(((_c = card.querySelector(".badge, [class*='badge']")) == null ? void 0 : _c.textContent) || "");
+    const leafByText = (scope, text) => [...scope.querySelectorAll("*")].find((el) => !el.children.length && el.textContent.trim() === text);
+    const sectionOf = (title) => {
+      var _a3;
+      return ((_a3 = leafByText(card, title)) == null ? void 0 : _a3.nextElementSibling) || null;
+    };
+    const pairOf = (scope, label) => {
+      var _a3;
+      let p = (_a3 = leafByText(scope, label)) == null ? void 0 : _a3.parentElement;
+      while (p && p !== card) {
+        const m = (p.textContent || "").match(/([\d,]+)\s*\/\s*([\d,]+)/);
+        if (m) return { label, cur: parsePageNum(m[1]), target: parsePageNum(m[2]) };
+        p = p.parentElement;
+      }
+      return null;
+    };
+    const vetoOf = (scope, label) => {
+      var _a3;
+      let p = (_a3 = leafByText(scope, label)) == null ? void 0 : _a3.parentElement;
+      while (p && p !== card) {
+        const numEl = [...p.querySelectorAll("*")].find(
+          (el) => !el.children.length && /^\d+$/.test((el.textContent || "").trim())
+        );
+        if (numEl) return { label, cur: parsePageNum(numEl.textContent) };
+        p = p.parentElement;
+      }
+      return null;
+    };
+    const activity = sectionOf("活跃程度");
+    const interaction = sectionOf("互动参与");
+    const compliance = sectionOf("合规记录");
+    if (!activity || !interaction) return null;
+    return {
+      targetLevel,
+      achieved,
+      activity: ["访问天数", "浏览话题", "浏览帖子"].map((l) => pairOf(activity, l)).filter(Boolean),
+      interaction: ["回复话题", "点赞", "获赞", "获赞天数", "获赞用户"].map((l) => pairOf(interaction, l)).filter(Boolean),
+      quota: compliance ? ["被举报帖子", "举报用户"].map((l) => pairOf(compliance, l)).filter(Boolean) : [],
+      veto: compliance ? ["被禁言", "被封禁"].map((l) => vetoOf(compliance, l)).filter(Boolean) : []
+    };
+  }
+  async function fetchConnect() {
+    const html = await gmGet(CONNECT_URL);
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return parseConnectCard(doc);
+  }
+  let cache = null;
+  let panelEl = null;
+  let loading = false;
+  async function loadLevelData(force = false) {
+    var _a2;
+    if (!force && cache && Date.now() - cache.at < CACHE_TTL) return cache;
+    const me = getCurrentUsername();
+    if (!me) return null;
+    const u = await api(`/u/${encodeURIComponent(me)}.json`);
+    const level = Number(((_a2 = u.user) == null ? void 0 : _a2.trust_level) ?? 0);
+    const [summary, connect] = await Promise.all([
+      api(`/u/${encodeURIComponent(me)}/summary.json`).then((r) => r.user_summary || {}).catch(() => ({})),
+      level < 4 ? fetchConnect().catch(() => null) : Promise.resolve(null)
+    ]);
+    cache = { at: Date.now(), level, user: u.user || {}, summary, connect };
+    return cache;
+  }
+  function itemState(r, s, u) {
+    const cur = Number(r.value(s, u)) || 0;
+    return { label: r.label, cur, target: r.target, done: cur >= r.target, approx: r.approx, note: r.note, unit: r.unit };
+  }
+  function approxTag(it) {
+    return it.approx ? `<i class="im-level-approx" title="${escapeHtml(it.note || APPROX_NOTE)}">参考</i>` : "";
+  }
+  function ringHtml(it) {
+    const pct = Math.max(0, Math.min(100, it.cur / it.target * 100));
+    const R = 24;
+    const C = 2 * Math.PI * R;
+    return `<div class="im-level-ring${it.done ? " done" : ""}">
+    <svg viewBox="0 0 56 56" aria-hidden="true">
+      <circle class="track" cx="28" cy="28" r="${R}"/>
+      <circle class="fill" cx="28" cy="28" r="${R}" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${(C * (1 - pct / 100)).toFixed(2)}"/>
+    </svg>
+    <div class="im-level-ring-num"><b>${fmtCompact(it.cur)}</b><span>/${fmtCompact(it.target)}</span></div>
+    <div class="im-level-ring-label">${escapeHtml(it.label)}${approxTag(it)}</div>
+  </div>`;
+  }
+  function barHtml(it) {
+    const pct = Math.max(0, Math.min(100, it.cur / it.target * 100));
+    const fmt = it.unit === "分钟" ? fmtDur : fmtNum;
+    const cls = it.done ? "done" : it.danger ? "bad" : "";
+    return `<div class="im-level-row ${cls}">
+    <div class="im-level-row-head">
+      <span>${it.done ? "✓ " : ""}${escapeHtml(it.label)}${approxTag(it)}</span>
+      <span class="im-level-num">${fmt(it.cur)}/${fmt(it.target)}</span>
+    </div>
+    <div class="im-level-bar"><i style="width:${pct}%"></i></div>
+  </div>`;
+  }
+  function vetoHtml(v) {
+    const ok = v.cur === 0;
+    return `<div class="im-level-veto${ok ? " ok" : " bad"}"><span>${ok ? "✓" : "✗"} ${escapeHtml(v.label)}</span><b>${fmtNum(v.cur)}</b></div>`;
+  }
+  function secWrap(title, body) {
+    return `<div class="im-level-sec"><div class="im-level-sec-title">${escapeHtml(title)}</div>${body}</div>`;
+  }
+  function connectPanelHtml(data) {
+    const { level, connect: c } = data;
+    const name = TL_NAMES[level] || `Lv${level}`;
+    const target = c.targetLevel ?? (c.achieved ? level : level + 1);
+    const pill = c.achieved ? `<span class="im-level-pill ok">已达到</span>` : `<span class="im-level-pill">未达到</span>`;
+    const sub = c.achieved ? `已达到信任级别 ${target} 的要求，请保持。` : `下一级：Lv${target}「${TL_NAMES[target] || `Lv${target}`}」`;
+    const secs = [];
+    if (c.activity.length) {
+      secs.push(secWrap(
+        "活跃程度（近 100 天）",
+        `<div class="im-level-rings">${c.activity.map((a) => ringHtml({ ...a, done: a.cur >= a.target })).join("")}</div>`
+      ));
+    }
+    if (c.interaction.length) {
+      secs.push(secWrap("互动参与", c.interaction.map((i) => barHtml({ ...i, done: i.cur >= i.target })).join("")));
+    }
+    const quotaRows = c.quota.map(
+      (q) => barHtml({ label: q.label, cur: q.cur, target: q.target, done: q.cur <= q.target, danger: q.cur > q.target })
+    ).join("");
+    const vetoRows = c.veto.map(vetoHtml).join("");
+    if (quotaRows || vetoRows) secs.push(secWrap("合规记录", quotaRows + vetoRows));
+    return `
+    <div class="im-level-card">
+      <div class="im-level-head"><span class="im-level-cur">Lv${level}</span><span class="im-level-name">${escapeHtml(name)}</span>${pill}</div>
+      <div class="im-level-sub">${escapeHtml(sub)}</div>
+      ${secs.join("")}
+      <div class="im-level-foot"><span>服务端精确口径（近 100 天窗口）</span><a href="${CONNECT_URL}" target="_blank" rel="noopener noreferrer">Connect ↗</a></div>
+    </div>`;
+  }
+  function fallbackSectionHtml(sec, s, u) {
+    const renderItem = (r) => {
+      if (r.text) return `<div class="im-level-tip">${escapeHtml(r.text)}</div>`;
+      const it = itemState(r, s, u);
+      return sec.kind === "ring" ? ringHtml(it) : barHtml(it);
+    };
+    const items = sec.items.map(renderItem).join("");
+    const body = sec.kind === "ring" ? `<div class="im-level-rings">${items}</div>` : sec.kind === "note" ? `<div class="im-level-note-box">${items}</div>` : items;
+    return secWrap(sec.title, body);
+  }
+  function fallbackPanelHtml(data) {
+    const { level, summary: s, user: u } = data;
+    const name = TL_NAMES[level] || `Lv${level}`;
+    const sections = level === 0 ? SEC_TL1 : level === 1 ? SEC_TL2 : SEC_TL3;
+    let done = 0;
+    let total = 0;
+    for (const sec of sections) {
+      for (const r of sec.items) {
+        if (r.text) continue;
+        total += 1;
+        if ((Number(r.value(s, u)) || 0) >= r.target) done += 1;
+      }
+    }
+    const pill = done >= total ? `<span class="im-level-pill ok">${level === 3 ? "保持中" : "已达标"}</span>` : `<span class="im-level-pill">还差 ${total - done} 项</span>`;
+    const sub = level === 3 ? `近 100 天滚动窗口保持考核，不达标会被降级；Lv4「${TL_NAMES[4]}」由管理员手动提升。` : `下一级：Lv${level + 1}「${TL_NAMES[level + 1]}」${level === 2 ? "，近 100 天滚动窗口考核" : ""}`;
+    const foot = level >= 2 ? `<div class="im-level-foot"><span>「参考」为全周期口径近似</span><a href="${CONNECT_URL}" target="_blank" rel="noopener noreferrer">Connect 精确进度 ↗</a></div>` : "";
+    return `
+    <div class="im-level-card">
+      <div class="im-level-head"><span class="im-level-cur">Lv${level}</span><span class="im-level-name">${escapeHtml(name)}</span>${pill}</div>
+      <div class="im-level-sub">${escapeHtml(sub)}</div>
+      ${sections.map((sec) => fallbackSectionHtml(sec, s, u)).join("")}
+      ${foot}
+    </div>`;
+  }
+  function panelHtml(data) {
+    const { level } = data;
+    if (level >= 4) {
+      const name = TL_NAMES[level] || `Lv${level}`;
+      return `
+      <div class="im-level-card">
+        <div class="im-level-head"><span class="im-level-cur">Lv${level}</span><span class="im-level-name">${escapeHtml(name)}</span></div>
+        <div class="im-level-max">已是最高等级，感谢你的贡献 🎉</div>
+      </div>`;
+    }
+    return data.connect ? connectPanelHtml(data) : fallbackPanelHtml(data);
+  }
+  function closePanel() {
+    panelEl == null ? void 0 : panelEl.remove();
+    panelEl = null;
+    document.removeEventListener("click", onOutside, true);
+    document.removeEventListener("keydown", onKey, true);
+  }
+  function onOutside(e) {
+    var _a2, _b2;
+    if (panelEl && !panelEl.contains(e.target) && !((_b2 = (_a2 = e.target).closest) == null ? void 0 : _b2.call(_a2, ".im-level-btn"))) closePanel();
+  }
+  function onKey(e) {
+    if (e.key === "Escape") closePanel();
+  }
+  async function togglePanel(anchor) {
+    if (panelEl) {
+      closePanel();
+      return;
+    }
+    if (loading) return;
+    loading = true;
+    try {
+      const data = await loadLevelData();
+      if (!data) return;
+      panelEl = document.createElement("div");
+      panelEl.className = "im-level-pop";
+      panelEl.innerHTML = panelHtml(data);
+      document.body.appendChild(panelEl);
+      const r = anchor.getBoundingClientRect();
+      const mw = panelEl.offsetWidth;
+      const mh = panelEl.offsetHeight;
+      let left = Math.max(8, Math.min(r.right - mw, innerWidth - mw - 8));
+      let top = r.bottom + 6;
+      if (top + mh > innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+      panelEl.style.left = `${left}px`;
+      panelEl.style.top = `${top}px`;
+      setTimeout(() => {
+        document.addEventListener("click", onOutside, true);
+        document.addEventListener("keydown", onKey, true);
+      }, 0);
+    } catch {
+    } finally {
+      loading = false;
+    }
+  }
+  async function syncLevelBadge() {
+    const btn = document.querySelector(".im-level-btn");
+    if (!btn) return;
+    if (!getCurrentUsername()) return;
+    try {
+      const data = await loadLevelData();
+      if (!data) return;
+      btn.textContent = `Lv${data.level}`;
+      btn.style.display = "";
+    } catch {
+    }
+  }
+  document.addEventListener("click", (e) => {
+    var _a2, _b2;
+    const btn = (_b2 = (_a2 = e.target).closest) == null ? void 0 : _b2.call(_a2, ".im-level-btn");
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    togglePanel(btn);
+  }, true);
   function run() {
     migratePrefs();
     onColorThemeChange(syncDarkModeToggle);
@@ -14120,6 +14593,7 @@ ${data.raw}
       if (!profile) renderActiveSource();
       bindHeaderUserMenuInterception();
       ensureChatPanel();
+      syncLevelBadge();
       ensureListResizer();
       applyListWidth(getListWidth());
       syncListNav();
@@ -14147,7 +14621,7 @@ ${data.raw}
       syncListActive();
     }
     function bootstrap() {
-      console.info(`[linuxdo-im] v${"1.0.0"} loaded, skin=${SKIN_ID}`);
+      console.info(`[linuxdo-im] v${"1.2.0"} loaded, skin=${SKIN_ID}`);
       if (!document.documentElement) {
         setTimeout(bootstrap, 0);
         return;

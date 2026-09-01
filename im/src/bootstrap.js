@@ -54,6 +54,7 @@ import {
 import { isNav2Open, onRailRefresh, isRailCollapsed, setRailCollapsed, syncRailFold } from "./ui/rail.js";
 import { bindHeaderUserMenuInterception } from "./ui/rail.js";
 import { syncNotifStrip } from "./ui/notifications.js";
+import { syncLevelBadge } from "./ui/level-badge.js";
 import { bindSearchShortcut, openSearchPopup } from "./ui/search-popup.js";
 
 
@@ -229,6 +230,7 @@ export function run() {
     if (!profile) renderActiveSource();
     bindHeaderUserMenuInterception();
     ensureChatPanel();
+    syncLevelBadge();
     ensureListResizer();
     applyListWidth(getListWidth());
     syncListNav();

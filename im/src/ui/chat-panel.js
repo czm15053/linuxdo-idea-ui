@@ -5,6 +5,7 @@ import { EDITOR_ICONS } from "../config/icons-editor.js";
 import { escapeHtml, stripHtml } from "../utils/html.js";
 import { debounce } from "../utils/dom.js";
 import { api, trackViewHeaders } from "../bridge/api.js";
+import { pg } from "../bridge/page.js";
 import { getCurrentUsername, isMyPost, normalizeUsername } from "../bridge/user.js";
 import { topicIdFromPath, postNumberFromPath, navigateInApp } from "../bridge/router.js";
 import { setViewMode } from "../state/view-state.js";
@@ -87,6 +88,7 @@ export function ensureChatPanel() {
       </div>
       <div class="im-chat-tools"></div>
       <div class="im-chat-actions">
+        <button class="im-level-btn" title="等级进度" style="display:none"></button>
         <button class="im-icon-btn im-chat-scrolltop" title="回到顶部">${ICONS.scrollTop}</button>
         <button class="im-icon-btn im-chat-refresh" title="刷新本话题">${ICONS.refresh}</button>
         <button class="im-icon-btn im-chat-native" title="切换原生视图">${ICONS.external}</button>
@@ -431,16 +433,16 @@ async function fetchLatestNewPosts(topicId) {
 export function subscribeTopicRealtime(topicId) {
   const channel = topicId ? `/topic/${topicId}` : null;
   if (channel === currentSubscribedTopicChannel) return; // 同频道不重订阅，避免打断在途长轮询
-  if (currentSubscribedTopicChannel && window.MessageBus) {
+  if (currentSubscribedTopicChannel && pg.MessageBus) {
     try {
-      window.MessageBus.unsubscribe(currentSubscribedTopicChannel);
+      pg.MessageBus.unsubscribe(currentSubscribedTopicChannel);
     } catch {}
     currentSubscribedTopicChannel = null;
   }
-  if (channel && window.MessageBus) {
+  if (channel && pg.MessageBus) {
     currentSubscribedTopicChannel = channel;
     try {
-      window.MessageBus.subscribe(channel, () => {
+      pg.MessageBus.subscribe(channel, () => {
         if (chatState.topicId === topicId) {
           fetchLatestNewPosts(topicId);
         }

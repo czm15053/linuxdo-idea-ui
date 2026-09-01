@@ -7,6 +7,7 @@ import { applyRailWidth } from "./shared/resizer.js"; // 运行期互调（resiz
 import { ICONS } from "../config/icons.js";
 import { escapeHtml } from "../utils/html.js";
 import { getEmberOwner, safeLookup } from "../bridge/discourse.js";
+import { pg } from "../bridge/page.js";
 import { getCurrentUsername } from "../bridge/user.js";
 import { listState } from "../state/list-state.js";
 import { getViewMode } from "../state/view-state.js";
@@ -297,7 +298,7 @@ export function getUnreadNotificationCount() {
     const owner = getEmberOwner();
     const user =
       safeLookup(owner, "service:current-user") ||
-      window.Discourse?.User?.current?.() ||
+      pg.Discourse?.User?.current?.() ||
       null;
     if (user) {
       const pick = (key) => {
@@ -399,7 +400,7 @@ export function getPersonalMessagesUnread() {
     const owner = getEmberOwner();
     const user =
       safeLookup(owner, "service:current-user") ||
-      window.Discourse?.User?.current?.() ||
+      pg.Discourse?.User?.current?.() ||
       null;
     const pick = (key) => {
       try {

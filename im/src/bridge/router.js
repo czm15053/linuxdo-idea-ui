@@ -1,4 +1,5 @@
 import { discourseRequire } from "./discourse.js";
+import { pg } from "./page.js";
 
 /** 站内软跳转后重应用布局；由入口注册 */
 let applyHook = null;
@@ -54,8 +55,8 @@ function discourseRouteTo(url) {
     }
   } catch { /* ignore */ }
   try {
-    if (typeof window.Discourse?.URL?.routeTo === "function") {
-      window.Discourse.URL.routeTo(url);
+    if (typeof pg.Discourse?.URL?.routeTo === "function") {
+      pg.Discourse.URL.routeTo(url);
       return true;
     }
   } catch { /* ignore */ }

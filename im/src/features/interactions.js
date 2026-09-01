@@ -1,5 +1,6 @@
 // 轻提示 toast + 消息点赞（likedPosts 本地镜像）
 import { csrfToken } from "../bridge/api.js";
+import { pg } from "../bridge/page.js";
 import { ICONS } from "../config/icons.js";
 import { likedPosts } from "./liked-posts.js";
 import { chatHooks } from "../ui/hooks.js";
@@ -13,7 +14,7 @@ function getNativeCantUndoText(postNumber) {
     if (nativeTitle && !nativeTitle.startsWith("[")) return nativeTitle;
   }
   try {
-    if (typeof window !== "undefined" && window.I18n && typeof window.I18n.t === "function") {
+    if (pg.I18n && typeof pg.I18n.t === "function") {
       const candidates = [
         "js.discourse_reactions.state.cant_remove_reaction",
         "discourse_reactions.state.cant_remove_reaction",
@@ -21,7 +22,7 @@ function getNativeCantUndoText(postNumber) {
         "discourse_reactions.cant_remove_reaction"
       ];
       for (const k of candidates) {
-        const res = window.I18n.t(k);
+        const res = pg.I18n.t(k);
         if (res && typeof res === "string" && !res.startsWith("[") && !res.includes("missing")) {
           return res;
         }

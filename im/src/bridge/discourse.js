@@ -1,6 +1,8 @@
+import { pg } from "./page.js";
+
 export function discourseRequire(moduleId) {
   try {
-    if (typeof window.require === "function") return window.require(moduleId);
+    if (typeof pg.require === "function") return pg.require(moduleId);
   } catch { /* module missing */ }
   return null;
 }
@@ -16,10 +18,10 @@ export function safeLookup(owner, key) {
 
 export function getEmberOwner() {
   try {
-    if (window.Discourse?.__container__) return window.Discourse.__container__;
+    if (pg.Discourse?.__container__) return pg.Discourse.__container__;
 
     // Ember.Namespace 反查 Discourse 应用
-    const Ember = window.Ember;
+    const Ember = pg.Ember;
     const namespaces = Ember?.Namespace?.NAMESPACES;
     if (Array.isArray(namespaces)) {
       const app = namespaces.find((n) =>
@@ -34,8 +36,8 @@ export function getEmberOwner() {
       discourseRequire("discourse/lib/get-owner");
     if (mod) {
       const owner =
-        (typeof mod.getOwnerWithFallback === "function" && mod.getOwnerWithFallback(window.Discourse)) ||
-        (typeof mod.getOwner === "function" && mod.getOwner(window.Discourse)) ||
+        (typeof mod.getOwnerWithFallback === "function" && mod.getOwnerWithFallback(pg.Discourse)) ||
+        (typeof mod.getOwner === "function" && mod.getOwner(pg.Discourse)) ||
         null;
       if (owner) return owner;
     }

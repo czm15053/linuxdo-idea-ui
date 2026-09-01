@@ -1,3 +1,5 @@
+import { pg } from "./page.js";
+
 let cachedUsername = null;
 
 
@@ -75,10 +77,10 @@ export function getCurrentUsername() {
     // Ember 容器兜底
     try {
       const owner =
-        window.Discourse?.__container__ ||
+        pg.Discourse?.__container__ ||
         document.querySelector(".ember-application")?.__ember_meta__?.owner;
       const user = owner?.lookup?.("service:current-user") ||
-        window.Discourse?.User?.current?.();
+        pg.Discourse?.User?.current?.();
       const name = user?.username || user?.get?.("username");
       if (name) {
         cachedUsername = name;

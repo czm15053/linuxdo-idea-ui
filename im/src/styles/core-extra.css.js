@@ -1922,4 +1922,109 @@ color: #7AA3D6;
     }
     .im-rail-collapsed .im-rail-dot { top: 5px; right: 8px; transform: none; }
     .im-rail-collapsed .im-rail-collapse svg { transform: rotate(180deg); }
+
+    /* ============ 等级徽章 + 升级进度浮层 ============ */
+    .__ROOT_CLASS__ .im-level-btn {
+      border: none; cursor: pointer; border-radius: 6px; padding: 0 8px; height: 24px;
+      background: var(--im-accent-soft); color: var(--im-accent);
+      font-size: 12px; font-weight: 600; font-family: var(--im-font);
+      letter-spacing: 0.2px; white-space: nowrap;
+    }
+    .__ROOT_CLASS__ .im-level-btn:hover { filter: brightness(0.95); }
+    .__ROOT_CLASS__ .im-level-pop {
+      position: fixed; z-index: 1300; width: 300px; max-height: min(72vh, 520px); overflow-y: auto;
+      border-radius: 12px; background: var(--im-bg); border: 1px solid var(--im-border);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18); padding: 14px 16px;
+      color: var(--im-text); font-size: 12.5px; font-family: var(--im-font);
+    }
+    .__ROOT_CLASS__ .im-level-head { display: flex; align-items: center; gap: 8px; }
+    .__ROOT_CLASS__ .im-level-cur { font-size: 16px; font-weight: 700; color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-name { font-size: 13px; font-weight: 600; }
+    .__ROOT_CLASS__ .im-level-pill {
+      margin-left: auto; font-size: 10.5px; font-weight: 600; white-space: nowrap;
+      padding: 2px 8px; border-radius: 999px;
+      background: var(--im-hover); color: var(--im-text-2); border: 1px solid var(--im-border);
+    }
+    .__ROOT_CLASS__ .im-level-pill.ok {
+      background: var(--im-accent-soft); color: var(--im-accent); border-color: transparent;
+    }
+    .__ROOT_CLASS__ .im-level-sub { margin-top: 6px; color: var(--im-text-2); font-size: 12px; line-height: 1.5; }
+    .__ROOT_CLASS__ .im-level-sec { margin-top: 12px; }
+    .__ROOT_CLASS__ .im-level-sec-title {
+      font-size: 11px; font-weight: 600; color: var(--im-text-3); margin-bottom: 8px;
+    }
+    /* 环形（活跃程度） */
+    .__ROOT_CLASS__ .im-level-rings { display: flex; gap: 4px; justify-content: space-between; }
+    .__ROOT_CLASS__ .im-level-ring { position: relative; width: 80px; text-align: center; }
+    .__ROOT_CLASS__ .im-level-ring svg {
+      width: 56px; height: 56px; display: block; margin: 0 auto; transform: rotate(-90deg);
+    }
+    .__ROOT_CLASS__ .im-level-ring .track { fill: none; stroke: var(--im-accent-soft); stroke-width: 5; }
+    .__ROOT_CLASS__ .im-level-ring .fill {
+      fill: none; stroke: var(--im-accent); stroke-width: 5; stroke-linecap: round;
+      transition: stroke-dashoffset 0.3s ease;
+    }
+    .__ROOT_CLASS__ .im-level-ring-num {
+      position: absolute; top: 0; left: 0; right: 0; height: 56px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      line-height: 1.15; pointer-events: none;
+    }
+    .__ROOT_CLASS__ .im-level-ring-num b {
+      font-size: 12px; font-weight: 700; color: var(--im-text); font-variant-numeric: tabular-nums;
+    }
+    .__ROOT_CLASS__ .im-level-ring.done .im-level-ring-num b { color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-ring-num span {
+      font-size: 9.5px; color: var(--im-text-3); font-variant-numeric: tabular-nums;
+    }
+    .__ROOT_CLASS__ .im-level-ring-label { margin-top: 3px; font-size: 10.5px; color: var(--im-text-2); }
+    /* 条形（互动参与） */
+    .__ROOT_CLASS__ .im-level-row { margin-bottom: 9px; }
+    .__ROOT_CLASS__ .im-level-row-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 4px; color: var(--im-text-2);
+    }
+    .__ROOT_CLASS__ .im-level-row.done .im-level-row-head { color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-num { font-variant-numeric: tabular-nums; color: var(--im-text-3); }
+    .__ROOT_CLASS__ .im-level-row.done .im-level-num { color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-approx {
+      font-style: normal; font-size: 10px; color: var(--im-text-3);
+      border: 1px solid var(--im-border); border-radius: 4px; padding: 0 3px; margin-left: 4px;
+      vertical-align: 1px; cursor: help;
+    }
+    .__ROOT_CLASS__ .im-level-bar {
+      height: 5px; border-radius: 3px; background: var(--im-accent-soft); overflow: hidden;
+    }
+    .__ROOT_CLASS__ .im-level-bar > i {
+      display: block; height: 100%; border-radius: 3px; background: var(--im-accent);
+      transition: width 0.3s ease;
+    }
+    /* 合规：配额超标（坏）与否决项 */
+    .__ROOT_CLASS__ .im-level-row.bad .im-level-row-head,
+    .__ROOT_CLASS__ .im-level-row.bad .im-level-num { color: var(--im-danger); }
+    .__ROOT_CLASS__ .im-level-row.bad .im-level-bar > i { background: var(--im-danger); }
+    .__ROOT_CLASS__ .im-level-veto {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--im-hover); border: 1px solid var(--im-border); border-radius: 8px;
+      padding: 6px 10px; font-size: 12px; margin-top: 6px; color: var(--im-text-2);
+    }
+    .__ROOT_CLASS__ .im-level-veto b { font-variant-numeric: tabular-nums; color: var(--im-text); }
+    .__ROOT_CLASS__ .im-level-veto.ok span { color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-veto.ok b { color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-level-veto.bad span,
+    .__ROOT_CLASS__ .im-level-veto.bad b { color: var(--im-danger); }
+    /* 说明与合规 */
+    .__ROOT_CLASS__ .im-level-tip { color: var(--im-text-3); font-size: 11.5px; line-height: 1.5; margin-top: 2px; }
+    .__ROOT_CLASS__ .im-level-note-box {
+      background: var(--im-hover); border: 1px solid var(--im-border); border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .__ROOT_CLASS__ .im-level-note-box .im-level-tip { margin-top: 0; }
+    .__ROOT_CLASS__ .im-level-max { color: var(--im-text-2); line-height: 1.6; padding: 6px 0 2px; }
+    .__ROOT_CLASS__ .im-level-foot {
+      margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--im-border);
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      font-size: 11px; color: var(--im-text-3);
+    }
+    .__ROOT_CLASS__ .im-level-foot a { color: var(--im-accent); text-decoration: none; white-space: nowrap; }
+    .__ROOT_CLASS__ .im-level-foot a:hover { text-decoration: underline; }
 `

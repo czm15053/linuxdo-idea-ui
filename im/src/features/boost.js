@@ -4,6 +4,7 @@ import { escapeHtml } from "../utils/html.js";
 import { ICONS } from "../config/icons.js";
 import { getCurrentUsername } from "../bridge/user.js";
 import { safeLookup, getEmberOwner } from "../bridge/discourse.js";
+import { pg } from "../bridge/page.js";
 import { extractTextSnippet } from "../ui/chat-panel.js";
 import { avatarColor, avatarLetter, fullAvatarUrl } from "../ui/shared/avatars.js";
 import { showImToast } from "./interactions.js";
@@ -140,7 +141,7 @@ async function submitImBoost(postId, _postNum, content, msgEl, composerEl) {
 
     let myAvatarUrl = "";
     try {
-      const u = safeLookup(getEmberOwner(), "service:current-user")?.currentUser || window.Discourse?.User?.current();
+      const u = safeLookup(getEmberOwner(), "service:current-user")?.currentUser || pg.Discourse?.User?.current();
       if (u && u.avatar_template) myAvatarUrl = fullAvatarUrl(u.avatar_template);
     } catch { /* ignore */ }
 
@@ -238,7 +239,7 @@ function openImBoostComposer(msgEl) {
   let myAvatar = "";
   try {
     const owner = getEmberOwner();
-    const u = safeLookup(owner, "service:current-user")?.currentUser || window.Discourse?.User?.current();
+    const u = safeLookup(owner, "service:current-user")?.currentUser || pg.Discourse?.User?.current();
     if (u && u.avatar_template) {
       myAvatar = `<img src="${escapeHtml(fullAvatarUrl(u.avatar_template))}" alt="">`;
     } else if (u && u.username) {
