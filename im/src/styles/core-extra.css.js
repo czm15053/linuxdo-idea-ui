@@ -164,7 +164,7 @@ background: var(--im-hover);
 }
 
 .im-composer {
-background: transparent; border-top: none;
+background: var(--im-composer-bg, transparent); border-top: none;
       padding: 4px 12px 12px; flex-shrink: 0;
 }
 
@@ -454,7 +454,7 @@ background: #2A3140;
 
 .__ROOT_CLASS__.__DARK_CLASS__ .im-composer,
     .__ROOT_CLASS__.__DARK_CLASS__ .im-composer-card {
-background: var(--im-bg) !important;
+background: var(--im-composer-bg, var(--im-bg)) !important;
       border-color: var(--im-border) !important;
       border-top-color: var(--im-border);
 }

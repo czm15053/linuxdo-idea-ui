@@ -3063,7 +3063,7 @@ background: var(--im-hover);
 }
 
 .im-composer {
-background: transparent; border-top: none;
+background: var(--im-composer-bg, transparent); border-top: none;
       padding: 4px 12px 12px; flex-shrink: 0;
 }
 
@@ -3353,7 +3353,7 @@ background: #2A3140;
 
 .__ROOT_CLASS__.__DARK_CLASS__ .im-composer,
     .__ROOT_CLASS__.__DARK_CLASS__ .im-composer-card {
-background: var(--im-bg) !important;
+background: var(--im-composer-bg, var(--im-bg)) !important;
       border-color: var(--im-border) !important;
       border-top-color: var(--im-border);
 }
@@ -4841,7 +4841,8 @@ color: #7AA3D6;
       --wc-text-3: #8B98AA;
       --wc-text-4: #B5BFCC;
       --wc-bg: #FFFFFF;
-      --wc-chat-bg: #F1F4F8;
+      --wc-chat-bg: #F5F7FA;
+      --im-composer-bg: #FFFFFF;
       --wc-hover: #E7EEF8;
       --wc-active: #4B8FF7;
       --wc-bubble-other: #E4E7EC;
@@ -4849,7 +4850,7 @@ color: #7AA3D6;
       --wc-border: #D9E0E9;
       --wc-border-strong: #C5CFDB;
       --wc-danger: #FA5151;
-      --wc-rail-bg: #E3F0FF;
+      --wc-rail-bg: #D6E4F4;
       --im-strip-bg: transparent;
       --im-nav: __RAIL_WIDTH__px;
       --im-nav2w: 0px;
@@ -5118,7 +5119,7 @@ color: #7AA3D6;
     .im-rail {
       position: fixed; left: 0; top: var(--im-header-h); bottom: 0;
       width: var(--im-nav);
-      background: linear-gradient(180deg, #E7F3FF 0%, #DDEEFF 100%);
+      background: var(--wc-rail-bg);
       border-right: 1px solid #C9D9EB;
       color: #47617E;
       display: flex; flex-direction: column; align-items: stretch;
@@ -5136,7 +5137,7 @@ color: #7AA3D6;
     }
     /* wecom：顶部当前用户块（头像 + 用户名），复用 .im-rail-avatar 通知逻辑 */
     .im-rail-me { position: relative; flex-shrink: 0; display: flex; }
-    .im-rail .im-rail-avatar-badge { top: -3px; right: -5px; box-shadow: 0 0 0 2px #E7F3FF; }
+    .im-rail .im-rail-avatar-badge { top: -3px; right: -5px; box-shadow: 0 0 0 2px var(--wc-rail-bg); }
     .im-rail-user-name {
       min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       font-size: 14px; font-weight: 600; line-height: 1;
@@ -5349,7 +5350,7 @@ color: #7AA3D6;
       left: calc(var(--im-nav) + var(--im-nav2w) + var(--im-strip));
       width: var(--im-list);
       bottom: 0;
-      background: #F4F7FB;
+      background: #F0F3F7;
       border-right: 1px solid #D6DEE8;
       display: flex;
       flex-direction: column;
@@ -5615,7 +5616,7 @@ color: #7AA3D6;
     }
     .im-chat-header {
       height: 80px; flex-shrink: 0;
-      background: #FFFFFF;
+      background: #F5F7FA;
       border-bottom: 1px solid #DCE3EB;
       display: flex; align-items: center;
       justify-content: space-between;
@@ -5759,7 +5760,7 @@ color: #7AA3D6;
 
     /* ---------- 企业微信 5.x composer：灰底上的白色圆角卡片 ---------- */
     .im-composer {
-      background: var(--wc-chat-bg); border-top: 0;
+      background: #FFFFFF; border-top: 0;
       padding: 0 16px 13px; flex-shrink: 0; /* 随卡内容收缩，与另两皮肤一致 */
     }
     .im-composer-card {
@@ -6030,7 +6031,8 @@ color: #7AA3D6;
       --wc-text-3: rgba(250,252,255,.55);
       --wc-text-4: rgba(250,252,255,.4);
       --wc-bg: #101011;
-      --wc-chat-bg: #101011;
+      --wc-chat-bg: #202021;
+      --im-composer-bg: #2C2C2D;
       --wc-hover: #272829;
       --wc-active: #338CFF;
       --wc-bubble-other: #303031;
@@ -6038,15 +6040,15 @@ color: #7AA3D6;
       --wc-border: rgba(255,255,255,.1);
       --wc-border-strong: rgba(255,255,255,.2);
       --wc-danger: #FF5962;
-      --wc-rail-bg: #000000;
+      --wc-rail-bg: #1B1B1C;
     }
     html.__ROOT_CLASS__.__DARK_CLASS__,
     html.__ROOT_CLASS__.__DARK_CLASS__ body {
       color-scheme: dark !important;
     }
-    /* rail：纯黑工作台 */
+    /* 左侧主导航区 */
     .__ROOT_CLASS__.__DARK_CLASS__ .im-rail {
-      background: #000000;
+      background: var(--wc-rail-bg);
       border-right-color: #2A2C2E;
       color: #9AA3AD;
     }
@@ -6067,7 +6069,7 @@ color: #7AA3D6;
     .__ROOT_CLASS__.__DARK_CLASS__ .im-rail-bottom .im-rail-item svg { color: #8A929B; }
     .__ROOT_CLASS__.__DARK_CLASS__ .im-rail-badge { box-shadow: none; }
     .__ROOT_CLASS__.__DARK_CLASS__ .im-rail-dot { background: var(--wc-danger); }
-    .__ROOT_CLASS__.__DARK_CLASS__ .im-rail .im-rail-avatar-badge { box-shadow: 0 0 0 2px #000000; }
+    .__ROOT_CLASS__.__DARK_CLASS__ .im-rail .im-rail-avatar-badge { box-shadow: 0 0 0 2px var(--wc-rail-bg); }
     .__ROOT_CLASS__.__DARK_CLASS__ .im-rail-user-name { color: #F7F7F7; }
     .__ROOT_CLASS__.__DARK_CLASS__ .im-rail-group-title,
     .__ROOT_CLASS__.__DARK_CLASS__ .im-rail-group-title svg { color: #6B7683; }
@@ -6114,15 +6116,15 @@ color: #7AA3D6;
     }
     /* 聊天区 */
     .__ROOT_CLASS__.__DARK_CLASS__ .im-chat-header {
-      background: #181819;
+      background: #202021;
       border-bottom-color: #2A2C2E;
     }
     .__ROOT_CLASS__.__DARK_CLASS__ .im-chat-title { color: var(--wc-text); }
     .__ROOT_CLASS__.__DARK_CLASS__ .im-chat-sub { color: var(--wc-text-3); }
     .__ROOT_CLASS__.__DARK_CLASS__ .im-msg-name { color: var(--wc-text-3); }
-    .__ROOT_CLASS__.__DARK_CLASS__ .im-composer { background: var(--wc-chat-bg); }
+    .__ROOT_CLASS__.__DARK_CLASS__ .im-composer { background: #2C2C2D; }
     .__ROOT_CLASS__.__DARK_CLASS__ .im-composer-card {
-      background: #181819;
+      background: #2C2C2D;
       border-color: #2A2C2E;
       box-shadow: none;
     }
