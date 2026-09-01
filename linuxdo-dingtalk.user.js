@@ -4142,7 +4142,7 @@
   const likedPosts = new Set();
   let inFlightNewPostsFetch = false;
   let currentSubscribedTopicChannel = null;
-  let chatRealtimeTickerId = null;
+  let chatRealtimeBound = false;
 
   async function fetchLatestNewPosts(topicId) {
     if (!topicId || chatState.topicId !== topicId || inFlightNewPostsFetch) return;
@@ -4228,12 +4228,13 @@
   }
 
   function startRealtimeChatPolling() {
-    if (chatRealtimeTickerId) return;
-    chatRealtimeTickerId = setInterval(() => {
+    if (chatRealtimeBound) return;
+    chatRealtimeBound = true;
+    document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible" && chatState.topicId && !chatState.loading) {
         fetchLatestNewPosts(chatState.topicId);
       }
-    }, 4000);
+    });
   }
 
   function bubbleHtml(post, myName) {
