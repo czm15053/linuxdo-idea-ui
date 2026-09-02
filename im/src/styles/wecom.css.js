@@ -642,14 +642,7 @@ export const CSS_WECOM = String.raw`
       padding-left: 6px; margin-left: 2px;
       border-left: 1px solid var(--wc-border);
     }
-    .im-list-nav .im-nav-native-cat {
-      flex-basis: 100%;
-      justify-content: center;
-      margin-top: 4px; padding-top: 8px;
-      border-top: 1px solid var(--wc-border);
-      color: var(--wc-text-3) !important;
-    }
-    .im-icon-btn {
+        .im-icon-btn {
       width: 32px; height: 32px;
       border: none; border-radius: 8px;
       background: transparent; color: var(--wc-text-2);

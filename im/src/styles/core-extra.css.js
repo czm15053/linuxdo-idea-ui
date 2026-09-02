@@ -62,6 +62,28 @@ display: inline-flex; align-items: center; gap: 2px;
 display: none;
 }
 
+/* /new（新）列表顶部「所有/话题/回复」筛选条（吸附原生 toggle）：
+   独立一行挂在 header 下方；默认隐藏，非空内容（syncNewToggle）才显示 */
+.im-new-toggle {
+  display: flex; align-items: center; gap: 2px;
+  padding: 2px 10px 6px;
+  flex-shrink: 0;
+  min-height: 0;
+}
+.im-new-toggle-btn {
+  height: 24px; padding: 0 12px; border: 0; border-radius: 12px;
+  background: #E7EAF1; color: var(--im-text-2); font-size: 13px; cursor: pointer;
+  font-family: var(--im-font);
+  display: inline-flex; align-items: center; gap: 3px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.im-new-toggle-btn + .im-new-toggle-btn { margin-left: 2px; }
+.im-new-toggle-btn .n { font-weight: 600; }
+.im-new-toggle-btn.active {
+  background: #FFFFFF; color: var(--im-text); font-weight: 600;
+  box-shadow: 0 1px 3px rgba(31,35,41,.12);
+}
+
 .im-chip {
 height: 24px; padding: 0 12px; border: 0; border-radius: 12px;
       background: transparent; color: var(--im-text-2); font-size: 13px; cursor: pointer;
@@ -1640,11 +1662,7 @@ color: #7AA3D6;
     .__ROOT_CLASS__ .im-list-nav .im-nav-period a.active {
       background: var(--im-blue-soft); color: var(--im-blue); font-weight: 600;
     }
-    .__ROOT_CLASS__ .im-list-nav a.im-nav-native-cat {
-      margin: 8px 10px 10px; padding: 7px 10px; border-radius: 8px;
-      font-size: 12px; background: var(--im-hover); color: var(--im-text-3);
-    }
-    /* ===== 原生弹层融合：用户卡片（§5.5 方案 A，变量化适配三皮肤三态） ===== */
+        /* ===== 原生弹层融合：用户卡片（§5.5 方案 A，变量化适配三皮肤三态） ===== */
     .__ROOT_CLASS__ .user-card {
       border: 1px solid var(--im-border);
       border-radius: 16px;

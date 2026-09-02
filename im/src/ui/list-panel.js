@@ -27,6 +27,7 @@ import {
   setMaskAvatar, ensureMaskAvatarToggle, ensureMaskTitleToggle,
 } from "./shared/toggles.js";
 import { setViewMode } from "../state/view-state.js";
+import { syncNewToggle } from "./new-toggle.js";
 
 let listNavOpen = (() => {
   try { return localStorage.getItem(LIST_NAV_KEY) === "1"; } catch { return false; }
@@ -104,9 +105,7 @@ export function syncListNav() {
       ).join("") +
       `</div>`;
   }
-  // 原生分类视图入口（/categories 被 IM 顶替为 latest，保留逃生门）
-  html += `<a href="/categories" class="im-nav-native-cat" data-im-native-jump="1">分类目录 · 原生视图</a>`;
-  if (nav.dataset.sig === html) return; // 避免无变化时触发 MutationObserver 死循环
+    if (nav.dataset.sig === html) return; // 避免无变化时触发 MutationObserver 死循环
   nav.dataset.sig = html;
   nav.innerHTML = html;
 }
@@ -202,6 +201,7 @@ export function ensureListPanel() {
     ensureMaskAvatarToggle(panel);
     ensureMaskTitleToggle(panel);
     applyListNavDom();
+    syncNewToggle(panel, () => loadList(listState.apiPath || "/new.json", true));
     return panel;
   }
   panel = document.createElement("div");
@@ -237,6 +237,7 @@ export function ensureListPanel() {
     onListBodyScroll(panel.querySelector(".im-list-body"));
   });
   applyListNavDom();
+  syncNewToggle(panel, () => loadList(listState.apiPath || "/new.json", true));
   return panel;
 }
 export function topicHref(topic) {

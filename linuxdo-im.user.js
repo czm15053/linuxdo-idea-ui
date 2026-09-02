@@ -2962,6 +2962,28 @@ display: inline-flex; align-items: center; gap: 2px;
 display: none;
 }
 
+/* /new（新）列表顶部「所有/话题/回复」筛选条（吸附原生 toggle）：
+   独立一行挂在 header 下方；默认隐藏，非空内容（syncNewToggle）才显示 */
+.im-new-toggle {
+  display: flex; align-items: center; gap: 2px;
+  padding: 2px 10px 6px;
+  flex-shrink: 0;
+  min-height: 0;
+}
+.im-new-toggle-btn {
+  height: 24px; padding: 0 12px; border: 0; border-radius: 12px;
+  background: #E7EAF1; color: var(--im-text-2); font-size: 13px; cursor: pointer;
+  font-family: var(--im-font);
+  display: inline-flex; align-items: center; gap: 3px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.im-new-toggle-btn + .im-new-toggle-btn { margin-left: 2px; }
+.im-new-toggle-btn .n { font-weight: 600; }
+.im-new-toggle-btn.active {
+  background: #FFFFFF; color: var(--im-text); font-weight: 600;
+  box-shadow: 0 1px 3px rgba(31,35,41,.12);
+}
+
 .im-chip {
 height: 24px; padding: 0 12px; border: 0; border-radius: 12px;
       background: transparent; color: var(--im-text-2); font-size: 13px; cursor: pointer;
@@ -4540,11 +4562,7 @@ color: #7AA3D6;
     .__ROOT_CLASS__ .im-list-nav .im-nav-period a.active {
       background: var(--im-blue-soft); color: var(--im-blue); font-weight: 600;
     }
-    .__ROOT_CLASS__ .im-list-nav a.im-nav-native-cat {
-      margin: 8px 10px 10px; padding: 7px 10px; border-radius: 8px;
-      font-size: 12px; background: var(--im-hover); color: var(--im-text-3);
-    }
-    /* ===== 原生弹层融合：用户卡片（§5.5 方案 A，变量化适配三皮肤三态） ===== */
+        /* ===== 原生弹层融合：用户卡片（§5.5 方案 A，变量化适配三皮肤三态） ===== */
     .__ROOT_CLASS__ .user-card {
       border: 1px solid var(--im-border);
       border-radius: 16px;
@@ -5572,14 +5590,7 @@ color: #7AA3D6;
       padding-left: 6px; margin-left: 2px;
       border-left: 1px solid var(--wc-border);
     }
-    .im-list-nav .im-nav-native-cat {
-      flex-basis: 100%;
-      justify-content: center;
-      margin-top: 4px; padding-top: 8px;
-      border-top: 1px solid var(--wc-border);
-      color: var(--wc-text-3) !important;
-    }
-    .im-icon-btn {
+        .im-icon-btn {
       width: 32px; height: 32px;
       border: none; border-radius: 8px;
       background: transparent; color: var(--wc-text-2);
@@ -11614,6 +11625,82 @@ ${data.raw}
       openSearchPopup();
     });
   }
+  const WRAPPER_SEL = ".topic-replies-toggle-wrapper";
+  let localMod = null;
+  function isNewRoute() {
+    return location.pathname.replace(/\/+$/, "") === "/new";
+  }
+  function nativeButton(mod) {
+    try {
+      return document.querySelector(`${WRAPPER_SEL} .topics-replies-toggle.${mod}`);
+    } catch {
+      return null;
+    }
+  }
+  function countOf(el) {
+    if (!el) return 0;
+    const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+    const m = text.match(/[（(]\s*(\d+)\s*[）)]/);
+    if (m) return Number(m[1]);
+    const n = parseInt(text.replace(/[^\d]/g, ""), 10);
+    return Number.isNaN(n) ? 0 : n;
+  }
+  function nativeActiveMod() {
+    const wrapper = document.querySelector(WRAPPER_SEL);
+    if (!wrapper) return "all";
+    for (const mod of ["topics", "replies", "all"]) {
+      const btn = wrapper.querySelector(`.topics-replies-toggle.${mod}`);
+      if (btn && btn.classList.contains("active")) return mod;
+    }
+    return "all";
+  }
+  function buttonHtml(mod, label, count, active) {
+    const title = {
+      all: "所有新话题和过去几天回复的话题",
+      topics: "新话题",
+      replies: "新回复"
+    }[mod] || "";
+    return `<button type="button" class="im-new-toggle-btn --${mod}${active ? " active" : ""}" data-mod="${mod}" title="${title}">${label}${count ? ` <span class="n">${count}</span>` : ""}</button>`;
+  }
+  function syncNewToggle(panel, onRefresh) {
+    var _a2;
+    if (!panel) return;
+    let row = panel.querySelector(".im-new-toggle");
+    const show = isNewRoute();
+    if (!show) {
+      if (row) row.style.display = "none";
+      return;
+    }
+    if (!row) {
+      row = document.createElement("div");
+      row.className = "im-new-toggle";
+      (_a2 = panel.querySelector(".im-list-header")) == null ? void 0 : _a2.after(row);
+      row.addEventListener("click", (e) => {
+        var _a3, _b2;
+        const btn = e.target.closest(".im-new-toggle-btn");
+        if (!btn || !row.contains(btn)) return;
+        const mod = btn.dataset.mod;
+        localMod = mod;
+        try {
+          (_b2 = (_a3 = nativeButton(mod)) == null ? void 0 : _a3.click) == null ? void 0 : _b2.call(_a3);
+        } catch {
+        }
+        try {
+          onRefresh == null ? void 0 : onRefresh();
+        } catch {
+        }
+      });
+    }
+    if (!row.dataset.bound) row.dataset.bound = "1";
+    if (!localMod) localMod = nativeActiveMod() || "all";
+    const active = localMod;
+    const html = buttonHtml("all", "所有", countOf(nativeButton("all")), active === "all") + buttonHtml("topics", "话题", countOf(nativeButton("topics")), active === "topics") + buttonHtml("replies", "回复", countOf(nativeButton("replies")), active === "replies");
+    if (row.dataset.sig !== html) {
+      row.dataset.sig = html;
+      row.innerHTML = html;
+    }
+    row.style.display = "";
+  }
   let listNavOpen = (() => {
     try {
       return localStorage.getItem(LIST_NAV_KEY) === "1";
@@ -11689,7 +11776,6 @@ ${data.raw}
         (p) => `<a href="/top${p.path}" class="${(topMatch[1] || "") === p.path ? "active" : ""}">${p.label}</a>`
       ).join("") + `</div>`;
     }
-    html += `<a href="/categories" class="im-nav-native-cat" data-im-native-jump="1">分类目录 · 原生视图</a>`;
     if (nav.dataset.sig === html) return;
     nav.dataset.sig = html;
     nav.innerHTML = html;
@@ -11768,6 +11854,7 @@ ${data.raw}
       ensureMaskAvatarToggle(panel);
       ensureMaskTitleToggle(panel);
       applyListNavDom();
+      syncNewToggle(panel, () => loadList(listState.apiPath || "/new.json", true));
       return panel;
     }
     panel = document.createElement("div");
@@ -11801,6 +11888,7 @@ ${data.raw}
       onListBodyScroll(panel.querySelector(".im-list-body"));
     });
     applyListNavDom();
+    syncNewToggle(panel, () => loadList(listState.apiPath || "/new.json", true));
     return panel;
   }
   function topicHref(topic) {
