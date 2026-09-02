@@ -6421,6 +6421,19 @@ html.im-theme {
     // 当前话题 OP 楼（详情头部头像/伪装复用）
   };
   const topicPostsMap = /* @__PURE__ */ new Map();
+  function cfBlocked() {
+    try {
+      if (document.querySelector("#challenge-running, #cf-challenge-running, form#challenge-form")) {
+        return true;
+      }
+      const title = String(document.title || "").toLowerCase().replace(/…/g, "...");
+      if (title.startsWith("just a moment") || title.includes("attention required")) {
+        return true;
+      }
+    } catch {
+    }
+    return false;
+  }
   function getViewMode() {
     try {
       return localStorage.getItem(VIEW_KEY) === "native" ? "native" : "im";
@@ -14546,6 +14559,11 @@ ${data.raw}
     bootstrap();
     function applyTheme() {
       var _a2, _b2, _c;
+      if (cfBlocked()) {
+        document.documentElement.classList.remove(ROOT_CLASS$1, DARK_CLASS, LOCK_CLASS, "im-topic-open");
+        removePanels();
+        return;
+      }
       if (otherThemeActive()) {
         console.warn("[linuxdo-im] 检测到其他外观脚本（旧版钉钉 / 旧版飞书）已启用，本脚本自动避让。请只保留其中一个。");
         document.documentElement.classList.remove(ROOT_CLASS$1, DARK_CLASS, LOCK_CLASS, "im-topic-open");
@@ -14628,21 +14646,24 @@ ${data.raw}
         setTimeout(bootstrap, 0);
         return;
       }
-      injectStyle();
-      if (!otherThemeActive()) {
-        applyColorMode();
-        forceSiteScheme();
-      }
-      if (getViewMode() !== "native" && !otherThemeActive()) {
-        document.documentElement.classList.add(ROOT_CLASS$1);
-        applyColorMode();
-        restyleSplash();
-        makeFavicon();
+      if (cfBlocked()) ;
+      else {
+        injectStyle();
+        if (!otherThemeActive()) {
+          applyColorMode();
+          forceSiteScheme();
+        }
+        if (getViewMode() !== "native" && !otherThemeActive()) {
+          document.documentElement.classList.add(ROOT_CLASS$1);
+          applyColorMode();
+          restyleSplash();
+          makeFavicon();
+        }
       }
       if (!window.__imFaviconVisibilityBound) {
         window.__imFaviconVisibilityBound = true;
         document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "visible" && getViewMode() !== "native" && !otherThemeActive()) {
+          if (document.visibilityState === "visible" && getViewMode() !== "native" && !otherThemeActive() && !cfBlocked()) {
             makeFavicon();
           }
         });
