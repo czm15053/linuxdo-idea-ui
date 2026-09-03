@@ -666,15 +666,39 @@
       padding: 0 5px; font-size: 11.5px; cursor: zoom-in; user-select: none;
     }
     .tt-imgwrap img {
-      position: absolute; left: 0; top: calc(100% + 4px);
-      max-width: min(420px, 58vw); max-height: 300px; object-fit: contain;
-      z-index: 20; border-radius: 4px; border: 1px solid var(--tt-border-strong);
+      /* fixed 定位：几何位置由 JS 按视口钳制，永不超出屏幕 */
+      position: fixed; left: 0; top: 0;
+      transform: translateY(-4px);
+      max-width: min(560px, 78vw); max-height: min(56vh, 540px); object-fit: contain;
+      z-index: 1000; border-radius: 4px; border: 1px solid var(--tt-border-strong);
       background: var(--tt-bg-inset); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      visibility: hidden; opacity: 0; transform: translateY(-4px);
+      visibility: hidden; opacity: 0;
       transition: opacity 0.15s ease, transform 0.15s ease;
       pointer-events: none;
     }
     .tt-imgwrap:hover img { visibility: visible; opacity: 1; transform: translateY(0); }
+    .tt-imgwrap img.tt-flip { transform: translateY(4px); }
+    .tt-imgwrap:hover img.tt-flip { transform: translateY(0); }
+
+    /* ---------- 图片灯箱（点击 [img] 完整显示原图） ---------- */
+    .tt-lightbox {
+      position: fixed; inset: 0; z-index: 2000;
+      background: rgba(5, 8, 12, 0.88); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.16s ease; cursor: zoom-out;
+    }
+    .tt-lightbox.open { opacity: 1; }
+    .tt-lightbox .lb-side {
+      position: absolute; top: 12px; font-size: 12px; color: var(--tt-text-dim);
+      font-family: inherit; z-index: 2; cursor: pointer; user-select: none;
+    }
+    .tt-lightbox .lb-open { left: 14px; }
+    .tt-lightbox .lb-close { right: 14px; }
+    .tt-lightbox img {
+      max-width: min(92vw, 1400px); max-height: 88vh; object-fit: contain;
+      border-radius: 4px; box-shadow: 0 16px 60px rgba(0, 0, 0, 0.6);
+      transform-origin: center center; cursor: grab; user-select: none;
+    }
     .tt-cooked code {
       background: var(--tt-bg-raised); border: 1px solid var(--tt-border-soft);
       border-radius: 3px; padding: 0 5px; font-size: 12.5px; color: var(--tt-accent);
@@ -2104,6 +2128,28 @@
       const target = anchor && root.contains(anchor) ? anchor : img;
       target.replaceWith(wrap);
       wrap.appendChild(img);
+      // 预览直接放原图：Discourse 正文 img 是 optimized 缩略图（且带 width/height/srcset），
+      // 悬停放大只会得到模糊小图；换成 data-href 原图并清掉尺寸约束，按 max 宽高完整等比显示
+      if (href && img.getAttribute("src") !== href) {
+        img.removeAttribute("srcset");
+        img.removeAttribute("width");
+        img.removeAttribute("height");
+        img.src = href;
+      }
+      // 预览定位：fixed 钳制在视口内 —— 水平居中于 token 但不越左右边界；
+      // 垂直取空间更大的一侧展开，高度限制在该侧可用空间内，永不超出屏幕
+      wrap.addEventListener("mouseenter", () => {
+        const r = wrap.getBoundingClientRect();
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const below = vh - r.bottom - 8, above = r.top - 8;
+        const flip = below < 260 && above > below;
+        img.classList.toggle("tt-flip", flip);
+        img.style.maxHeight = Math.max(120, Math.min(540, vh * 0.56, flip ? above : below)) + "px";
+        const pw = Math.min(560, vw * 0.78);
+        img.style.left = Math.max(8, Math.min(r.left + r.width / 2 - pw / 2, vw - pw - 8)) + "px";
+        img.style.top = flip ? "auto" : (r.bottom + 4) + "px";
+        img.style.bottom = flip ? (vh - r.top + 4) + "px" : "auto";
+      });
     });
 
     root.querySelectorAll("a[href]").forEach((a) => {
@@ -2530,6 +2576,151 @@
     composerState.replyToPostNumber = null;
     target?.classList.remove("active");
     target?.querySelector(".label")?.remove();
+  }
+
+  /* ---------- 图片灯箱：点击 [img] 完整查看原图（TUI 风格） ---------- */
+
+  let activeLightbox = null;
+
+  function closeLightbox() {
+    if (activeLightbox) {
+      activeLightbox.remove();
+      activeLightbox = null;
+      document.removeEventListener("keydown", lightboxKeydown, true);
+    }
+  }
+
+  function lightboxKeydown(e) {
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeLightbox(); }
+  }
+
+  function openLightbox(src) {
+    if (!src) return;
+    closeLightbox();
+    const lb = document.createElement("div");
+    lb.className = "tt-lightbox";
+    lb.tabIndex = -1;
+    lb.innerHTML =
+      `<span class="lb-side lb-open">open original ↗</span>` +
+      `<span class="lb-side lb-close">esc close</span>` +
+      `<img src="${escapeHtml(src)}" alt="" draggable="false">`;
+    const img = lb.querySelector("img");
+    let scale = 1, tx = 0, ty = 0, dragging = false, sx = 0, sy = 0;
+    const apply = (smooth) => {
+      img.style.transition = smooth ? "transform .18s ease" : "none";
+      img.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`;
+    };
+    lb.addEventListener("click", (e) => {
+      if (e.target === lb || e.target.classList?.contains("lb-close")) closeLightbox();
+    });
+    lb.querySelector(".lb-open").addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.open(src, "_blank", "noopener");
+    });
+    img.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      scale = Math.min(Math.max(scale * (e.deltaY < 0 ? 1.15 : 0.88), 0.3), 6);
+      apply(false);
+    }, { passive: false });
+    img.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      dragging = true; sx = e.clientX - tx; sy = e.clientY - ty;
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (!dragging) return;
+      tx = e.clientX - sx; ty = e.clientY - sy; apply(false);
+    });
+    window.addEventListener("mouseup", () => { dragging = false; });
+    img.addEventListener("dblclick", () => {
+      if (scale > 1.1) { scale = 1; tx = 0; ty = 0; }
+      else scale = 2;
+      apply(true);
+    });
+    document.addEventListener("keydown", lightboxKeydown, true);
+    document.body.appendChild(lb);
+    activeLightbox = lb;
+    requestAnimationFrame(() => { lb.classList.add("open"); apply(true); lb.focus(); });
+  }
+
+  /* ---------- composer 粘贴/拖拽图片上传（对齐 im 上传链） ---------- */
+
+  let composerUploading = false;
+
+  async function ttUploadImage(file) {
+    const form = new FormData();
+    form.append("file", file, file.name || "image");
+    form.append("upload_type", "composer");
+    form.append("type", "composer");
+    form.append("synchronous", "true");
+    const response = await fetch("/uploads.json", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-CSRF-Token": csrfToken(), "X-Requested-With": "XMLHttpRequest" },
+      body: form
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.errors?.[0] || payload.error || `HTTP ${response.status}`);
+    }
+    // Discourse 三种返回形态：扁平对象（新版）/ upload 包裹 / uploads 数组
+    let upload = payload.upload || (Array.isArray(payload.uploads) ? payload.uploads[0] : null);
+    if (!upload && payload && payload.id && payload.url) upload = payload;
+    if (!upload) throw new Error("站点未返回图片地址");
+    return upload;
+  }
+
+  function ttImageMarkdown(upload, file) {
+    const url = upload.short_url || upload.url || upload.thumbnail_url;
+    if (!url) throw new Error("站点未返回图片地址");
+    const rawLabel = String(upload.original_filename || file?.name || "图片");
+    const label = rawLabel.replace(/\.[^.]+$/, "").replace(/[[\]\\|]/g, "_");
+    const width = Number(upload.thumbnail_width || upload.width) || 0;
+    const height = Number(upload.thumbnail_height || upload.height) || 0;
+    const dims = width > 0 && height > 0 ? `|${width}x${height}` : "";
+    return `![${label}${dims}](${String(url).replace(/[\\()]/g, (ch) => `\\${ch}`)})`;
+  }
+
+  function ttTransferImages(event) {
+    const list = [...(event.clipboardData?.files || event.dataTransfer?.files || [])];
+    const isImage = (f) => String(f.type || "").toLowerCase().startsWith("image/");
+    if (list.length) return list.filter(isImage);
+    // 部分剪贴板只在 items 里暴露文件（.files 为空）
+    return [...(event.clipboardData?.items || [])]
+      .filter((it) => it.kind === "file")
+      .map((it) => it.getAsFile?.())
+      .filter((f) => f && isImage(f));
+  }
+
+  function insertComposerMarkdown(ta, text) {
+    if (!ta || !text) return;
+    const start = ta.selectionStart ?? ta.value.length;
+    const end = ta.selectionEnd ?? start;
+    ta.setRangeText(text, start, end, "end");
+    ta.dispatchEvent(new Event("input", { bubbles: true })); // 触发自动增高
+  }
+
+  async function handleComposerImageFiles(files) {
+    if (!files.length) return;
+    const ta = composerUi().input;
+    if (!ta || composerUploading) {
+      if (composerUploading) setComposerStatus("已有图片正在上传，请稍候", "error");
+      return;
+    }
+    composerUploading = true;
+    try {
+      const marks = [];
+      for (const file of files) {
+        setComposerStatus(`uploading ${file.name || "image"}…`, "busy");
+        marks.push(ttImageMarkdown(await ttUploadImage(file), file));
+      }
+      insertComposerMarkdown(ta, marks.join("\n"));
+      setComposerStatus(`已插入 ${marks.length} 张图片 ✓`, "success");
+    } catch (e) {
+      setComposerStatus(`上传失败: ${(e && e.message) || "未知错误"}`, "error");
+    } finally {
+      composerUploading = false;
+    }
   }
 
   function submitComposerText() {
@@ -3035,7 +3226,7 @@
       }
       if (t.closest(".tt-imgtok")) {
         const href = t.closest(".tt-imgwrap")?.dataset.href;
-        if (href) window.open(href, "_blank", "noopener");
+        if (href) openLightbox(href); // 灯箱完整显示原图（原为直接新标签跳走）
         return;
       }
       if (t.closest("[data-action='copy-code']")) {
@@ -3140,6 +3331,21 @@
       ta.addEventListener("input", () => {
         ta.style.height = "auto";
         ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+      });
+      // 粘贴 / 拖拽图片 → 直接上传并以 markdown 插入光标处
+      ta.addEventListener("paste", (e) => {
+        const files = ttTransferImages(e);
+        if (!files.length) return;
+        e.preventDefault();
+        e.stopPropagation();
+        handleComposerImageFiles(files);
+      });
+      ta.addEventListener("drop", (e) => {
+        const files = ttTransferImages(e);
+        if (!files.length) return;
+        e.preventDefault();
+        e.stopPropagation();
+        handleComposerImageFiles(files);
       });
       // 点最外层 box 聚焦输入框
       const box = ta.closest(".tt-composer");
