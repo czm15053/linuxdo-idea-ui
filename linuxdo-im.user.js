@@ -6438,7 +6438,10 @@ html.im-theme {
         return true;
       }
       const title = String(document.title || "").toLowerCase().replace(/…/g, "...");
-      if (title.startsWith("just a moment") || title.includes("attention required")) {
+      if (title.startsWith("just a moment") || title.includes("attention required") || title.includes("请稍候")) {
+        return true;
+      }
+      if (document.querySelector("input[type=hidden][id^='cf-chl-widget-'][name='cf-turnstile-response']") && document.querySelector(".main-wrapper[role='main'], #challenge-error-text")) {
         return true;
       }
     } catch {
@@ -12100,16 +12103,25 @@ ${data.raw}
     if (!TABS.some((t) => t.key === tab)) tab = "summary";
     return { username: decodeURIComponent(m[1]), tab };
   }
+  let headInflight = null;
   async function ensureHead(username) {
     var _a2;
     if (((_a2 = state.head) == null ? void 0 : _a2._for) === username) return state.head;
+    if (headInflight) return headInflight;
+    headInflight = (async () => {
+      try {
+        const data = await api(`/u/${encodeURIComponent(username)}.json`);
+        state.head = { user: data.user || {}, _for: username };
+      } catch {
+        state.head = { _for: username, error: true };
+      }
+      return state.head;
+    })();
     try {
-      const data = await api(`/u/${encodeURIComponent(username)}.json`);
-      state.head = { user: data.user || {}, _for: username };
-    } catch {
-      state.head = { _for: username, error: true };
+      return await headInflight;
+    } finally {
+      headInflight = null;
     }
-    return state.head;
   }
   function headHtml(head) {
     if (!head || head.error) return "";
@@ -12222,13 +12234,22 @@ ${data.raw}
       (it) => `<button type="button" class="im-chip im-pfilter-chip${it.key === activeKey2 ? " active" : ""}" data-${attr}="${it.key}">${it.label}</button>`
     ).join("") + `</div>`;
   }
+  let summaryInflight = null;
   async function ensureSummary() {
     if (state.summary && Date.now() - state.summary.loadedAt < TTL) return;
+    if (summaryInflight) return summaryInflight;
+    summaryInflight = (async () => {
+      try {
+        const data = await api(`/u/${encodeURIComponent(state.username)}/summary.json`);
+        state.summary = { data, loadedAt: Date.now(), error: null };
+      } catch (err) {
+        state.summary = { data: null, loadedAt: Date.now(), error: (err == null ? void 0 : err.message) || "网络异常" };
+      }
+    })();
     try {
-      const data = await api(`/u/${encodeURIComponent(state.username)}/summary.json`);
-      state.summary = { data, loadedAt: Date.now(), error: null };
-    } catch (err) {
-      state.summary = { data: null, loadedAt: Date.now(), error: (err == null ? void 0 : err.message) || "网络异常" };
+      return await summaryInflight;
+    } finally {
+      summaryInflight = null;
     }
   }
   function statChip(v, k) {
@@ -14400,19 +14421,28 @@ ${data.raw}
   let cache = null;
   let panelEl = null;
   let loading = false;
+  let inflight = null;
   async function loadLevelData(force = false) {
-    var _a2;
     if (!force && cache && Date.now() - cache.at < CACHE_TTL) return cache;
-    const me = getCurrentUsername();
-    if (!me) return null;
-    const u = await api(`/u/${encodeURIComponent(me)}.json`);
-    const level = Number(((_a2 = u.user) == null ? void 0 : _a2.trust_level) ?? 0);
-    const [summary, connect] = await Promise.all([
-      api(`/u/${encodeURIComponent(me)}/summary.json`).then((r) => r.user_summary || {}).catch(() => ({})),
-      level < 4 ? fetchConnect().catch(() => null) : Promise.resolve(null)
-    ]);
-    cache = { at: Date.now(), level, user: u.user || {}, summary, connect };
-    return cache;
+    if (inflight) return inflight;
+    inflight = (async () => {
+      var _a2;
+      const me = getCurrentUsername();
+      if (!me) return null;
+      const u = await api(`/u/${encodeURIComponent(me)}.json`);
+      const level = Number(((_a2 = u.user) == null ? void 0 : _a2.trust_level) ?? 0);
+      const [summary, connect] = await Promise.all([
+        api(`/u/${encodeURIComponent(me)}/summary.json`).then((r) => r.user_summary || {}).catch(() => ({})),
+        level < 4 ? fetchConnect().catch(() => null) : Promise.resolve(null)
+      ]);
+      cache = { at: Date.now(), level, user: u.user || {}, summary, connect };
+      return cache;
+    })();
+    try {
+      return await inflight;
+    } finally {
+      inflight = null;
+    }
   }
   function itemState(r, s, u) {
     const cur = Number(r.value(s, u)) || 0;

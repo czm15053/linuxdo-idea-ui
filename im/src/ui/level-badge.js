@@ -181,20 +181,30 @@ async function fetchConnect() {
 let cache = null; // { at, level, user, summary, connect }
 let panelEl = null;
 let loading = false;
+let inflight = null; // 进行中的加载 Promise，合并页面首帧的并发触发，避免同一 URL 重复轰炸
 
 async function loadLevelData(force = false) {
   if (!force && cache && Date.now() - cache.at < CACHE_TTL) return cache;
-  const me = getCurrentUsername();
-  if (!me) return null;
-  // 徽章只依赖 user.json；明细失败降级为空（不拖垮徽章显示）
-  const u = await api(`/u/${encodeURIComponent(me)}.json`);
-  const level = Number(u.user?.trust_level ?? 0);
-  const [summary, connect] = await Promise.all([
-    api(`/u/${encodeURIComponent(me)}/summary.json`).then((r) => r.user_summary || {}).catch(() => ({})),
-    level < 4 ? fetchConnect().catch(() => null) : Promise.resolve(null)
-  ]);
-  cache = { at: Date.now(), level, user: u.user || {}, summary, connect };
-  return cache;
+  // 缓存未就绪期间 syncLevelBadge 会被 applyTheme 高频调用：合并并发，只保留一个进行中的请求
+  if (inflight) return inflight;
+  inflight = (async () => {
+    const me = getCurrentUsername();
+    if (!me) return null;
+    // 徽章只依赖 user.json；明细失败降级为空（不拖垮徽章显示）
+    const u = await api(`/u/${encodeURIComponent(me)}.json`);
+    const level = Number(u.user?.trust_level ?? 0);
+    const [summary, connect] = await Promise.all([
+      api(`/u/${encodeURIComponent(me)}/summary.json`).then((r) => r.user_summary || {}).catch(() => ({})),
+      level < 4 ? fetchConnect().catch(() => null) : Promise.resolve(null)
+    ]);
+    cache = { at: Date.now(), level, user: u.user || {}, summary, connect };
+    return cache;
+  })();
+  try {
+    return await inflight;
+  } finally {
+    inflight = null;
+  }
 }
 
 // ---------------- 渲染 ----------------

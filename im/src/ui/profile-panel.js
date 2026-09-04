@@ -54,15 +54,25 @@ export function parseProfilePath(pathname) {
 
 /* ---------- 头部卡（/u/:username.json，实测字段直取） ---------- */
 
+let headInflight = null; // 合并并发触发
+
 async function ensureHead(username) {
   if (state.head?._for === username) return state.head;
+  if (headInflight) return headInflight;
+  headInflight = (async () => {
+    try {
+      const data = await api(`/u/${encodeURIComponent(username)}.json`);
+      state.head = { user: data.user || {}, _for: username };
+    } catch {
+      state.head = { _for: username, error: true };
+    }
+    return state.head;
+  })();
   try {
-    const data = await api(`/u/${encodeURIComponent(username)}.json`);
-    state.head = { user: data.user || {}, _for: username };
-  } catch {
-    state.head = { _for: username, error: true };
+    return await headInflight;
+  } finally {
+    headInflight = null;
   }
-  return state.head;
 }
 
 function headHtml(head) {
@@ -200,13 +210,23 @@ function subBarHtml(items, activeKey, attr) {
 
 /* ---------- 总结 tab（/u/:name/summary.json） ---------- */
 
+let summaryInflight = null; // 合并并发触发
+
 async function ensureSummary() {
   if (state.summary && Date.now() - state.summary.loadedAt < TTL) return;
+  if (summaryInflight) return summaryInflight;
+  summaryInflight = (async () => {
+    try {
+      const data = await api(`/u/${encodeURIComponent(state.username)}/summary.json`);
+      state.summary = { data, loadedAt: Date.now(), error: null };
+    } catch (err) {
+      state.summary = { data: null, loadedAt: Date.now(), error: err?.message || "网络异常" };
+    }
+  })();
   try {
-    const data = await api(`/u/${encodeURIComponent(state.username)}/summary.json`);
-    state.summary = { data, loadedAt: Date.now(), error: null };
-  } catch (err) {
-    state.summary = { data: null, loadedAt: Date.now(), error: err?.message || "网络异常" };
+    return await summaryInflight;
+  } finally {
+    summaryInflight = null;
   }
 }
 
