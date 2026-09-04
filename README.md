@@ -6,17 +6,17 @@
 
 ## 目录
 
-- [🎉 飞书 / 钉钉 / 企业微信用户请安装新版](#-飞书--钉钉--企业微信用户请安装新版)
+- [🎉 飞书 / 钉钉 / 企业微信用户请安装新版（三合一）](#-飞书--钉钉--企业微信用户请安装新版三合一)
 - [脚本一：IM 三合一外观（`linuxdo-im.user.js`）](#脚本一im-三合一外观linuxdo-imuserjs)
 - [脚本二：JetBrains / Darcula 外观（`linuxdo-idea.user.js`）](#脚本二jetbrains--darcula-外观linuxdo-ideauserjs)
-- [脚本三：飞书 IM 外观（`linuxdo-feishu.user.js`）](#脚本三飞书-im-外观linuxdo-feishuuserjs)
-- [脚本四：钉钉 IM 外观（`linuxdo-dingtalk.user.js`）](#脚本四钉钉-im-外观linuxdo-dingtalkuserjs)
+- [脚本三：飞书 IM 外观（`linuxdo-feishu.user.js` · 已停止更新，请用三合一）](#脚本三飞书-im-外观linuxdo-feishuuserjs)
+- [脚本四：钉钉 IM 外观（`linuxdo-dingtalk.user.js` · 已停止更新，请用三合一）](#脚本四钉钉-im-外观linuxdo-dingtalkuserjs)
 - [脚本五：终端 TUI 外观 — Claude Code / Codex CLI（`linuxdo-terminal.user.js`）](#脚本五终端-tui-外观--claude-code--codex-clilinuxdo-terminaluserjs)
 - [脚本六：Codex 桌面 app 外观（`linuxdo-codex.user.js`）](#脚本六codex-桌面-app-外观linuxdo-codexuserjs)
 - [License](#license)
 - [友链](#友链)
 
-## 🎉 飞书 / 钉钉 / 企业微信用户请安装新版
+# 🎉 飞书 / 钉钉 / 企业微信用户请安装新版（三合一）
 
 <center>
 
