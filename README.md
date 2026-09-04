@@ -1,8 +1,20 @@
-# Linux DO · IM / JetBrains / 飞书 / 钉钉 / 终端 TUI 风格外观
+# Linux DO · 不同风格摸鱼皮肤合集
 
-把 [linux.do](https://linux.do/) 换成 **IM（钉钉 / 飞书 / 企业微信）**、**JetBrains IDE**、**飞书 IM**、**钉钉 PC IM** 或**终端 TUI（Claude Code / Codex CLI）**风格。只换皮，不碰数据——内容、链接、按钮与交互全部保留。
+把 [linux.do](https://linux.do/) 换成 **IM（钉钉 / 飞书 / 企业微信）**、**JetBrains IDE**、**飞书 IM**、**钉钉 PC IM**、**Codex 桌面 app** 或**终端 TUI（Claude Code / Codex CLI）**风格。只换皮，不碰数据——内容、链接、按钮与交互全部保留。
 
-> ⚠️ 五个脚本**互斥**，同一时刻只启用一个。同时启用时后装脚本会自动避让（控制台有提示）。
+> ⚠️ 六个脚本**互斥**，同一时刻只启用一个。同时启用时后装脚本会自动避让（控制台有提示）。
+
+## 目录
+
+- [🎉 飞书 / 钉钉 / 企业微信用户请安装新版](#-飞书--钉钉--企业微信用户请安装新版)
+- [脚本一：IM 三合一外观（`linuxdo-im.user.js`）](#脚本一im-三合一外观linuxdo-imuserjs)
+- [脚本二：JetBrains / Darcula 外观（`linuxdo-idea.user.js`）](#脚本二jetbrains--darcula-外观linuxdo-ideauserjs)
+- [脚本三：飞书 IM 外观（`linuxdo-feishu.user.js`）](#脚本三飞书-im-外观linuxdo-feishuuserjs)
+- [脚本四：钉钉 IM 外观（`linuxdo-dingtalk.user.js`）](#脚本四钉钉-im-外观linuxdo-dingtalkuserjs)
+- [脚本五：终端 TUI 外观 — Claude Code / Codex CLI（`linuxdo-terminal.user.js`）](#脚本五终端-tui-外观--claude-code--codex-clilinuxdo-terminaluserjs)
+- [脚本六：Codex 桌面 app 外观（`linuxdo-codex.user.js`）](#脚本六codex-桌面-app-外观linuxdo-codexuserjs)
+- [License](#license)
+- [友链](#友链)
 
 ## 🎉 飞书 / 钉钉 / 企业微信用户请安装新版
 
@@ -12,8 +24,6 @@
 旧的独立飞书 / 钉钉脚本已停止更新，**请改用新版** 👇
 
 </center>
-
-## 脚本一：IM 三合一外观（`linuxdo-im.user.js`）
 
 ## 脚本一：IM 三合一外观（`linuxdo-im.user.js`）
 
@@ -186,11 +196,47 @@ https://github.com/czm15053/linuxdo-idea-ui/raw/main/linuxdo-terminal.user.js
 | Codex 详情页 | ![Codex 详情页](./snapshot/Codex详情页-TUI.png) |
 | 分类选择浮层 | ![分类选择浮层](./snapshot/点击切换分类-TUI.png) |
 
+## 脚本六：Codex 桌面 app 外观（`linuxdo-codex.user.js`）
+
+换成 **OpenAI Codex 桌面 app** 风格：左侧导航 rail + 中间线程列表 / 详情 + 右侧氛围代码面板，配色实测自原版 app 截图，明暗双模式。
+
+### 安装
+
+同上，安装 [`linuxdo-codex.user.js`](./linuxdo-codex.user.js) 即可。
+
+Raw 直链（仓库公开后可用）：
+
+```text
+https://github.com/czm15053/linuxdo-idea-ui/raw/main/linuxdo-codex.user.js
+```
+
+### 功能
+
+- **左 rail**：Codex 品牌标 + 搜索 / 通知入口；话题、我的草稿、我的消息、徽章、私聊机器人、近期活动、更多；下方分类树可逐级展开 / 收起并显示未读，底部收养原生用户菜单（当前用户名 + 明暗切换）
+- **列表页**：话题渲染为 Codex 项目线程列表，点击就地进入详情
+- **详情页**：帖子渲染为 agent thread（楼层带 "Worked for xx" 装饰），引用可跳源楼并一键返回；投票、书签、点赞等原生交互完整保留
+- **右侧代码面板**：纯氛围分屏，模拟 IDE 打开源码文件，可关闭；三栏宽度均可拖拽调整
+- **明暗双模式**：默认跟随 linux.do 配色，左下角按钮可手动覆盖，偏好写入 `localStorage`
+- **加载页面 / favicon**：OpenAI 花朵加载动画，favicon 换成圆角底 OpenAI 花
+- **图片灯箱**：点击放大防出屏；composer 支持粘贴 / 拖拽图片上传
+- **CF 盾兼容**：检测到 Cloudflare 盾页时自动降级为原生界面
+- **互斥**：检测到其他皮肤脚本时自动避让；SPA 站内跳转后自动重新套用
+
+### 截图
+
+| | |
+| --- | --- |
+| 加载页面 | ![加载页面](./snapshot/加载页面-codex.png) |
+| 列表页 · 收起侧边栏 | ![列表页 · 收起侧边栏](./snapshot/列表页-codex未展开侧边栏.png) |
+| 列表页 · 展开侧边栏 | ![列表页 · 展开侧边栏](./snapshot/列表页-codex展开侧边栏.png) |
+| 详情页 · 收起侧边栏 | ![详情页 · 收起侧边栏](./snapshot/详情页-codex未展开侧边栏.png) |
+| 详情页 · 展开侧边栏 | ![详情页 · 展开侧边栏](./snapshot/详情页-codex展开侧边栏.png) |
+
 ## License
 
 MIT © czm15053
 
-JetBrains、IntelliJ IDEA、PyCharm 均为 JetBrains s.r.o. 商标；飞书为字节跳动旗下产品商标；钉钉为阿里巴巴集团产品商标。本项目为非官方、非关联作品。
+JetBrains、IntelliJ IDEA、PyCharm 均为 JetBrains s.r.o. 商标；飞书为字节跳动旗下产品商标；钉钉为阿里巴巴集团产品商标；Codex、OpenAI 为 OpenAI 商标。本项目为非官方、非关联作品。
 
 ## 友链
 

@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux DO · Codex 风格 mockup</title>
+<style>
+  :root {
+    /* sidebar — 中性深灰，实测自 Codex 桌面 app 截图 */
+    --rail-bg: #222222;
+    --rail-bg-hover: #2a2a2a;
+    --rail-bg-active: #303030;
+    --rail-text: #dedede;
+    --rail-text-dim: #8f8f8f;
+    --rail-text-faint: #6b6b6b;
+    --rail-border: rgba(255, 255, 255, 0.06);
+
+    /* 以下 token 实测自 Codex 桌面 app 深/浅两版截图（2026-08）:
+       bg gray 阶 900 #181818 / 卡片 #242424 / inline code #2e2e2e，
+       border = white 5%/8%/14%，未读点蓝 #83c3fe，radius scale 1.25x */
+    --bg: #181818;            /* gray-900 */
+    --bg-raised: #242424;     /* 实测：卡片/选中块 */
+    --bg-inset: #131313;      /* gray-950 */
+    --border: rgba(255, 255, 255, 0.08);
+    --border-soft: rgba(255, 255, 255, 0.05);
+    --border-strong: rgba(255, 255, 255, 0.12);
+    --text: #ececec;          /* 实测标题峰值 ~#f5f5f5 */
+    --text-secondary: #b9b9b9;/* 正文实测 */
+    --text-dim: #8f8f8f;      /* gray-400 */
+    --text-faint: #5d5d5d;    /* gray-500 */
+
+    /* accent */
+    --blue: #83c3fe;
+    --blue-soft: rgba(131, 195, 254, 0.15);
+    --chip-bg: #2e2e2e;       /* 实测 inline code */
+    --chip-text: #ececec;
+
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+      "Liberation Mono", monospace;
+
+    --rail-w: 306px;
+    --radius: 10px;           /* radius-md .5rem × 1.25 */
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ================= 左栏 ================= */
+  .rail {
+    width: var(--rail-w);
+    flex: none;
+    background: var(--rail-bg);
+    color: var(--rail-text);
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+  }
+
+  .rail-traffic {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 14px 0 78px; /* 给 macOS 红绿灯留位 */
+    color: var(--rail-text-dim);
+  }
+  .rail-traffic svg { width: 20px; height: 20px; padding: 2px; border-radius: 6px; cursor: pointer; }
+  .rail-traffic svg:hover { background: var(--rail-bg-hover); color: var(--rail-text); }
+
+  .rail-brand {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 14px 10px;
+  }
+  .rail-brand-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+  }
+  .rail-brand-name svg { width: 12px; height: 12px; color: var(--rail-text-dim); }
+  .rail-brand-actions { display: flex; gap: 2px; color: var(--rail-text-dim); }
+  .rail-brand-actions svg { width: 19px; height: 19px; padding: 2px; border-radius: 6px; cursor: pointer; }
+  .rail-brand-actions svg:hover { background: var(--rail-bg-hover); color: var(--rail-text); }
+  .rail-brand-actions .bell { position: relative; }
+  .rail-brand-actions .bell::after {
+    content: "";
+    position: absolute;
+    top: 1px; right: 1px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--blue);
+    border: 1.5px solid var(--rail-bg);
+  }
+
+  .rail-nav { padding: 2px 8px; display: flex; flex-direction: column; gap: 1px; }
+  .rail-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 5px 10px;
+    border-radius: var(--radius);
+    font-size: 13.5px;
+    color: var(--rail-text);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .rail-item:hover { background: var(--rail-bg-hover); }
+  .rail-item.active { background: var(--rail-bg-active); }
+  .rail-item svg { width: 16px; height: 16px; flex: none; color: var(--rail-text-dim); }
+  .rail-item.active svg { color: var(--rail-text); }
+
+  .rail-scroll { flex: 1; overflow-y: auto; padding-bottom: 8px; }
+  .rail-scroll::-webkit-scrollbar { width: 8px; }
+  .rail-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+  .rail-section {
+    padding: 18px 18px 4px;
+    font-size: 12px;
+    color: var(--rail-text-faint);
+  }
+  .rail-section-items { padding: 0 8px; display: flex; flex-direction: column; gap: 1px; }
+
+  .rail-item .dot {
+    margin-left: auto;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--blue);
+    flex: none;
+  }
+  .rail-item .count {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--rail-text-dim);
+    flex: none;
+  }
+  .rail-item.sub { padding-left: 33px; font-size: 13px; color: var(--rail-text-dim); }
+  .rail-item.sub:hover { color: var(--rail-text); }
+  .rail-item.faint { color: var(--rail-text-faint); }
+
+  .rail-foot {
+    border-top: 1px solid var(--rail-border);
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .rail-foot-user {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .rail-foot-user:hover { background: var(--rail-bg-hover); }
+  .rail-foot-user svg { width: 17px; height: 17px; color: var(--rail-text-dim); }
+  .rail-foot-dl {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: grid;
+    place-items: center;
+    color: #fff;
+    cursor: pointer;
+    flex: none;
+  }
+  .rail-foot-dl svg { width: 16px; height: 16px; }
+
+  /* ================= 右侧 ================= */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .topbar {
+    height: 46px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--border-soft);
+    color: var(--text-secondary);
+  }
+  .topbar svg { width: 16px; height: 16px; flex: none; }
+  .topbar .crumb { display: flex; align-items: center; gap: 7px; font-size: 13px; min-width: 0; }
+  .topbar .crumb .proj { color: var(--text); }
+  .topbar .crumb .model { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar .spacer { flex: 1; }
+  .topbar .icon-btn {
+    padding: 5px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-dim);
+    display: grid;
+    place-items: center;
+  }
+  .topbar .icon-btn:hover { background: var(--bg-raised); color: var(--text); }
+
+  .thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 40px 40px;
+    scrollbar-width: thin;
+  }
+  .thread-inner { max-width: 760px; margin: 0 auto; }
+
+  /* —— 列表视图（分类 / 最新 / 热门 → Codex 项目视图）—— */
+  .proj-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 6px 0 2px;
+  }
+  .proj-head h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.2px; }
+  .new-topic-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-ui);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--chip-bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    padding: 6px 13px;
+    cursor: pointer;
+  }
+  .new-topic-btn:hover { background: #303030; }
+  .new-topic-btn svg { width: 13px; height: 13px; }
+  .proj-desc {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .thread-rows { display: flex; flex-direction: column; }
+  .trow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    margin: 0 -10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    min-width: 0;
+  }
+  .trow:hover { background: var(--bg-raised); }
+  .trow.active { background: var(--chip-bg); }
+  .trow-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex: none;
+    background: transparent;
+    border: 1.5px solid var(--text-faint);
+  }
+  .trow-dot.unread { background: var(--blue); border-color: var(--blue); }
+  .trow-pin { width: 13px; height: 13px; flex: none; color: var(--text-dim); }
+  .trow-title {
+    font-size: 13.5px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .trow.read .trow-title { color: var(--text-secondary); }
+  .trow-meta {
+    margin-left: auto;
+    flex: none;
+    font-size: 12px;
+    color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .trow-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .trow-texts { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .trow-sep { height: 1px; background: var(--border-soft); margin: 2px 0; }
+
+  /* —— 详情分屏：右侧代码面板（分散注意力的背景噪音）—— */
+  .cx-split { display: flex; padding: 0 !important; overflow: hidden !important; }
+  .split-scroll {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 28px 40px 40px;
+    scrollbar-width: thin;
+  }
+  .code-panel {
+    width: 44%;
+    min-width: 380px;
+    flex: none;
+    border-left: 1px solid var(--border-soft);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+  }
+  .code-tabs {
+    height: 42px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .code-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .code-tab .rs-ic {
+    width: 14px; height: 14px;
+    border-radius: 4px;
+    background: #6b7280;
+    color: #181818;
+    font-size: 8px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+  }
+  .code-tab .close { opacity: 0.55; cursor: pointer; font-size: 13px; line-height: 1; }
+  .code-tab .close:hover { opacity: 1; color: var(--text); }
+  .code-add { color: var(--text-dim); font-size: 15px; cursor: pointer; padding: 2px 6px; }
+  .code-crumb {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border-soft);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .code-crumb .seg { cursor: pointer; }
+  .code-crumb .seg:hover { color: var(--text); }
+  .code-crumb .cur { color: var(--text-secondary); }
+  .code-crumb .spacer { flex: 1; }
+  .code-view-toggle {
+    display: flex;
+    background: var(--chip-bg);
+    border-radius: 999px;
+    padding: 2px;
+    font-size: 11px;
+  }
+  .code-view-toggle span {
+    padding: 3px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    color: var(--text-dim);
+  }
+  .code-view-toggle span.on { background: var(--bg-raised); color: var(--text); }
+  .open-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--chip-bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 4px 11px;
+    cursor: pointer;
+  }
+  .code-lang {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--chip-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 4px 6px;
+    outline: none;
+    cursor: pointer;
+  }
+  .code-body {
+    flex: 1;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.75;
+    padding: 8px 0 24px;
+    scrollbar-width: thin;
+  }
+  .cline { display: flex; }
+  .cline .ln {
+    width: 52px;
+    flex: none;
+    text-align: right;
+    padding-right: 14px;
+    color: #4a4a4a;
+    user-select: none;
+  }
+  .cline .lc { white-space: pre; color: #c9c9c9; }
+  .cline:hover { background: rgba(255,255,255,0.02); }
+  /* 面板开关 */
+  body.hide-code-panel .code-panel { display: none; }
+  body.hide-code-panel #panel-toggle { color: var(--text-faint); }
+  /* diff 模式 */
+  .cline.add { background: rgba(64, 201, 119, 0.10); }
+  .cline.del { background: rgba(250, 66, 62, 0.09); }
+  .cline.add .ln { color: #4d8f68; }
+  .cline.del .ln { color: #9a5a58; }
+  .cline.hunk { background: rgba(51, 156, 255, 0.07); }
+  .cline.hunk .lc { color: #6f8fbf; }
+  .cline.meta .lc { color: var(--text-dim); }
+  /* 语法高亮（fake Rust） */
+  .tk-k { color: #c586c0; }   /* 关键字 */
+  .tk-s { color: #9bd3ae; }   /* 字符串 */
+  .tk-c { color: #6f7a6f; }   /* 注释 */
+  .tk-t { color: #7ab8ff; }   /* 类型 */
+  .tk-f { color: #82aaff; }   /* 函数 */
+  .tk-n { color: #b5cea8; }   /* 数字 */
+  .tk-m { color: #d8a05f; }   /* 宏/属性 */
+
+  /* —— 用户 turn（楼主帖）—— */
+  .turn-user {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 6px;
+  }
+  .turn-user-bubble {
+    background: #282828;      /* gray-750 */
+    border-radius: 16px;
+    padding: 10px 16px;
+    max-width: 85%;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+  .turn-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-faint);
+    font-size: 12.5px;
+    padding: 10px 2px 14px;
+  }
+  .turn-meta .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    border: 1.5px solid var(--text-dim);
+  }
+  .turn-meta .status-dot.done { background: var(--text-dim); }
+
+  /* —— agent turn（回帖，全宽 markdown）—— */
+  .turn-agent { padding: 4px 0 26px; }
+  .turn-agent h1, .turn-agent h2, .turn-agent h3 {
+    color: var(--text);
+    font-weight: 600;
+    margin: 20px 0 9px;
+  }
+  .turn-agent h2 { font-size: 17px; }
+  .turn-agent h3 { font-size: 15px; }
+  .turn-agent p { font-size: 13.5px; line-height: 1.75; color: var(--text); margin: 9px 0; }
+  .turn-agent ul, .turn-agent ol { margin: 8px 0 8px 20px; }
+  .turn-agent li { font-size: 13.5px; line-height: 1.8; color: var(--text); margin: 4px 0; }
+  .turn-agent li::marker { color: var(--text-dim); }
+  .turn-agent a { color: var(--blue); text-decoration: none; }
+  .turn-agent a:hover { text-decoration: underline; }
+
+  code.inline {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--chip-bg);
+    color: var(--chip-text);
+    border-radius: 6px;
+    padding: 2.5px 6px;
+  }
+
+  /* 文件引用芯片 */
+  .file-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--blue-soft);
+    color: #8fb8f8;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    border-radius: 6px;
+    padding: 2.5px 7px;
+    cursor: pointer;
+    vertical-align: baseline;
+  }
+  .file-chip svg { width: 12px; height: 12px; }
+  .file-chip:hover { background: rgba(94, 151, 246, 0.26); }
+
+  /* 代码块 */
+  .codeblock {
+    margin: 14px 0;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .codeblock-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .codeblock-head .copy { cursor: pointer; display: flex; align-items: center; gap: 5px; }
+  .codeblock-head .copy:hover { color: var(--text); }
+  .codeblock-head .copy svg { width: 13px; height: 13px; }
+  .codeblock pre {
+    padding: 12px 14px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    overflow-x: auto;
+    color: #d6d6d6;
+  }
+  .tok-k { color: #c586c0; } .tok-s { color: #ce9178; }
+  .tok-f { color: #82aaff; } .tok-c { color: #6a9955; }
+  .tok-n { color: #b5cea8; }
+
+  /* 引用 → 工具调用卡片 */
+  .tool-card {
+    margin: 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-raised);
+    overflow: hidden;
+  }
+  .tool-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .tool-card-head svg { width: 14px; height: 14px; color: var(--text-dim); }
+  .tool-card-head .chev { margin-left: auto; transition: transform 0.15s; }
+  .tool-card.open .tool-card-head .chev { transform: rotate(90deg); }
+  .tool-card-body {
+    display: none;
+    border-top: 1px solid var(--border-soft);
+    padding: 10px 14px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+  .tool-card.open .tool-card-body { display: block; }
+
+  /* 分割线 turn 之间 */
+  .turn-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0 18px;
+    color: var(--text-faint);
+    font-size: 12px;
+  }
+  .turn-divider::before, .turn-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-soft);
+  }
+
+  /* 楼层间的“ worked ”状态行 */
+  .worked {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-faint);
+    font-size: 12.5px;
+    margin: 4px 0 12px;
+  }
+  .worked svg { width: 14px; height: 14px; }
+
+  /* —— 底部 composer —— */
+  .composer-wrap {
+    flex: none;
+    padding: 10px 40px 18px;
+  }
+  .composer {
+    max-width: 760px;
+    margin: 0 auto;
+    background: #212121;      /* gray-800 */
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 12px 14px 8px;
+  }
+  .composer textarea {
+    width: 100%;
+    background: none;
+    border: none;
+    outline: none;
+    resize: none;
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14.5px;
+    line-height: 1.6;
+    min-height: 24px;
+  }
+  .composer textarea::placeholder { color: var(--text-faint); }
+  .composer-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+  }
+  .composer-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    background: var(--chip-bg);
+    border-radius: 999px;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+  .composer-chip:hover { background: #363636; }
+  .composer-chip svg { width: 13px; height: 13px; }
+  .composer-send {
+    margin-left: auto;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--text);
+    color: #111;
+    border: none;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .composer-send svg { width: 15px; height: 15px; }
+</style>
+</head>
+<body>
+
+<!-- ================= 左栏 ================= -->
+<aside class="rail">
+  <div class="rail-traffic">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><line x1="9.5" y1="4" x2="9.5" y2="20"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="14 6 8 12 14 18"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"><polyline points="10 6 16 12 10 18"/></svg>
+  </div>
+
+  <div class="rail-brand">
+    <div class="rail-brand-name">
+      Linux DO
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 9 12 14 17 9"/></svg>
+    </div>
+    <div class="rail-brand-actions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <svg class="bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg>
+    </div>
+  </div>
+
+  <div class="rail-scroll">
+    <nav class="rail-nav">
+      <div class="rail-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        新话题
+      </div>
+      <div class="rail-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="18" cy="8" r="2.4"/><path d="M6 8.4v7.2"/><path d="M18 10.4c0 4-4 3.6-7 4.6"/></svg>
+        我参与的
+      </div>
+      <div class="rail-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+        稍后看
+        <span class="count">3</span>
+      </div>
+      <div class="rail-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1"/></svg>
+        插件
+      </div>
+    </nav>
+
+    <div class="rail-section">置顶</div>
+    <div class="rail-section-items">
+      <div class="rail-item">LINUX DO 社区公约 2.0</div>
+    </div>
+
+    <div class="rail-section">分类</div>
+    <div class="rail-section-items">
+      <div class="rail-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+        开发调优
+      </div>
+      <div class="rail-item sub">关于 Claude Code 的一些心得</div>
+      <div class="rail-item sub">只读分析当前仓库的总体架构</div>
+      <div class="rail-item sub">MCP server 连接失败排查</div>
+      <div class="rail-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+        资源荟萃
+        <span class="dot"></span>
+      </div>
+      <div class="rail-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+        搞七捻三
+      </div>
+      <div class="rail-item faint">展开显示</div>
+    </div>
+
+    <div class="rail-section">最近</div>
+    <div class="rail-section-items">
+      <div class="rail-item">佬友们都是怎么攒积分的</div>
+      <div class="rail-item">分享一个自用的摸鱼脚本</div>
+      <div class="rail-item">GPT-5.3 Codex Spark 体验</div>
+      <div class="rail-item faint">MCP server connected: - tasks (9 to…</div>
+    </div>
+  </div>
+
+  <div class="rail-foot">
+    <div class="rail-foot-user">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55h.01a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></svg>
+      czm
+    </div>
+    <div class="rail-foot-dl">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><polyline points="6.5 10.5 12 16 17.5 10.5"/><path d="M5 20h14"/></svg>
+    </div>
+  </div>
+</aside>
+
+<!-- ================= 右侧 ================= -->
+<main class="main">
+  <header class="topbar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+    <div class="crumb">
+      <span class="proj">开发调优</span>
+      <span style="color:var(--text-faint)">/</span>
+      <span class="model">关于 Claude Code 的一些心得 · 42 楼</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="icon-btn" id="panel-toggle" title="显示 / 隐藏代码面板">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><line x1="14.5" y1="4" x2="14.5" y2="20"/></svg>
+    </div>
+    <div class="icon-btn" title="在原生界面打开">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>
+    </div>
+    <div class="icon-btn" title="更多">
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+    </div>
+  </header>
+
+  <!-- ========== 列表视图：分类/最新/热门 → Codex 项目视图 ========== -->
+  <div class="thread" id="view-list">
+    <div class="thread-inner">
+      <div class="proj-head">
+        <h1>开发调优</h1>
+        <button class="new-topic-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          新话题
+        </button>
+      </div>
+      <div class="proj-desc">开发、调优、折腾 agent 的经验交流 · 共 1.2k 个话题</div>
+
+      <div class="thread-rows">
+        <div class="trow" data-open>
+          <svg class="trow-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.8a2 2 0 0 1-1.8-1.1L5.5 6.4A1 1 0 0 1 6.4 5h11.2a1 1 0 0 1 .9 1.4l-1.7 3.3a2 2 0 0 1-1.8 1.1Z"/><path d="M9 10.8V15a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-4.2"/></svg>
+          <div class="trow-texts">
+            <div class="trow-title">LINUX DO 社区公约 2.0</div>
+          </div>
+          <div class="trow-meta"><span>326 回复</span><span>置顶</span></div>
+        </div>
+        <div class="trow-sep"></div>
+        <div class="trow" data-open>
+          <span class="trow-dot unread"></span>
+          <div class="trow-texts">
+            <div class="trow-title">关于 Claude Code 的一些心得</div>
+            <div class="trow-sub">hooks、subagent 和上下文管理三块，欢迎佬友们补充……</div>
+          </div>
+          <div class="trow-meta"><span>42 回复</span><span>3 天前</span></div>
+        </div>
+        <div class="trow-sep"></div>
+        <div class="trow" data-open>
+          <span class="trow-dot unread"></span>
+          <div class="trow-texts">
+            <div class="trow-title">只读分析当前仓库的总体架构与主要模块</div>
+            <div class="trow-sub">证据：app.js (lines 857-899)、scan.rs (lines 356-388)……</div>
+          </div>
+          <div class="trow-meta"><span>18 回复</span><span>5 小时前</span></div>
+        </div>
+        <div class="trow-sep"></div>
+        <div class="trow read" data-open>
+          <span class="trow-dot"></span>
+          <div class="trow-texts">
+            <div class="trow-title">MCP server 连接失败排查记录</div>
+            <div class="trow-sub">MCP server connected: - tasks (9 tools) 之前的坑都在这里……</div>
+          </div>
+          <div class="trow-meta"><span>7 回复</span><span>昨天</span></div>
+        </div>
+        <div class="trow-sep"></div>
+        <div class="trow read" data-open>
+          <span class="trow-dot"></span>
+          <div class="trow-texts">
+            <div class="trow-title">佬友们都是怎么攒积分的</div>
+            <div class="trow-sub">每天坚持签到 + 发帖，三个月终于 L3 了……</div>
+          </div>
+          <div class="trow-meta"><span>156 回复</span><span>2 天前</span></div>
+        </div>
+        <div class="trow-sep"></div>
+        <div class="trow read" data-open>
+          <span class="trow-dot"></span>
+          <div class="trow-texts">
+            <div class="trow-title">GPT-5.3 Codex Spark 体验报告</div>
+            <div class="trow-sub">速度确实快，但复杂重构还是得上满血版……</div>
+          </div>
+          <div class="trow-meta"><span>89 回复</span><span>2 天前</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 详情视图：帖子 = agent thread（左）+ 代码面板（右） ========== -->
+  <div class="thread cx-split" id="view-detail">
+    <div class="split-scroll">
+    <div class="thread-inner">
+
+      <!-- 楼主帖 = user prompt -->
+      <div class="turn-user">
+        <div class="turn-user-bubble">最近在linux.do潜水很久了，把这段时间用 Claude Code 的一些心得整理一下，主要讲讲 hooks、subagent 和上下文管理三块。欢迎佬友们补充。</div>
+      </div>
+      <div class="turn-meta">
+        <span class="status-dot done"></span>
+        楼主 · 发布于 3 天前 · 已读 1.2k
+      </div>
+
+      <!-- 一楼 = agent 回答 -->
+      <div class="turn-agent">
+        <h2>Hooks 的正确打开方式</h2>
+        <p>很多人把 hooks 当装饰用，其实它是唯一能<strong>确定性地</strong>约束 agent 行为的手段。常用三类：</p>
+        <ul>
+          <li><code class="inline">PreToolUse</code>：拦截危险命令，比如 <code class="inline">rm -rf</code>、裸 <code class="inline">git push</code></li>
+          <li><code class="inline">PostToolUse</code>：写文件后自动跑 <code class="inline">prettier --write</code></li>
+          <li><code class="inline">Stop</code>：收尾时强制跑一遍测试，红了就不让停</li>
+        </ul>
+        <p>配置放在 <span class="file-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/></svg>settings.json (hooks 字段)</span>，参考官方文档 <a href="#">Claude Code Hooks</a>。</p>
+        <div class="codeblock">
+          <div class="codeblock-head">
+            <span>json — ~/.claude/settings.json</span>
+            <span class="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>复制</span>
+          </div>
+          <pre><span class="tok-k">"hooks"</span>: {
+  <span class="tok-k">"PostToolUse"</span>: [{
+    <span class="tok-k">"matcher"</span>: <span class="tok-s">"Edit|Write"</span>,
+    <span class="tok-k">"hooks"</span>: [{ <span class="tok-k">"type"</span>: <span class="tok-s">"command"</span>, <span class="tok-k">"command"</span>: <span class="tok-s">"pnpm lint --fix"</span> }]
+  }]
+}</pre>
+        </div>
+      </div>
+
+      <div class="worked">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        2 楼 · 摸鱼小能手 · 发表于 3 天前
+      </div>
+
+      <!-- 二楼，带引用卡片 -->
+      <div class="turn-agent">
+        <div class="tool-card open">
+          <div class="tool-card-head">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1L3 20l1.2-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>
+            引用 1 楼 · czm
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+          </div>
+          <div class="tool-card-body">很多人把 hooks 当装饰用，其实它是唯一能确定性地约束 agent 行为的手段……</div>
+        </div>
+        <p>补充一个坑：Stop hook 里跑测试记得加超时，不然 agent 会被一个挂起的 watcher 卡死。我一般用 <code class="inline">timeout 120 pnpm test</code> 包一层。</p>
+        <h3>subagent 上下文隔离</h3>
+        <p>子代理最大的价值不是并行，是<strong>上下文隔离</strong>——搜一万行代码，主上下文只带回来十行结论。原则：</p>
+        <ol>
+          <li>探索类任务全走子代理，主线程只做决策</li>
+          <li>子代理 prompt 里写死路径，别让它自己找</li>
+        </ol>
+      </div>
+
+      <div class="worked">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        3 楼 · 键盘侠本侠 · 发表于 2 天前
+      </div>
+
+      <!-- 三楼，短回帖 -->
+      <div class="turn-agent">
+        <p>学到了，<code class="inline">timeout</code> 包一层这个细节之前完全没注意到，感谢佬友 🙏</p>
+      </div>
+
+      <div class="turn-divider">以上为 42 条回复中的最近 3 条</div>
+
+    </div>
+    </div><!-- /split-scroll -->
+
+    <!-- 右侧代码面板：随机生成的超长代码 / diff，纯氛围 -->
+    <aside class="code-panel" id="code-panel">
+      <div class="code-tabs">
+        <div class="code-tab"><span class="rs-ic">RS</span><span id="code-file-name">lib.rs</span><span class="close">×</span></div>
+        <span class="code-add">＋</span>
+      </div>
+      <div class="code-crumb">
+        <span class="seg">linuxdo-idea-ui</span> › <span class="seg">src</span> › <span class="seg" id="code-crumb-dir">engine</span> › <span class="cur" id="code-crumb-file">lib.rs</span>
+        <span class="spacer"></span>
+        <select class="code-lang" id="code-lang">
+          <option value="rust">Rust</option>
+          <option value="python">Python</option>
+          <option value="typescript">TypeScript</option>
+          <option value="go">Go</option>
+          <option value="java">Java</option>
+        </select>
+        <div class="code-view-toggle" id="code-view-toggle"><span class="on" data-v="code">代码</span><span data-v="diff">diff</span></div>
+        <button class="open-btn">⌘ 打开</button>
+      </div>
+      <div class="code-body" id="code-body"></div>
+    </aside>
+  </div>
+
+  <!-- composer -->
+  <div class="composer-wrap">
+    <div class="composer">
+      <textarea rows="1" placeholder="回复「关于 Claude Code 的一些心得」…"></textarea>
+      <div class="composer-bar">
+        <div class="composer-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          附件
+        </div>
+        <div class="composer-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.05 12.35 2a1.4 1.4 0 0 0-1-.4H3a1 1 0 0 0-1 1v8.35a1.4 1.4 0 0 0 .4 1l9.1 9.05a1.4 1.4 0 0 0 2 0l7.9-7.9a1.4 1.4 0 0 0 0-2Z"/><circle cx="7.5" cy="7.5" r="1"/></svg>
+          Markdown
+        </div>
+        <button class="composer-send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  // 引用卡片折叠
+  document.querySelectorAll(".tool-card-head").forEach((h) =>
+    h.addEventListener("click", () => h.parentElement.classList.toggle("open"))
+  );
+
+  // 列表 / 详情 视图切换
+  const viewList = document.getElementById("view-list");
+  const viewDetail = document.getElementById("view-detail");
+  const crumbProj = document.querySelector(".topbar .crumb .proj");
+  const crumbModel = document.querySelector(".topbar .crumb .model");
+  const composerInput = document.querySelector(".composer textarea");
+
+  function showView(view) {
+    const isList = view === "list";
+    viewList.style.display = isList ? "" : "none";
+    viewDetail.style.display = isList ? "none" : "";
+    crumbProj.textContent = "开发调优";
+    crumbModel.textContent = isList
+      ? "全部线程 · 1.2k"
+      : "关于 Claude Code 的一些心得 · 42 楼";
+    composerInput.placeholder = isList
+      ? "在 开发调优 发新话题…"
+      : "回复「关于 Claude Code 的一些心得」…";
+  }
+
+  // 点话题行 → 详情
+  document.querySelectorAll(".trow[data-open]").forEach((row) =>
+    row.addEventListener("click", () => showView("detail"))
+  );
+  // 顶栏文件夹图标 → 返回列表
+  document.querySelector(".topbar > svg").addEventListener("click", () => showView("list"));
+  // 侧栏：除「新话题」外都回到列表；「新话题」聚焦输入框
+  document.querySelectorAll(".rail-item").forEach((item, i) => {
+    item.addEventListener("click", () => {
+      if (i === 0) { composerInput.focus(); return; }
+      showView("list");
+    });
+  });
+
+  showView(location.hash === "#detail" ? "detail" : "list");
+
+  /* ================= 右侧代码面板：随机长代码 / diff ================= */
+  // 伪随机（按语言+模式固定种子，刷新后同一语言内容稳定，便于对比）
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const LANGS = {
+    rust: {
+      file: "lib.rs", dir: "engine", icon: "RS", comment: "//",
+      kw: ["fn","let","mut","impl","pub","use","struct","enum","match","if","else","for","in","return","mod","crate","self","Self","async","await","move","where","const","trait","loop","while","Ok","Err","Some","None","Box","Vec","String","Result","Option"],
+      blocks: [
+        ["use std::collections::HashMap;", "use std::sync::{Arc, Mutex};", ""],
+        ["pub struct TopicCache {", "    entries: HashMap<u64, CachedTopic>,", "    ttl: Duration,", "    hits: Arc<Mutex<u64>>,", "}", ""],
+        ["impl TopicCache {", "    pub fn new(ttl: Duration) -> Self {", "        Self { entries: HashMap::new(), ttl, hits: Arc::new(Mutex::new(0)) }", "    }", "}", ""],
+        ["    pub fn get(&self, id: u64) -> Option<CachedTopic> {", "        match self.entries.get(&id) {", "            Some(t) if !t.expired(self.ttl) => Some(t.clone()),", "            _ => None,", "        }", "    }", ""],
+        ["    pub async fn refresh(&mut self, id: u64) -> Result<(), FetchError> {", "        let fresh = fetch_topic(id).await?;", "        self.entries.insert(id, fresh.into());", "        *self.hits.lock().unwrap() += 1;", "        Ok(())", "    }", ""],
+        ["#[derive(Debug, Clone)]", "pub enum RenderMode {", "    List,", "    Detail { topic_id: u64 },", "    Split { topic_id: u64, panel: PanelKind },", "}", ""],
+        ["    fn evict_stale(&mut self) -> usize {", "        let before = self.entries.len();", "        self.entries.retain(|_, v| !v.expired(self.ttl));", "        before - self.entries.len()", "    }", ""],
+        ["// 缓存淘汰策略：先按 TTL，再按 LRU 兜底", "// 注意保持与 metrics 上报的一致性", ""],
+        ["    pub fn stats(&self) -> CacheStats {", "        CacheStats {", "            size: self.entries.len(),", "            hits: *self.hits.lock().unwrap(),", "            hit_rate: self.hits.lock().unwrap().checked_div(self.entries.len() as u64).unwrap_or(0),", "        }", "    }", ""],
+        ["#[cfg(test)]", "mod tests {", "    use super::*;", "", "    #[test]", "    fn stale_entry_is_evicted() {", "        let mut c = TopicCache::new(Duration::from_secs(0));", "        c.entries.insert(1, CachedTopic::default());", "        assert_eq!(c.evict_stale(), 1);", "    }", "}", ""]
+      ]
+    },
+    python: {
+      file: "pipeline.py", dir: "workers", icon: "PY", comment: "#",
+      kw: ["def","class","return","if","else","elif","for","while","in","import","from","as","with","try","except","finally","raise","lambda","None","True","False","async","await","yield","pass","self","is","not","and","or"],
+      blocks: [
+        ["import asyncio", "import hashlib", "from dataclasses import dataclass, field", "from typing import Optional", ""],
+        ["@dataclass", "class TopicSnapshot:", "    topic_id: int", "    title: str", "    posts: list = field(default_factory=list)", "    fetched_at: float = 0.0", ""],
+        ["class Pipeline:", '    """话题抓取流水线：拉取 -> 清洗 -> 落库。"""', "", "    def __init__(self, workers: int = 8):", "        self.workers = workers", "        self.queue: asyncio.Queue = asyncio.Queue(maxsize=1024)", "        self.seen: set[int] = set()", ""],
+        ["    async def run(self) -> None:", "        producers = [asyncio.create_task(self.produce(i)) for i in range(2)]", "        consumers = [asyncio.create_task(self.consume(i)) for i in range(self.workers)]", "        await asyncio.gather(*producers, *consumers)", ""],
+        ["    async def consume(self, idx: int) -> None:", "        while True:", "            snap = await self.queue.get()", "            try:", "                await self.persist(snap)", "            except Exception as exc:", '                logger.warning("persist failed: %s", exc)', "            finally:", "                self.queue.task_done()", ""],
+        ["    def fingerprint(self, snap: TopicSnapshot) -> str:", "        digest = hashlib.sha256(snap.title.encode()).hexdigest()", "        return digest[:16]", ""],
+        ["    async def persist(self, snap: TopicSnapshot) -> None:", "        key = self.fingerprint(snap)", "        if key in self.seen:", "            return", "        await store.upsert(key, snap)", "        self.seen.add(key)", ""],
+        ["def backoff(attempt: int, base: float = 0.5) -> float:", "    # 指数退避 + 抖动，避免雪崩", "    return base * (2 ** attempt) * (0.5 + random.random())", ""],
+        ["async def main() -> None:", "    pipe = Pipeline(workers=16)", "    await pipe.run()", "", 'if __name__ == "__main__":', "    asyncio.run(main())", ""]
+      ]
+    },
+    typescript: {
+      file: "app.ts", dir: "web", icon: "TS", comment: "//",
+      kw: ["const","let","var","function","return","if","else","for","of","in","while","import","from","export","default","class","extends","interface","type","enum","new","this","async","await","try","catch","finally","throw","switch","case","break","readonly","public","private","void","string","number","boolean","Promise","Map","Set"],
+      blocks: [
+        ['import { EventEmitter } from "events";', 'import type { Topic, Post } from "./types";', ""],
+        ["interface CacheEntry<T> {", "  value: T;", "  expiresAt: number;", "}", ""],
+        ["export class TopicStore extends EventEmitter {", "  private cache = new Map<number, CacheEntry<Topic>>();", "  private readonly ttl = 30_000;", "", "  constructor(private readonly client: ApiClient) {", "    super();", "  }", "}", ""],
+        ["  async get(id: number): Promise<Topic | null> {", "    const hit = this.cache.get(id);", "    if (hit && hit.expiresAt > Date.now()) return hit.value;", '    const fresh = await this.client.fetchTopic(id);', "    this.cache.set(id, { value: fresh, expiresAt: Date.now() + this.ttl });", '    this.emit("update", fresh);', "    return fresh;", "  }", ""],
+        ["  invalidate(id?: number): void {", "    if (id === undefined) this.cache.clear();", "    else this.cache.delete(id);", "  }", ""],
+        ["export function renderRow(topic: Topic): string {", '  const unread = topic.unread > 0 ? "●" : "○";', "  return `${unread} ${topic.title} (${topic.postsCount - 1} 回复)`;", "}", ""],
+        ["// 状态机：idle -> loading -> ready | error", "type ViewState =", '  | { kind: "idle" }', '  | { kind: "loading" }', '  | { kind: "ready"; posts: Post[] }', '  | { kind: "error"; message: string };', ""],
+        ["export function reduce(state: ViewState, ev: ViewEvent): ViewState {", "  switch (ev.type) {", '    case "load": return { kind: "loading" };', '    case "ok":  return { kind: "ready", posts: ev.posts };', '    case "err": return { kind: "error", message: ev.message };', "    default:    return state;", "  }", "}", ""],
+        ["const store = new TopicStore(new ApiClient(BASE_URL));", 'store.on("update", (t) => console.log("topic updated", t.id));', ""]
+      ]
+    },
+    go: {
+      file: "main.go", dir: "cmd", icon: "GO", comment: "//",
+      kw: ["func","package","import","return","if","else","for","range","go","chan","select","case","default","type","struct","interface","map","var","const","defer","nil","err","string","int","bool","error","true","false"],
+      blocks: [
+        ["package main", "", 'import (', '    "context"', '    "fmt"', '    "sync"', '    "time"', ')', ""],
+        ["type TopicCache struct {", "    mu      sync.RWMutex", "    entries map[uint64]CachedTopic", "    ttl     time.Duration", "}", ""],
+        ["func NewTopicCache(ttl time.Duration) *TopicCache {", "    return &TopicCache{entries: make(map[uint64]CachedTopic), ttl: ttl}", "}", ""],
+        ["func (c *TopicCache) Get(id uint64) (CachedTopic, bool) {", "    c.mu.RLock()", "    defer c.mu.RUnlock()", "    t, ok := c.entries[id]", "    if !ok || t.Expired(c.ttl) {", "        return CachedTopic{}, false", "    }", "    return t, true", "}", ""],
+        ["func (c *TopicCache) Refresh(ctx context.Context, id uint64) error {", "    fresh, err := FetchTopic(ctx, id)", "    if err != nil {", '        return fmt.Errorf("refresh topic %d: %w", id, err)', "    }", "    c.mu.Lock()", "    defer c.mu.Unlock()", "    c.entries[id] = fresh", "    return nil", "}", ""],
+        ["// 后台定时清理过期条目", "func (c *TopicCache) EvictLoop(ctx context.Context) {", "    tick := time.NewTicker(time.Minute)", "    defer tick.Stop()", "    for {", "        select {", "        case <-ctx.Done():", "            return", "        case <-tick.C:", "            c.evictStale()", "        }", "    }", "}", ""],
+        ["func main() {", "    ctx, cancel := context.WithCancel(context.Background())", "    defer cancel()", "    cache := NewTopicCache(30 * time.Second)", "    go cache.EvictLoop(ctx)", '    fmt.Println("listening on :8080")', "}", ""]
+      ]
+    },
+    java: {
+      file: "TopicService.java", dir: "src/main/java", icon: "JV", comment: "//",
+      kw: ["public","private","protected","class","interface","enum","static","final","void","return","if","else","for","while","new","this","import","package","extends","implements","try","catch","finally","throw","throws","int","long","boolean","String","List","Map","Optional","var"],
+      blocks: [
+        ["package com.example.topics;", "", "import java.time.Duration;", "import java.util.Map;", "import java.util.Optional;", "import java.util.concurrent.ConcurrentHashMap;", ""],
+        ["public class TopicService {", "", "    private final Map<Long, CachedTopic> cache = new ConcurrentHashMap<>();", "    private final Duration ttl;", "    private final TopicClient client;", ""],
+        ["    public TopicService(TopicClient client, Duration ttl) {", "        this.client = client;", "        this.ttl = ttl;", "    }", ""],
+        ["    public Optional<CachedTopic> get(long id) {", "        CachedTopic hit = cache.get(id);", "        if (hit == null || hit.expired(ttl)) {", "            return Optional.empty();", "        }", "        return Optional.of(hit);", "    }", ""],
+        ["    public CachedTopic refresh(long id) throws FetchException {", "        CachedTopic fresh = client.fetchTopic(id);", "        cache.put(id, fresh);", "        return fresh;", "    }", ""],
+        ["    // 惰性淘汰：读路径上顺手清理", "    public int evictStale() {", "        int before = cache.size();", "        cache.values().removeIf(t -> t.expired(ttl));", "        return before - cache.size();", "    }", ""],
+        ["    public CacheStats stats() {", "        return new CacheStats(cache.size(), hits.get(), misses.get());", "    }", "}", ""]
+      ]
+    }
+  };
+
+  const escHtml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  function highlight(line, L) {
+    let s = line, cm = "";
+    const ci = s.indexOf(L.comment);
+    if (ci >= 0) { cm = s.slice(ci); s = s.slice(0, ci); }
+    const slots = [];
+    const stash = (m) => { slots.push(m); return "\u0001" + (slots.length - 1) + "\u0002"; };
+    s = s.replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`/g, (m) => stash('<span class="tk-s">' + escHtml(m) + "</span>"));
+    s = escHtml(s);
+    s = s.replace(new RegExp("\\b(" + L.kw.join("|") + ")\\b", "g"), '<span class="tk-k">$1</span>');
+    s = s.replace(/\b(\d[\d_]*(?:\.\d+)?)\b/g, '<span class="tk-n">$1</span>');
+    s = s.replace(/\b([A-Z][A-Za-z0-9]+)\b/g, '<span class="tk-t">$1</span>');
+    s = s.replace(/\u0001(\d+)\u0002/g, (_, i) => slots[+i]);
+    if (cm) s += '<span class="tk-c">' + escHtml(cm) + "</span>";
+    return s;
+  }
+
+  function genCodeLines(langKey) {
+    const L = LANGS[langKey];
+    const rnd = mulberry32(langKey.length * 2654435761 + 7);
+    const out = [];
+    let guard = 0;
+    while (out.length < 160 && guard++ < 60) {
+      const block = L.blocks[Math.floor(rnd() * L.blocks.length)];
+      out.push(...block);
+    }
+    return out;
+  }
+
+  function renderCodePanel() {
+    const langKey = document.getElementById("code-lang").value;
+    const mode = document.querySelector("#code-view-toggle span.on").dataset.v;
+    const L = LANGS[langKey];
+    document.getElementById("code-file-name").textContent = L.file;
+    document.getElementById("code-crumb-file").textContent = L.file;
+    document.getElementById("code-crumb-dir").textContent = L.dir;
+    document.querySelector(".code-tab .rs-ic").textContent = L.icon;
+
+    const lines = genCodeLines(langKey);
+    const body = document.getElementById("code-body");
+    if (mode === "code") {
+      body.innerHTML = lines.map((ln, i) =>
+        '<div class="cline"><span class="ln">' + (i + 1) + '</span><span class="lc">' + highlight(ln, L) + "</span></div>"
+      ).join("");
+      return;
+    }
+    // diff 模式：同一批代码切片，随机 +/−/上下文
+    const rnd = mulberry32(langKey.length * 97 + 13);
+    const rows = [
+      ["meta", "diff --git a/" + L.dir + "/" + L.file + " b/" + L.dir + "/" + L.file],
+      ["meta", "index 8f3a2c1..e9d47b5 100644"],
+      ["meta", "--- a/" + L.dir + "/" + L.file],
+      ["meta", "+++ b/" + L.dir + "/" + L.file]
+    ];
+    let i = 0, guard = 0;
+    while (i < lines.length - 12 && guard++ < 40) {
+      const start = i + 1;
+      const chunk = 6 + Math.floor(rnd() * 10);
+      rows.push(["hunk", "@@ -" + start + "," + chunk + " +" + start + "," + (chunk + 2) + " @@"]);
+      for (let k = 0; k < chunk && i < lines.length; k++, i++) {
+        const r = rnd();
+        const kind = r < 0.25 ? "del" : r < 0.5 ? "add" : "";
+        const sign = kind === "del" ? "-" : kind === "add" ? "+" : " ";
+        rows.push([kind, sign + " " + lines[i]]);
+      }
+      i += 2; // hunk 间隔
+    }
+    body.innerHTML = rows.map(([kind, ln], n) => {
+      const isHead = kind === "meta" || kind === "hunk";
+      const num = isHead ? "" : String(n);
+      const sign = ln.startsWith("+") ? "+ " : ln.startsWith("-") ? "- " : "  ";
+      const content = isHead ? escHtml(ln) : sign + highlight(ln.slice(2), L);
+      return '<div class="cline ' + kind + '"><span class="ln">' + num + '</span><span class="lc">' + content + "</span></div>";
+    }).join("");
+  }
+
+  document.getElementById("code-lang").addEventListener("change", renderCodePanel);
+  // 代码面板开关：顶栏分屏按钮 + tab 上的 ×
+  const togglePanel = () => document.body.classList.toggle("hide-code-panel");
+  document.getElementById("panel-toggle").addEventListener("click", togglePanel);
+  document.querySelector(".code-tab .close").addEventListener("click", togglePanel);
+  document.querySelectorAll("#code-view-toggle span").forEach((s) =>
+    s.addEventListener("click", () => {
+      document.querySelectorAll("#code-view-toggle span").forEach((x) => x.classList.toggle("on", x === s));
+      renderCodePanel();
+    })
+  );
+  renderCodePanel();
+</script>
+</body>
+</html>
