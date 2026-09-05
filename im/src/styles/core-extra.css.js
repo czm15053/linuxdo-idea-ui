@@ -1863,6 +1863,93 @@ color: #7AA3D6;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .__ROOT_CLASS__.__DARK_CLASS__ .im-search-pop { box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6); }
+
+    /* ---------- AI 总结（主贴下第二层，豆包气泡） ---------- */
+    .im-ai-summary { max-width: min(88%, 560px); }
+    .im-ai-summary .im-msg-avatar {
+      background: transparent; border-radius: 50%; overflow: hidden;
+      width: 36px; height: 36px; padding: 0;
+    }
+    .im-ai-summary .im-msg-avatar img,
+    .im-ai-summary .im-msg-avatar svg {
+      width: 100%; height: 100%; display: block; object-fit: cover;
+    }
+    .im-ai-summary .im-ai-name { color: var(--im-accent); font-weight: 600; cursor: pointer; }
+    .im-ai-summary .im-ai-avatar { cursor: pointer; }
+    .im-ai-id-pop {
+      position: fixed; z-index: 1400; width: 280px;
+      background: var(--im-bg); color: var(--im-text);
+      border: 1px solid var(--im-border); border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+      padding: 12px; font-family: var(--im-font);
+    }
+    .im-ai-id-row { display: flex; gap: 10px; align-items: flex-start; }
+    .im-ai-id-preview {
+      width: 56px; height: 56px; flex-shrink: 0; padding: 0;
+      border: 1px dashed var(--im-border); border-radius: 50%;
+      background: var(--im-hover); overflow: hidden; cursor: pointer;
+    }
+    .im-ai-id-preview.is-drop { border-color: var(--im-accent); background: var(--im-accent-soft); }
+    .im-ai-id-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .im-ai-id-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .im-ai-id-fields label { font-size: 11px; color: var(--im-text-3); }
+    .im-ai-id-fields input {
+      height: 30px; border: 1px solid var(--im-border); border-radius: 7px;
+      padding: 0 9px; font-size: 13px; color: var(--im-text);
+      background: transparent; outline: none; font-family: var(--im-font);
+    }
+    .im-ai-id-fields input:focus { border-color: var(--im-accent); }
+    .im-ai-id-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+    .im-ai-id-reset {
+      height: 28px; padding: 0 10px; border: 1px solid var(--im-border); border-radius: 7px;
+      background: transparent; color: var(--im-text-2); font-size: 12px; cursor: pointer;
+      font-family: var(--im-font);
+    }
+    .im-ai-id-reset:hover { background: var(--im-hover); }
+    .__ROOT_CLASS__.__DARK_CLASS__ .im-ai-id-pop { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6); }
+    .im-ai-summary .im-msg-bubble { min-width: 72px; }
+    .im-ai-loading {
+      display: inline-flex; align-items: center; gap: 5px;
+      min-height: 18px; padding: 2px 0;
+    }
+    .im-ai-loading i {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--im-text-3);
+      animation: im-ai-bounce 1.2s infinite ease-in-out;
+    }
+    .im-ai-loading i:nth-child(2) { animation-delay: .15s; }
+    .im-ai-loading i:nth-child(3) { animation-delay: .3s; }
+    @keyframes im-ai-bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: .35; }
+      40% { transform: translateY(-4px); opacity: 1; }
+    }
+    .im-ai-stream { white-space: pre-wrap; word-break: break-word; }
+    .im-ai-caret {
+      display: inline-block; width: 1.5px; height: .9em;
+      background: var(--im-accent); margin-left: 2px;
+      vertical-align: -1px;
+      animation: im-ai-blink 1s step-end infinite;
+    }
+    @keyframes im-ai-blink { 50% { opacity: 0; } }
+    .im-ai-text.is-cooked { white-space: normal; }
+    .im-ai-text.is-cooked p { margin: 0 0 8px; }
+    .im-ai-text.is-cooked p:last-child { margin-bottom: 0; }
+    .im-ai-summary.is-error .im-ai-error-text { color: var(--im-danger); font-size: 13px; }
+    .im-ai-retry {
+      margin-top: 8px;
+      border: none; background: var(--im-accent-soft); color: var(--im-accent);
+      border-radius: 6px; height: 24px; padding: 0 10px; cursor: pointer;
+      font-size: 12px; font-family: var(--im-font);
+    }
+    .im-ai-retry:hover { filter: brightness(0.96); }
+    .im-chat-summarize {
+      width: auto !important; padding: 0 8px !important; gap: 4px;
+      font-size: 12px; font-family: var(--im-font); font-weight: 600;
+      color: var(--im-accent);
+    }
+    .im-chat-summarize span { line-height: 1; }
+    .im-chat-summarize.is-busy { opacity: .5; pointer-events: none; }
+
     /* ---------- 选择楼层弹层 ---------- */
     .im-floor-pop {
       position: absolute; inset: 0; z-index: 60;

@@ -201,6 +201,9 @@
   const RAIL_COLLAPSE_KEY = "linuxdo-im-rail-collapse";
   const LIST_W_KEY = "linuxdo-im-list-width";
   const LIST_NAV_KEY = "linuxdo-im-list-nav";
+  const AI_NAME_KEY = "linuxdo-im-ai-name";
+  const AI_AVATAR_KEY = "linuxdo-im-ai-avatar";
+  const AI_DEFAULT_NAME = "豆包";
   const CSS_DD = String.raw`
     /* ---------- Token ---------- */
     .__ROOT_CLASS__ {
@@ -4763,6 +4766,93 @@ color: #7AA3D6;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .__ROOT_CLASS__.__DARK_CLASS__ .im-search-pop { box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6); }
+
+    /* ---------- AI 总结（主贴下第二层，豆包气泡） ---------- */
+    .im-ai-summary { max-width: min(88%, 560px); }
+    .im-ai-summary .im-msg-avatar {
+      background: transparent; border-radius: 50%; overflow: hidden;
+      width: 36px; height: 36px; padding: 0;
+    }
+    .im-ai-summary .im-msg-avatar img,
+    .im-ai-summary .im-msg-avatar svg {
+      width: 100%; height: 100%; display: block; object-fit: cover;
+    }
+    .im-ai-summary .im-ai-name { color: var(--im-accent); font-weight: 600; cursor: pointer; }
+    .im-ai-summary .im-ai-avatar { cursor: pointer; }
+    .im-ai-id-pop {
+      position: fixed; z-index: 1400; width: 280px;
+      background: var(--im-bg); color: var(--im-text);
+      border: 1px solid var(--im-border); border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+      padding: 12px; font-family: var(--im-font);
+    }
+    .im-ai-id-row { display: flex; gap: 10px; align-items: flex-start; }
+    .im-ai-id-preview {
+      width: 56px; height: 56px; flex-shrink: 0; padding: 0;
+      border: 1px dashed var(--im-border); border-radius: 50%;
+      background: var(--im-hover); overflow: hidden; cursor: pointer;
+    }
+    .im-ai-id-preview.is-drop { border-color: var(--im-accent); background: var(--im-accent-soft); }
+    .im-ai-id-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .im-ai-id-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .im-ai-id-fields label { font-size: 11px; color: var(--im-text-3); }
+    .im-ai-id-fields input {
+      height: 30px; border: 1px solid var(--im-border); border-radius: 7px;
+      padding: 0 9px; font-size: 13px; color: var(--im-text);
+      background: transparent; outline: none; font-family: var(--im-font);
+    }
+    .im-ai-id-fields input:focus { border-color: var(--im-accent); }
+    .im-ai-id-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+    .im-ai-id-reset {
+      height: 28px; padding: 0 10px; border: 1px solid var(--im-border); border-radius: 7px;
+      background: transparent; color: var(--im-text-2); font-size: 12px; cursor: pointer;
+      font-family: var(--im-font);
+    }
+    .im-ai-id-reset:hover { background: var(--im-hover); }
+    .__ROOT_CLASS__.__DARK_CLASS__ .im-ai-id-pop { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6); }
+    .im-ai-summary .im-msg-bubble { min-width: 72px; }
+    .im-ai-loading {
+      display: inline-flex; align-items: center; gap: 5px;
+      min-height: 18px; padding: 2px 0;
+    }
+    .im-ai-loading i {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--im-text-3);
+      animation: im-ai-bounce 1.2s infinite ease-in-out;
+    }
+    .im-ai-loading i:nth-child(2) { animation-delay: .15s; }
+    .im-ai-loading i:nth-child(3) { animation-delay: .3s; }
+    @keyframes im-ai-bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: .35; }
+      40% { transform: translateY(-4px); opacity: 1; }
+    }
+    .im-ai-stream { white-space: pre-wrap; word-break: break-word; }
+    .im-ai-caret {
+      display: inline-block; width: 1.5px; height: .9em;
+      background: var(--im-accent); margin-left: 2px;
+      vertical-align: -1px;
+      animation: im-ai-blink 1s step-end infinite;
+    }
+    @keyframes im-ai-blink { 50% { opacity: 0; } }
+    .im-ai-text.is-cooked { white-space: normal; }
+    .im-ai-text.is-cooked p { margin: 0 0 8px; }
+    .im-ai-text.is-cooked p:last-child { margin-bottom: 0; }
+    .im-ai-summary.is-error .im-ai-error-text { color: var(--im-danger); font-size: 13px; }
+    .im-ai-retry {
+      margin-top: 8px;
+      border: none; background: var(--im-accent-soft); color: var(--im-accent);
+      border-radius: 6px; height: 24px; padding: 0 10px; cursor: pointer;
+      font-size: 12px; font-family: var(--im-font);
+    }
+    .im-ai-retry:hover { filter: brightness(0.96); }
+    .im-chat-summarize {
+      width: auto !important; padding: 0 8px !important; gap: 4px;
+      font-size: 12px; font-family: var(--im-font); font-weight: 600;
+      color: var(--im-accent);
+    }
+    .im-chat-summarize span { line-height: 1; }
+    .im-chat-summarize.is-busy { opacity: .5; pointer-events: none; }
+
     /* ---------- 选择楼层弹层 ---------- */
     .im-floor-pop {
       position: absolute; inset: 0; z-index: 60;
@@ -6710,6 +6800,7 @@ html.im-theme {
       }
     });
   }
+  const DOUBAO_AVATAR = "data:image/png;base64,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";
   const ICONS = {
     msg: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H10l-4.2 3.2A.8.8 0 0 1 4.5 18.6V6.5Z" stroke="currentColor" stroke-width="1.7"/></svg>`,
     doc: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7 4.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-9.5A1.5 1.5 0 0 1 5.5 19V6A1.5 1.5 0 0 1 7 4.5Z" stroke="currentColor" stroke-width="1.7"/><path d="M14 4.5V9h4.5" stroke="currentColor" stroke-width="1.7"/></svg>`,
@@ -6732,6 +6823,7 @@ html.im-theme {
     clock: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.7"/><path d="M12 8v4l3 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`,
     grid: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="5" y="5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="5" y="13" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="13" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.7"/></svg>`,
     spark: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.6 5.2L19 10l-5.4 1.8L12 17l-1.6-5.2L5 10l5.4-1.8L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
+    doubao: `<img src="${DOUBAO_AVATAR}" alt="" draggable="false">`,
     phone: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 4.5h3.2l1 3.2-2 1.4a11 11 0 0 0 5.7 5.7l1.4-2 3.2 1V17a2 2 0 0 1-2.2 2A15 15 0 0 1 5 6.7 2 2 0 0 1 7 4.5Z" stroke="currentColor" stroke-width="1.6"/></svg>`,
     plus: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
     mute: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M10 8H7v8h3l5 3V5l-5 3Z" stroke="currentColor" stroke-width="1.6"/><path d="M18 9l3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
@@ -6839,8 +6931,14 @@ html.im-theme {
     // chat-panel：话题已打开时滚动/高亮某楼（列表行重复点击用）
     refreshMaskedChrome: null,
     // chat-panel：匿名伪装开关切换后重涂详情页头部标题/头像
-    enhancePolls: null
+    enhancePolls: null,
     // features：投票组件增强
+    ensureAiSummaryButton: null,
+    // features：聊天头「AI 总结」按钮
+    syncAiSummary: null,
+    // features：主贴下重插/恢复总结气泡
+    startAiSummary: null
+    // features：触发总结（订阅 MessageBus + POST）
   };
   let listReloader = null;
   function onListReload(fn) {
@@ -7546,23 +7644,23 @@ html.im-theme {
     return fallbackSummary;
   }
   const TTL$3 = 3e4;
-  const cache$1 = /* @__PURE__ */ new Map();
+  const cache$2 = /* @__PURE__ */ new Map();
   let maskEl = null;
   let cardEl = null;
   let closeListeners = null;
   let seq = 0;
   const CLOSE_SVG$1 = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
   async function fetchCard(username) {
-    const cached = cache$1.get(username);
+    const cached = cache$2.get(username);
     if (cached && Date.now() - cached.loadedAt < TTL$3) return cached;
     try {
       const data = await api(`/u/${encodeURIComponent(username)}.json`);
       const next = { user: data.user || {}, loadedAt: Date.now(), error: null };
-      cache$1.set(username, next);
+      cache$2.set(username, next);
       return next;
     } catch (err) {
       const next = { user: null, loadedAt: Date.now(), error: (err == null ? void 0 : err.message) || "网络异常" };
-      cache$1.set(username, next);
+      cache$2.set(username, next);
       return next;
     }
   }
@@ -7753,6 +7851,11 @@ html.im-theme {
     const view = document.querySelector(".im-prof-frame-view");
     if (view == null ? void 0 : view.contentDocument) forceSchemeInDoc(view.contentDocument);
   });
+  function afterChatPaint(body) {
+    var _a2, _b2;
+    (_a2 = chatHooks.enhancePolls) == null ? void 0 : _a2.call(chatHooks, body);
+    (_b2 = chatHooks.syncAiSummary) == null ? void 0 : _b2.call(chatHooks);
+  }
   function extractTextSnippet(html, maxLen = 60) {
     if (!html) return "";
     try {
@@ -7766,7 +7869,7 @@ html.im-theme {
     }
   }
   function ensureChatPanel() {
-    var _a2, _b2;
+    var _a2, _b2, _c, _d;
     let panel = document.querySelector(".im-chat-panel");
     if (panel && (!panel.querySelector(".im-chat-compose") || !panel.querySelector(".im-composer-card"))) {
       panel.remove();
@@ -7778,6 +7881,7 @@ html.im-theme {
         bindChatPanelEvents(panel);
       }
       (_a2 = chatHooks.wireComposer) == null ? void 0 : _a2.call(chatHooks, panel);
+      (_b2 = chatHooks.ensureAiSummaryButton) == null ? void 0 : _b2.call(chatHooks, panel);
       return panel;
     }
     panel = document.createElement("div");
@@ -7822,6 +7926,7 @@ html.im-theme {
         <button class="im-level-btn" title="等级进度" style="display:none"></button>
         <button class="im-icon-btn im-chat-scrolltop" title="回到顶部">${ICONS.scrollTop}</button>
         <button class="im-icon-btn im-chat-refresh" title="刷新本话题">${ICONS.refresh}</button>
+        <button class="im-icon-btn im-chat-summarize" title="AI 总结">${ICONS.spark}<span>总结</span></button>
         <button class="im-icon-btn im-chat-native" title="切换原生视图">${ICONS.external}</button>
       </div>
     </div>
@@ -7839,7 +7944,8 @@ html.im-theme {
   `;
     document.body.appendChild(panel);
     bindChatPanelEvents(panel);
-    (_b2 = chatHooks.wireComposer) == null ? void 0 : _b2.call(chatHooks, panel);
+    (_c = chatHooks.wireComposer) == null ? void 0 : _c.call(chatHooks, panel);
+    (_d = chatHooks.ensureAiSummaryButton) == null ? void 0 : _d.call(chatHooks, panel);
     return panel;
   }
   document.addEventListener("click", (e) => {
@@ -7864,7 +7970,7 @@ html.im-theme {
   }, true);
   function bindChatPanelEvents(panel) {
     panel.addEventListener("click", (e) => {
-      var _a2, _b2, _c;
+      var _a2, _b2, _c, _d;
       if (e.target.closest(".im-chat-metrics")) {
         e.preventDefault();
         e.stopPropagation();
@@ -7876,6 +7982,12 @@ html.im-theme {
           chatState.topicId = null;
           loadTopic(topicIdFromPath(location.pathname));
         }
+        return;
+      }
+      if (e.target.closest(".im-chat-summarize")) {
+        e.preventDefault();
+        e.stopPropagation();
+        (_a2 = chatHooks.startAiSummary) == null ? void 0 : _a2.call(chatHooks);
         return;
       }
       if (e.target.closest(".im-chat-native")) {
@@ -7904,7 +8016,7 @@ html.im-theme {
       }
       const ucardHit = e.target.closest(".im-msg-avatar, .im-msg-name, .im-chat-avatar, a.mention, a[href^='/u/']");
       if (ucardHit && panel.contains(ucardHit)) {
-        const hitName = ucardHit.dataset.username || ((_a2 = ucardHit.closest(".im-msg")) == null ? void 0 : _a2.dataset.username) || ((_b2 = (ucardHit.getAttribute("href") || "").match(/^\/u\/([^/]+)/)) == null ? void 0 : _b2[1]) || "";
+        const hitName = ucardHit.dataset.username || ((_b2 = ucardHit.closest(".im-msg")) == null ? void 0 : _b2.dataset.username) || ((_c = (ucardHit.getAttribute("href") || "").match(/^\/u\/([^/]+)/)) == null ? void 0 : _c[1]) || "";
         if (hitName) {
           if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
           e.preventDefault();
@@ -7996,7 +8108,7 @@ html.im-theme {
       } else if (toolBtn.dataset.action === "bookmark") {
         e.preventDefault();
         e.stopPropagation();
-        (_c = chatHooks.toggleBookmark) == null ? void 0 : _c.call(chatHooks, Number(msg.dataset.postId), toolBtn);
+        (_d = chatHooks.toggleBookmark) == null ? void 0 : _d.call(chatHooks, Number(msg.dataset.postId), toolBtn);
       } else if (NATIVE_ACTION_SEL[toolBtn.dataset.action]) {
         e.preventDefault();
         e.stopPropagation();
@@ -8037,6 +8149,7 @@ html.im-theme {
     });
   }
   function renderChatEmpty() {
+    var _a2;
     ensureChatPanel();
     chatState.topicId = null;
     const panel = document.querySelector(".im-chat-panel");
@@ -8069,6 +8182,7 @@ html.im-theme {
       ${ICONS.msg}
       <div>暂无消息</div>
     </div>`;
+    (_a2 = chatHooks.syncAiSummary) == null ? void 0 : _a2.call(chatHooks);
   }
   function renderChatError(message) {
     const body = document.querySelector(".im-chat-body");
@@ -8419,7 +8533,7 @@ html.im-theme {
     }
   }
   async function loadTopic(topicId) {
-    var _a2, _b2, _c;
+    var _a2, _b2;
     if (!topicId || chatState.loading) return;
     if (chatState.topicId === topicId) {
       syncListActive();
@@ -8523,7 +8637,7 @@ html.im-theme {
       });
       if (body) {
         body.innerHTML = renderBubbles(posts, getCurrentUsername()) || `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
-        (_c = chatHooks.enhancePolls) == null ? void 0 : _c.call(chatHooks, body);
+        afterChatPaint(body);
         if (scrollToPost) {
           requestAnimationFrame(() => scrollChatToPost(body, scrollToPost, true));
         } else {
@@ -8542,7 +8656,6 @@ html.im-theme {
     return posts.slice().sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
   }
   async function loadOlderPosts() {
-    var _a2;
     if (!chatState.hasOlder || chatState.loading || !chatState.topicId) return;
     const ids = chatState.stream.slice(Math.max(0, chatState.renderedFirstIdx - 20), chatState.renderedFirstIdx);
     if (!ids.length) return;
@@ -8561,7 +8674,7 @@ html.im-theme {
         const prevHeight = body.scrollHeight;
         body.insertAdjacentHTML("afterbegin", renderBubbles(posts, getCurrentUsername()));
         body.scrollTop += body.scrollHeight - prevHeight;
-        (_a2 = chatHooks.enhancePolls) == null ? void 0 : _a2.call(chatHooks, body);
+        afterChatPaint(body);
       }
     } catch {
     } finally {
@@ -8608,7 +8721,6 @@ html.im-theme {
     }
   }
   async function jumpToFloorRemote(postNumber, highlight = true) {
-    var _a2;
     const topicId = chatState.topicId;
     if (!topicId || chatState.loading) return false;
     const n = Math.floor(Number(postNumber));
@@ -8635,7 +8747,7 @@ html.im-theme {
       if (body) {
         const landed = posts.some((p) => p.post_number === n) ? n : posts[posts.length - 1].post_number;
         body.innerHTML = renderBubbles(posts, getCurrentUsername()) || `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
-        (_a2 = chatHooks.enhancePolls) == null ? void 0 : _a2.call(chatHooks, body);
+        afterChatPaint(body);
         requestAnimationFrame(() => scrollChatToPost(body, landed, highlight));
         rememberTopicPost(topicId, landed);
       }
@@ -13078,30 +13190,30 @@ ${data.raw}
   function showImToast(message, targetEl) {
     if (!message) return;
     document.querySelectorAll(".im-toast").forEach((el) => el.remove());
-    const toast = document.createElement("div");
-    toast.className = "im-toast";
-    toast.textContent = message;
-    document.body.appendChild(toast);
+    const toast2 = document.createElement("div");
+    toast2.className = "im-toast";
+    toast2.textContent = message;
+    document.body.appendChild(toast2);
     if (targetEl && targetEl.getBoundingClientRect) {
       const rect = targetEl.getBoundingClientRect();
-      const toastW = toast.offsetWidth || 180;
-      const toastH = toast.offsetHeight || 32;
+      const toastW = toast2.offsetWidth || 180;
+      const toastH = toast2.offsetHeight || 32;
       let left = rect.left + rect.width / 2 - toastW / 2;
       left = Math.max(12, Math.min(window.innerWidth - toastW - 12, left));
       let top = rect.top - toastH - 8;
       if (top < 10) {
         top = rect.bottom + 8;
       }
-      toast.style.left = `${left}px`;
-      toast.style.top = `${top}px`;
+      toast2.style.left = `${left}px`;
+      toast2.style.top = `${top}px`;
     } else {
-      toast.style.top = "60px";
-      toast.style.left = "50%";
-      toast.style.transform = "translateX(-50%)";
+      toast2.style.top = "60px";
+      toast2.style.left = "50%";
+      toast2.style.transform = "translateX(-50%)";
     }
     setTimeout(() => {
-      toast.classList.add("fade-out");
-      setTimeout(() => toast.remove(), 220);
+      toast2.classList.add("fade-out");
+      setTimeout(() => toast2.remove(), 220);
     }, 2400);
   }
   async function toggleLike(postId, triggerEl) {
@@ -13855,6 +13967,564 @@ ${data.raw}
     setInterval(tick, TICK_MS);
   }
   startReadTracking();
+  const CHANNEL_PREFIX = "/discourse-ai/summaries/topic/";
+  const FIRST_CHUNK_MS = 45e3;
+  const STALL_MS = 9e4;
+  const cache$1 = /* @__PURE__ */ new Map();
+  let busChannel = null;
+  let busHandler = null;
+  let firstTimer = 0;
+  let stallTimer = 0;
+  let requestSeq = 0;
+  function currentTopicId() {
+    return chatState.topicId || topicIdFromPath(location.pathname);
+  }
+  function topicCache(topicId) {
+    let row = cache$1.get(topicId);
+    if (!row) {
+      row = { status: "idle", text: "", error: "" };
+      cache$1.set(topicId, row);
+    }
+    return row;
+  }
+  function extractSummary(raw) {
+    if (raw == null) return { text: "", done: false };
+    let data = raw;
+    if (typeof data === "string") {
+      try {
+        data = JSON.parse(data);
+      } catch {
+        return { text: "", done: false };
+      }
+    }
+    if (typeof data !== "object") return { text: "", done: false };
+    if (data.data && (data.channel || data.message_id != null || data.global_id != null)) {
+      data = data.data;
+    }
+    if (typeof data !== "object" || data == null) return { text: "", done: false };
+    const payload = data.ai_topic_summary || data.summary || data;
+    const text = String(
+      (payload == null ? void 0 : payload.summarized_text) || (payload == null ? void 0 : payload.summary) || (payload == null ? void 0 : payload.text) || data.summarized_text || ""
+    );
+    const done = !!(data.done || (payload == null ? void 0 : payload.done));
+    return { text, done };
+  }
+  function summaryHtml(text) {
+    const src = String(text || "").trim();
+    if (!src) return "";
+    try {
+      return src.split(/\n{2,}/).map((part) => mdToHtml(part)).join("");
+    } catch {
+      return escapeHtml(src).replace(/\n/g, "<br>");
+    }
+  }
+  function httpError(status, body) {
+    var _a2, _b2;
+    if (status === 403) return "没有权限或需要登录后才能总结";
+    if (status === 404) return "本站未开启 AI 总结";
+    if (status === 429) return "请求过于频繁，请稍后再试";
+    if (status === 422) return "这篇帖子暂时无法总结";
+    try {
+      const json = JSON.parse(body);
+      const msg = ((_a2 = json.errors) == null ? void 0 : _a2[0]) || json.error || ((_b2 = json.extras) == null ? void 0 : _b2.reason);
+      if (msg) return String(msg);
+    } catch {
+    }
+    return `总结失败（HTTP ${status}）`;
+  }
+  function toast(message, el) {
+    var _a2;
+    (_a2 = chatHooks.toast) == null ? void 0 : _a2.call(chatHooks, message, el);
+  }
+  const AI_NAME_MAX = 24;
+  const AI_AVATAR_PX = 96;
+  let identCache = null;
+  function getIdentity() {
+    if (identCache) return identCache;
+    let name = AI_DEFAULT_NAME;
+    let avatar = "";
+    try {
+      name = localStorage.getItem(AI_NAME_KEY) || AI_DEFAULT_NAME;
+      avatar = localStorage.getItem(AI_AVATAR_KEY) || "";
+    } catch {
+    }
+    identCache = { name: String(name || "").trim() || AI_DEFAULT_NAME, avatar };
+    return identCache;
+  }
+  function setIdentity({ name, avatar } = {}) {
+    identCache = null;
+    try {
+      if (name != null) {
+        const next = String(name).trim().slice(0, AI_NAME_MAX) || AI_DEFAULT_NAME;
+        localStorage.setItem(AI_NAME_KEY, next);
+      }
+      if (avatar === "") localStorage.removeItem(AI_AVATAR_KEY);
+      else if (avatar != null) localStorage.setItem(AI_AVATAR_KEY, avatar);
+    } catch (err) {
+      toast(String(err == null ? void 0 : err.name) === "QuotaExceededError" ? "头像太大，请换一张更小的图" : "无法保存设置");
+      return false;
+    }
+    return true;
+  }
+  function avatarMarkup(avatar) {
+    if (avatar) return `<img src="${escapeHtml(avatar)}" alt="" draggable="false">`;
+    return ICONS.doubao;
+  }
+  function paintIdentity(root2) {
+    const el = document.querySelector(".im-ai-summary");
+    if (!el) return;
+    const { name, avatar } = getIdentity();
+    const av = el.querySelector(".im-ai-avatar");
+    const nm = el.querySelector(".im-ai-name");
+    if (av) {
+      av.title = `点击更换头像（${name}）`;
+      av.innerHTML = avatarMarkup(avatar);
+    }
+    if (nm) {
+      nm.title = "点击修改昵称";
+      nm.textContent = name;
+    }
+  }
+  function fileToAvatarDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !/^image\//.test(file.type || "")) {
+        reject(new Error("请选择图片文件"));
+        return;
+      }
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement("canvas");
+        canvas.width = AI_AVATAR_PX;
+        canvas.height = AI_AVATAR_PX;
+        const ctx = canvas.getContext("2d");
+        const side = Math.min(img.width, img.height) || AI_AVATAR_PX;
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, AI_AVATAR_PX, AI_AVATAR_PX);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("图片无法读取"));
+      };
+      img.src = url;
+    });
+  }
+  let idPop = null;
+  function closeIdentityPop() {
+    idPop == null ? void 0 : idPop.remove();
+    idPop = null;
+    document.removeEventListener("click", onIdPopOutside, true);
+    document.removeEventListener("keydown", onIdPopKey, true);
+  }
+  function onIdPopOutside(e) {
+    var _a2, _b2;
+    if (idPop && !idPop.contains(e.target) && !((_b2 = (_a2 = e.target).closest) == null ? void 0 : _b2.call(_a2, ".im-ai-avatar, .im-ai-name"))) {
+      closeIdentityPop();
+    }
+  }
+  function onIdPopKey(e) {
+    if (e.key === "Escape") closeIdentityPop();
+  }
+  function openIdentityPop(anchor) {
+    closeIdentityPop();
+    const { name, avatar } = getIdentity();
+    const pop = document.createElement("div");
+    pop.className = "im-ai-id-pop";
+    pop.innerHTML = `<div class="im-ai-id-row"><button type="button" class="im-ai-id-preview" title="点击或拖入图片更换头像">${avatarMarkup(avatar)}</button><div class="im-ai-id-fields"><label>昵称</label><input class="im-ai-id-name" type="text" maxlength="${AI_NAME_MAX}" value="${escapeHtml(name)}" spellcheck="false"><input class="im-ai-id-url" type="url" placeholder="或粘贴图片 URL" spellcheck="false"></div></div><div class="im-ai-id-actions"><button type="button" class="im-ai-id-reset">恢复默认</button></div><input type="file" class="im-ai-id-file" accept="image/*" hidden>`;
+    document.body.appendChild(pop);
+    const r = anchor.getBoundingClientRect();
+    const mw = pop.offsetWidth;
+    const mh = pop.offsetHeight;
+    let left = Math.max(8, Math.min(r.left, innerWidth - mw - 8));
+    let top = r.bottom + 8;
+    if (top + mh > innerHeight - 8) top = Math.max(8, r.top - mh - 8);
+    pop.style.left = `${left}px`;
+    pop.style.top = `${top}px`;
+    idPop = pop;
+    const nameInput = pop.querySelector(".im-ai-id-name");
+    const urlInput = pop.querySelector(".im-ai-id-url");
+    const fileInput = pop.querySelector(".im-ai-id-file");
+    const preview = pop.querySelector(".im-ai-id-preview");
+    const saveName = () => {
+      if (setIdentity({ name: nameInput.value })) paintIdentity();
+    };
+    nameInput.addEventListener("change", saveName);
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        saveName();
+        closeIdentityPop();
+      }
+    });
+    const applyAvatar = (src) => {
+      if (!setIdentity({ avatar: src })) return;
+      preview.innerHTML = avatarMarkup(getIdentity().avatar);
+      paintIdentity();
+    };
+    const pickFile = () => fileInput.click();
+    preview.addEventListener("click", pickFile);
+    preview.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      preview.classList.add("is-drop");
+    });
+    preview.addEventListener("dragleave", () => preview.classList.remove("is-drop"));
+    preview.addEventListener("drop", async (e) => {
+      var _a2;
+      e.preventDefault();
+      preview.classList.remove("is-drop");
+      const file = [...((_a2 = e.dataTransfer) == null ? void 0 : _a2.files) || []].find((f) => /^image\//.test(f.type));
+      if (!file) return;
+      try {
+        applyAvatar(await fileToAvatarDataUrl(file));
+      } catch (err) {
+        toast(err.message || "头像读取失败");
+      }
+    });
+    fileInput.addEventListener("change", async () => {
+      var _a2;
+      const file = (_a2 = fileInput.files) == null ? void 0 : _a2[0];
+      fileInput.value = "";
+      if (!file) return;
+      try {
+        applyAvatar(await fileToAvatarDataUrl(file));
+      } catch (err) {
+        toast(err.message || "头像读取失败");
+      }
+    });
+    const saveUrl = () => {
+      const v = urlInput.value.trim();
+      if (!v) return;
+      if (!/^(https?:\/\/|data:image\/)/i.test(v)) {
+        toast("请输入 http(s) 或 data:image 链接");
+        return;
+      }
+      applyAvatar(v);
+      urlInput.value = "";
+    };
+    urlInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        saveUrl();
+      }
+    });
+    urlInput.addEventListener("change", saveUrl);
+    pop.querySelector(".im-ai-id-reset").addEventListener("click", () => {
+      setIdentity({ name: AI_DEFAULT_NAME, avatar: "" });
+      paintIdentity();
+      closeIdentityPop();
+    });
+    setTimeout(() => {
+      document.addEventListener("click", onIdPopOutside, true);
+      document.addEventListener("keydown", onIdPopKey, true);
+      nameInput.focus();
+      nameInput.select();
+    }, 0);
+  }
+  function chatBody() {
+    return document.querySelector(".im-chat-panel .im-chat-body");
+  }
+  function revealSummary() {
+    var _a2, _b2;
+    (_b2 = (_a2 = chatBody()) == null ? void 0 : _a2.querySelector(".im-ai-summary")) == null ? void 0 : _b2.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+  function summarizeBtn() {
+    return document.querySelector(".im-chat-summarize");
+  }
+  function syncButton(topicId) {
+    const btn = summarizeBtn();
+    if (!btn) return;
+    const row = topicId ? cache$1.get(topicId) : null;
+    const busy = row && (row.status === "loading" || row.status === "streaming");
+    btn.classList.toggle("is-busy", !!busy);
+    btn.title = busy ? "正在总结…" : (row == null ? void 0 : row.status) === "done" ? "重新总结" : "AI 总结";
+  }
+  function loadingMarkup() {
+    return `<div class="im-ai-loading" aria-label="正在总结"><i></i><i></i><i></i></div>`;
+  }
+  function bubbleSkeleton(row) {
+    const busy = row.status === "loading" || row.status === "streaming";
+    let inner;
+    if (row.status === "loading" && !row.text) {
+      inner = loadingMarkup();
+    } else if (row.status === "error" && !row.text) {
+      inner = `<div class="im-ai-error-text">${escapeHtml(row.error || "总结失败")}</div><button type="button" class="im-ai-retry">重试</button>`;
+    } else if (row.status === "done") {
+      inner = `<div class="im-ai-text is-cooked">${summaryHtml(row.text)}</div>`;
+    } else {
+      inner = `<div class="im-ai-stream"><span class="im-ai-text"></span>${busy ? `<span class="im-ai-caret" aria-hidden="true"></span>` : ""}</div>` + (row.status === "error" ? `<div class="im-ai-error-text">${escapeHtml(row.error)}</div><button type="button" class="im-ai-retry">重试</button>` : "");
+    }
+    const metaRight = row.status === "done" ? "完成" : row.status === "error" ? "失败" : "生成中";
+    const { name, avatar } = getIdentity();
+    return `
+    <span class="im-msg-avatar im-ai-avatar" title="点击更换头像（${escapeHtml(name)}）">${avatarMarkup(avatar)}</span>
+    <div class="im-msg-content">
+      <span class="im-ai-name" title="点击修改昵称">${escapeHtml(name)}</span>
+      <div class="im-msg-bubble" aria-live="polite">${inner}</div>
+      <span class="im-msg-meta"><span>AI 总结</span><span class="im-ai-meta-state">${metaRight}</span></span>
+    </div>`;
+  }
+  function fillStreamText(el, text) {
+    const node = el.querySelector(".im-ai-text");
+    if (node && !node.classList.contains("is-cooked")) node.textContent = text;
+  }
+  function placeBubble() {
+    const topicId = currentTopicId();
+    const body = chatBody();
+    const panel = document.querySelector(".im-chat-panel");
+    if (!body || !panel || !topicId) return false;
+    const row = cache$1.get(topicId);
+    if (!row || row.status === "idle") return false;
+    for (const el2 of body.querySelectorAll(":scope > .im-chat-loading, :scope > .im-chat-empty, :scope > .im-chat-error")) {
+      el2.remove();
+    }
+    if (panel.dataset.empty === "1") panel.dataset.empty = "0";
+    delete body.dataset.state;
+    let el = body.querySelector(".im-ai-summary");
+    if (!el) {
+      el = document.createElement("div");
+      el.className = "im-msg im-msg-other im-ai-summary";
+      el.addEventListener("click", (e) => {
+        const idHit = e.target.closest(".im-ai-avatar, .im-ai-name");
+        if (idHit && el.contains(idHit)) {
+          e.preventDefault();
+          e.stopPropagation();
+          openIdentityPop(idHit);
+          return;
+        }
+        const retry = e.target.closest(".im-ai-retry");
+        if (!retry || !el.contains(retry)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        startAiSummary({ force: true });
+      });
+    }
+    el.classList.toggle("is-error", row.status === "error");
+    el.classList.toggle("is-done", row.status === "done");
+    const { name, avatar } = getIdentity();
+    const sig = `${row.status}\0${row.text}\0${row.error || ""}\0${name}\0${avatar}`;
+    if (el.dataset.sig !== sig) {
+      el.innerHTML = bubbleSkeleton(row);
+      el.dataset.sig = sig;
+      if (row.text && row.status !== "done") fillStreamText(el, row.text);
+    }
+    const op = body.querySelector('.im-msg[data-post-number="1"]');
+    if (op) {
+      if (el.previousElementSibling !== op) op.after(el);
+    } else if (body.firstElementChild !== el) {
+      body.prepend(el);
+    }
+    syncButton(topicId);
+    return true;
+  }
+  function clearTimers() {
+    if (firstTimer) {
+      clearTimeout(firstTimer);
+      firstTimer = 0;
+    }
+    if (stallTimer) {
+      clearTimeout(stallTimer);
+      stallTimer = 0;
+    }
+  }
+  function armFirstTimeout(topicId, seq2) {
+    if (firstTimer) clearTimeout(firstTimer);
+    firstTimer = setTimeout(() => {
+      if (seq2 !== requestSeq) return;
+      const row = cache$1.get(topicId);
+      if (!row || row.status !== "loading") return;
+      fail(topicId, "等待总结超时，请重试");
+    }, FIRST_CHUNK_MS);
+  }
+  function armStallTimeout(topicId, seq2) {
+    if (stallTimer) clearTimeout(stallTimer);
+    stallTimer = setTimeout(() => {
+      if (seq2 !== requestSeq) return;
+      const row = cache$1.get(topicId);
+      if (!row || row.status !== "streaming") return;
+      fail(topicId, "总结中断，已保留已生成内容");
+    }, STALL_MS);
+  }
+  function fail(topicId, message) {
+    const row = topicCache(topicId);
+    if (row.status === "done") return;
+    row.status = "error";
+    row.error = message;
+    clearTimers();
+    if (currentTopicId() === topicId) {
+      placeBubble();
+      toast(message, summarizeBtn());
+    }
+    syncButton(topicId);
+  }
+  function applyChunk(topicId, text, done) {
+    var _a2;
+    const row = topicCache(topicId);
+    if (text) row.text = text;
+    if (done) {
+      row.status = "done";
+      row.error = "";
+      clearTimers();
+      unsubscribe();
+    } else {
+      row.status = "streaming";
+      armStallTimeout(topicId, requestSeq);
+      if (firstTimer) {
+        clearTimeout(firstTimer);
+        firstTimer = 0;
+      }
+    }
+    if (currentTopicId() !== topicId) return;
+    const el = (_a2 = chatBody()) == null ? void 0 : _a2.querySelector(".im-ai-summary");
+    if (!el || done || row.status === "error") {
+      placeBubble();
+    } else if (!el.querySelector(".im-ai-text") || el.querySelector(".im-ai-loading")) {
+      placeBubble();
+    } else {
+      fillStreamText(el, row.text);
+      syncButton(topicId);
+    }
+  }
+  function onBusMessage(data) {
+    if (!busChannel || !busChannel.startsWith(CHANNEL_PREFIX)) return;
+    const topicId = Number(busChannel.slice(CHANNEL_PREFIX.length));
+    if (!topicId) return;
+    const { text, done } = extractSummary(data);
+    if (!text && !done) return;
+    applyChunk(topicId, text, done);
+  }
+  function unsubscribe() {
+    if (busChannel && busHandler && pg.MessageBus) {
+      try {
+        pg.MessageBus.unsubscribe(busChannel, busHandler);
+      } catch {
+      }
+    }
+    busChannel = null;
+    busHandler = null;
+  }
+  function subscribe(topicId) {
+    const channel = CHANNEL_PREFIX + topicId;
+    if (busChannel === channel && busHandler) return true;
+    unsubscribe();
+    const mb = pg.MessageBus;
+    if (!mb || typeof mb.subscribe !== "function") return false;
+    busHandler = onBusMessage;
+    busChannel = channel;
+    try {
+      mb.subscribe(channel, busHandler, -1);
+      return true;
+    } catch (err) {
+      console.warn("[linuxdo-im] MessageBus.subscribe failed", err);
+      busChannel = null;
+      busHandler = null;
+      return false;
+    }
+  }
+  async function requestSummary(topicId) {
+    const headers = {
+      Accept: "*/*",
+      "X-CSRF-Token": csrfToken(),
+      "X-Requested-With": "XMLHttpRequest",
+      "Discourse-Logged-In": "true",
+      "Discourse-Present": "true"
+    };
+    const url = `/discourse-ai/summarization/t/${topicId}`;
+    const send = (method) => fetch(method === "GET" ? `${url}?stream=true` : url, {
+      method,
+      credentials: "same-origin",
+      headers: method === "POST" ? { ...headers, "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" } : headers,
+      body: method === "POST" ? "stream=true" : void 0
+    });
+    let resp = await send("POST");
+    if (!resp.ok && (resp.status === 404 || resp.status === 405)) {
+      try {
+        const alt = await send("GET");
+        if (alt.ok) resp = alt;
+      } catch {
+      }
+    }
+    const raw = await resp.text();
+    if (!resp.ok) throw new Error(httpError(resp.status, raw));
+    try {
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+  function ensureAiSummaryButton(panel) {
+    if (!panel) return;
+    const actions = panel.querySelector(".im-chat-actions");
+    if (!actions) return;
+    let btn = actions.querySelector(".im-chat-summarize");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "im-icon-btn im-chat-summarize";
+      btn.title = "AI 总结";
+      btn.innerHTML = `${ICONS.spark}<span>总结</span>`;
+      const native = actions.querySelector(".im-chat-native");
+      if (native) actions.insertBefore(btn, native);
+      else actions.appendChild(btn);
+    } else if (!btn.querySelector("span")) {
+      btn.insertAdjacentHTML("beforeend", "<span>总结</span>");
+    }
+    syncButton(currentTopicId());
+  }
+  function syncAiSummary() {
+    const topicId = currentTopicId();
+    syncButton(topicId);
+    if (!topicId) return;
+    const row = cache$1.get(topicId);
+    if (row && row.status !== "idle") placeBubble();
+  }
+  async function startAiSummary(opts = {}) {
+    const topicId = currentTopicId();
+    const btn = summarizeBtn();
+    if (!topicId) {
+      toast("请先打开一个话题再总结", btn);
+      return;
+    }
+    const row = topicCache(topicId);
+    if (!opts.force && (row.status === "loading" || row.status === "streaming")) {
+      placeBubble();
+      revealSummary();
+      toast("正在总结…", btn);
+      return;
+    }
+    const seq2 = ++requestSeq;
+    row.status = "loading";
+    row.text = "";
+    row.error = "";
+    const placed = placeBubble();
+    revealSummary();
+    if (!placed) toast("正在总结…", btn);
+    if (!subscribe(topicId)) {
+      fail(topicId, "实时通道未就绪，请刷新页面后重试");
+      return;
+    }
+    armFirstTimeout(topicId, seq2);
+    await new Promise((r) => setTimeout(r, 50));
+    if (seq2 !== requestSeq) return;
+    try {
+      const json = await requestSummary(topicId);
+      if (seq2 !== requestSeq) return;
+      const { text, done } = extractSummary(json);
+      if (text) {
+        applyChunk(topicId, text, done || json.success !== "OK");
+      }
+    } catch (err) {
+      if (seq2 !== requestSeq) return;
+      fail(topicId, (err == null ? void 0 : err.message) || "总结请求失败");
+    }
+  }
+  Object.assign(chatHooks, {
+    ensureAiSummaryButton,
+    syncAiSummary,
+    startAiSummary
+  });
   function ensureTitlebar() {
     var _a2, _b2;
     let bar = document.querySelector(".im-titlebar");

@@ -18,6 +18,8 @@ const checks = [
   ["function migratePrefs(", 1],
   ["function skinCss(", 1],
   ["function ensureSkinToggle(", 1],
+  ["function startAiSummary(", 1],
+  ["function syncAiSummary(", 1],
   ["const LIST_NAV_KEY", 1],
   ["const MASK_AVATAR_KEY", 1],
   ["const MASK_TITLE_KEY", 1],

@@ -20,6 +20,11 @@ import { isMaskAvatar } from "./shared/toggles.js";
 import { syncListActive } from "./list-panel.js";
 import { showUserCard } from "./user-card.js";
 
+function afterChatPaint(body) {
+  chatHooks.enhancePolls?.(body);
+  chatHooks.syncAiSummary?.();
+}
+
 export function extractTextSnippet(html, maxLen = 60) {
   if (!html) return "";
   try {
@@ -44,6 +49,7 @@ export function ensureChatPanel() {
       bindChatPanelEvents(panel);
     }
     chatHooks.wireComposer?.(panel);
+    chatHooks.ensureAiSummaryButton?.(panel);
     return panel;
   }
   panel = document.createElement("div");
@@ -70,7 +76,7 @@ export function ensureChatPanel() {
   const toolsHtml = toolKeys.map((k) =>
     `<button type="button" class="im-icon-btn" data-tool="${k}" title="${toolTitles[k]}">${EDITOR_ICONS[k]}</button>`
   ).join("");
-  // 头部右侧只保留真实功能钮（回到顶部/刷新/原生视图）；
+  // 头部右侧只保留真实功能钮（回到顶部/刷新/AI 总结/原生视图）；
   // .im-chat-tools 保留为空占位，margin-left:auto 仍负责把 actions 推到最右
   panel.innerHTML = `
     <div class="im-chat-header">
@@ -91,6 +97,7 @@ export function ensureChatPanel() {
         <button class="im-level-btn" title="等级进度" style="display:none"></button>
         <button class="im-icon-btn im-chat-scrolltop" title="回到顶部">${ICONS.scrollTop}</button>
         <button class="im-icon-btn im-chat-refresh" title="刷新本话题">${ICONS.refresh}</button>
+        <button class="im-icon-btn im-chat-summarize" title="AI 总结">${ICONS.spark}<span>总结</span></button>
         <button class="im-icon-btn im-chat-native" title="切换原生视图">${ICONS.external}</button>
       </div>
     </div>
@@ -109,6 +116,7 @@ export function ensureChatPanel() {
   document.body.appendChild(panel);
   bindChatPanelEvents(panel);
   chatHooks.wireComposer?.(panel);
+  chatHooks.ensureAiSummaryButton?.(panel);
   return panel;
 }
 
@@ -150,6 +158,12 @@ function bindChatPanelEvents(panel) {
         chatState.topicId = null;
         loadTopic(topicIdFromPath(location.pathname));
       }
+      return;
+    }
+    if (e.target.closest(".im-chat-summarize")) {
+      e.preventDefault();
+      e.stopPropagation();
+      chatHooks.startAiSummary?.();
       return;
     }
     if (e.target.closest(".im-chat-native")) {
@@ -350,6 +364,7 @@ export function renderChatEmpty() {
       ${ICONS.msg}
       <div>暂无消息</div>
     </div>`;
+  chatHooks.syncAiSummary?.();
 }
 function renderChatError(message) {
   const body = document.querySelector(".im-chat-body");
@@ -851,7 +866,7 @@ export async function loadTopic(topicId) {
     if (body) {
       body.innerHTML = renderBubbles(posts, getCurrentUsername()) ||
         `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
-      chatHooks.enhancePolls?.(body);
+      afterChatPaint(body);
       if (scrollToPost) {
         requestAnimationFrame(() => scrollChatToPost(body, scrollToPost, true));
       } else {
@@ -889,7 +904,7 @@ async function loadOlderPosts() {
       const prevHeight = body.scrollHeight;
       body.insertAdjacentHTML("afterbegin", renderBubbles(posts, getCurrentUsername()));
       body.scrollTop += body.scrollHeight - prevHeight;
-      chatHooks.enhancePolls?.(body);
+      afterChatPaint(body);
     }
   } catch { /* 保留现状 */ } finally {
     chatState.loading = false;
@@ -965,7 +980,7 @@ export async function jumpToFloorRemote(postNumber, highlight = true) {
       const landed = posts.some((p) => p.post_number === n) ? n : posts[posts.length - 1].post_number;
       body.innerHTML = renderBubbles(posts, getCurrentUsername()) ||
         `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
-      chatHooks.enhancePolls?.(body);
+      afterChatPaint(body);
       requestAnimationFrame(() => scrollChatToPost(body, landed, highlight));
       rememberTopicPost(topicId, landed);
     }

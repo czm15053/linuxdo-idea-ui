@@ -22,3 +22,7 @@ export const RAIL_W_KEY = "linuxdo-im-rail-width";
 export const RAIL_COLLAPSE_KEY = "linuxdo-im-rail-collapse"; // "1" = 侧栏收起为窄条大图标（wecom）
 export const LIST_W_KEY = "linuxdo-im-list-width";
 export const LIST_NAV_KEY = "linuxdo-im-list-nav"; // "1" = 展开中栏筛选
+
+export const AI_NAME_KEY = "linuxdo-im-ai-name";
+export const AI_AVATAR_KEY = "linuxdo-im-ai-avatar"; // data URL / http(s) URL，空 = 官方豆包
+export const AI_DEFAULT_NAME = "豆包";

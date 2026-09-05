@@ -15,5 +15,8 @@ export const chatHooks = {
   popQuoteJump: null,        // features：返回原处
   jumpToPost: null,          // chat-panel：话题已打开时滚动/高亮某楼（列表行重复点击用）
   refreshMaskedChrome: null, // chat-panel：匿名伪装开关切换后重涂详情页头部标题/头像
-  enhancePolls: null         // features：投票组件增强
+  enhancePolls: null,        // features：投票组件增强
+  ensureAiSummaryButton: null, // features：聊天头「AI 总结」按钮
+  syncAiSummary: null,       // features：主贴下重插/恢复总结气泡
+  startAiSummary: null       // features：触发总结（订阅 MessageBus + POST）
 };
