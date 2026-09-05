@@ -11,6 +11,7 @@ export function makeFavicon() {
   faviconApplying = true;
   try {
     const href = FAVICON_URI;
+    const imgType = href.match(/^data:([^;,]+)/)?.[1] || "image/x-icon";
     // 覆盖所有常见 icon 链（含 shortcut / apple-touch），避免未选中标签仍用站点原图
     const icons = head.querySelectorAll(
       "link[rel='icon'], link[rel='shortcut icon'], link[rel~='icon'], link[rel='apple-touch-icon'], link[rel='apple-touch-icon-precomposed'], link[rel='mask-icon']"
@@ -19,7 +20,7 @@ export function makeFavicon() {
       if (icon.id && icon.id !== FAVICON_ID) icon.removeAttribute("id");
       if (icon.getAttribute("href") !== href) icon.setAttribute("href", href);
       if (icon.rel === "mask-icon") continue;
-      if (icon.getAttribute("type") !== "image/x-icon") icon.setAttribute("type", "image/x-icon");
+      if (icon.getAttribute("type") !== imgType) icon.setAttribute("type", imgType);
       if (!icon.getAttribute("sizes")) icon.setAttribute("sizes", "any");
     }
 
@@ -28,7 +29,7 @@ export function makeFavicon() {
       link = document.createElement("link");
       link.id = FAVICON_ID;
       link.rel = "icon";
-      link.type = "image/x-icon";
+      link.type = imgType;
       link.sizes = "any";
       link.setAttribute("href", href);
       head.appendChild(link);
@@ -41,7 +42,7 @@ export function makeFavicon() {
     if (!shortcut) {
       shortcut = document.createElement("link");
       shortcut.rel = "shortcut icon";
-      shortcut.type = "image/x-icon";
+      shortcut.type = imgType;
       shortcut.dataset.imShortcut = "1";
       shortcut.setAttribute("href", href);
       head.insertBefore(shortcut, head.firstChild);
