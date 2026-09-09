@@ -1,18 +1,24 @@
-# Linux DO · 不同风格摸鱼皮肤合集
+# 摸鱼办公皮肤合集 · Linux DO & X (Twitter)
 
-把 [linux.do](https://linux.do/) 换成 **IM（钉钉 / 飞书 / 企业微信）**、**JetBrains IDE**、**飞书 IM**、**钉钉 PC IM**、**Codex 桌面 app** 或**终端 TUI（Claude Code / Codex CLI）**风格。只换皮，不碰数据——内容、链接、按钮与交互全部保留。
+为 **Linux DO** 和 **X (Twitter)** 深度定制的办公界面伪装外观脚本，支持 **钉钉 PC 端**、**飞书 IM**、**企业微信 5.x**、**JetBrains IDE**、**终端 TUI** 等多种风格。只换皮，不碰数据——内容、链接、按钮与交互全部保留。
 
-> ⚠️ 六个脚本**互斥**，同一时刻只启用一个。同时启用时后装脚本会自动避让（控制台有提示）。
+> ⚠️ 同一站点内的不同外观脚本**互斥**，同一时刻对同一网站只启用一个外观。
 
 ## 目录
 
+### 🌐 Linux DO 专区
 - [🎉 飞书 / 钉钉 / 企业微信用户请安装新版（三合一）](#-飞书--钉钉--企业微信用户请安装新版三合一)
 - [脚本一：IM 三合一外观（`linuxdo-im.user.js`）](#脚本一im-三合一外观linuxdo-imuserjs)
 - [脚本二：JetBrains / Darcula 外观（`linuxdo-idea.user.js`）](#脚本二jetbrains--darcula-外观linuxdo-ideauserjs)
-- [脚本三：飞书 IM 外观（`linuxdo-feishu.user.js` · 已停止更新，请用三合一）](#脚本三飞书-im-外观linuxdo-feishuuserjs)
-- [脚本四：钉钉 IM 外观（`linuxdo-dingtalk.user.js` · 已停止更新，请用三合一）](#脚本四钉钉-im-外观linuxdo-dingtalkuserjs)
+- [脚本三：飞书 IM 外观（`linuxdo-feishu.user.js` · 已停止更新）](#脚本三飞书-im-外观linuxdo-feishuuserjs)
+- [脚本四：钉钉 IM 外观（`linuxdo-dingtalk.user.js` · 已停止更新）](#脚本四钉钉-im-外观linuxdo-dingtalkuserjs)
 - [脚本五：终端 TUI 外观 — Claude Code / Codex CLI（`linuxdo-terminal.user.js`）](#脚本五终端-tui-外观--claude-code--codex-clilinuxdo-terminaluserjs)
 - [脚本六：Codex 桌面 app 外观（`linuxdo-codex.user.js`）](#脚本六codex-桌面-app-外观linuxdo-codexuserjs)
+
+### 🐦 X (Twitter) 专区
+- [X.com 专属：IM 三合一外观（`x-im.user.js`）](#x-twitter-专属im-三合一外观x-imuserjs)
+
+### 📌 其他
 - [License](#license)
 - [友链](#友链)
 
@@ -42,6 +48,24 @@ https://github.com/czm15053/linuxdo-idea-ui/raw/main/linuxdo-im.user.js
 ```
 
 功能详解、截图与开发说明详见 [`im/README.md`](./im/README.md)。
+
+## X (Twitter) 专属：IM 三合一外观（`x-im.user.js`）
+
+为 [x.com](https://x.com/) / [twitter.com](https://twitter.com/) 深度定制的办公 IM 伪装脚本。将主页推荐流、关注、私信伪装为 **钉钉 / 飞书 / 企业微信** 聊天界面，支持 GraphQL 详情抽屉、原版 1:1 矢量图标、原生安全发帖与防窥脱敏。
+
+### 安装
+
+1. 安装 [Tampermonkey](https://www.tampermonkey.net/)
+2. 打开 [`x/x-im.user.js`](./x/x-im.user.js)，点 **Raw** 后安装
+3. 访问 <https://x.com/> 自动生效
+
+Raw 直链（仓库公开后可用）：
+
+```text
+https://github.com/czm15053/linuxdo-idea-ui/raw/main/x/x-im.user.js
+```
+
+完整架构、效果截图占位与开发说明详见 [`x/README.md`](./x/README.md)。
 
 ## 脚本二：JetBrains / Darcula 外观（`linuxdo-idea.user.js`）
 
