@@ -1,7 +1,7 @@
 import { ICONS, getSkinIcon } from "../config/icons.js";
 import { PINNED } from "../config/constants.js";
 import { currentSkinId } from "../config/skins.js";
-import { getChatId, isMaskTitle, getSortMode, setSortMode } from "../state/prefs.js";
+import { getChatId, isMaskTitle, getSortMode, setSortMode, isHideMedia, setHideMedia } from "../state/prefs.js";
 import { displayTitle, personAvatarHtml } from "./avatars.js";
 import { escapeHtml, parseCountValue, formatCount } from "../utils/html.js";
 import {
@@ -179,6 +179,7 @@ export function ensureChatPanel() {
         <div class="im-chat-tools"></div>
         <div class="im-chat-actions">
           <button type="button" class="im-icon-btn" data-act="refresh" title="刷新">${ICONS.refresh}</button>
+          <button type="button" class="im-icon-btn im-hide-media-toggle${isHideMedia() ? " is-on" : ""}" data-act="hide-media" title="${isHideMedia() ? "显示媒体（图片/视频）" : "隐藏媒体：纯文本摸鱼模式"}">${isHideMedia() ? ICONS.imageOff : ICONS.image}</button>
           <button type="button" class="im-icon-btn" data-act="compose" title="发帖">${ICONS.compose}</button>
         </div>
       </div>
@@ -200,6 +201,19 @@ export function ensureChatPanel() {
       </div>`;
     (document.body || document.documentElement).appendChild(panel);
     panel.querySelector('[data-act="compose"]')?.addEventListener("click", () => openCompose());
+    panel.querySelector('[data-act="hide-media"]')?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const on = !isHideMedia();
+      setHideMedia(on);
+      document.documentElement.classList.toggle("im-hide-media", on);
+      syncChatHeader(panel);
+      const listBtn = document.querySelector(".im-list-panel .im-hide-media-toggle");
+      if (listBtn) {
+        listBtn.classList.toggle("is-on", on);
+        listBtn.innerHTML = on ? ICONS.imageOff : ICONS.image;
+      }
+      toast(on ? "已开启纯文本摸鱼模式（隐藏图片与视频）" : "已恢复显示图片与视频");
+    });
     panel.querySelector('[data-act="refresh"]')?.addEventListener("click", (e) => {
       e.stopPropagation();
       refreshHomeFeed();
@@ -316,6 +330,13 @@ function syncChatHeader(panel) {
   syncComposerMode(panel, false);
   const refreshBtn = panel.querySelector("[data-act='refresh']");
   if (refreshBtn) refreshBtn.hidden = !(routeKind() === "home" || id === "home" || id === "follow");
+  const mediaBtn = panel.querySelector(".im-hide-media-toggle");
+  if (mediaBtn) {
+    const on = isHideMedia();
+    mediaBtn.classList.toggle("is-on", on);
+    mediaBtn.innerHTML = on ? ICONS.imageOff : ICONS.image;
+    mediaBtn.title = on ? "显示媒体（图片/视频）" : "隐藏媒体：纯文本摸鱼模式";
+  }
 
   // 通知中心展示「全部 / 提及」切换 tab，搜索页展示「热门 / 最新 / 图片 / 视频」tab，其它一律装饰标签
   const tabsEl = panel.querySelector(".im-chat-tabs");

@@ -1,5 +1,5 @@
 import { currentSkinId, SKINS } from "../config/skins.js";
-import { isMaskAvatar } from "../state/prefs.js";
+import { isMaskAvatar, isHideMedia } from "../state/prefs.js";
 import { ROOT_CLASS, LOCK_CLASS } from "../config/constants.js";
 import { ensureTitlebar } from "./titlebar.js";
 import { ensureRail, highlightRail } from "./rail.js";
@@ -19,6 +19,7 @@ export function applyRootAttrs() {
   html.classList.add(ROOT_CLASS, LOCK_CLASS);
   html.setAttribute("data-xim-skin", skin);
   html.setAttribute("data-xim-mask", isMaskAvatar() ? "1" : "0");
+  html.classList.toggle("im-hide-media", isHideMedia());
   applyColorMode();
   const s = SKINS[skin];
   html.style.setProperty("--im-nav", s.railWidth + "px");
@@ -30,7 +31,7 @@ export function applyRootAttrs() {
 
 export function clearRootAttrs() {
   const html = document.documentElement;
-  html.classList.remove(ROOT_CLASS, LOCK_CLASS);
+  html.classList.remove(ROOT_CLASS, LOCK_CLASS, "im-hide-media");
   html.removeAttribute("data-xim-skin");
   html.removeAttribute("data-xim-dark");
   html.removeAttribute("data-xim-mask");

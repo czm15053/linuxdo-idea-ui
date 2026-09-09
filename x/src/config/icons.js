@@ -15,6 +15,7 @@ const X_EXTRAS = {
   chart: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.75 21V3h2v18h-2zM18 21V8.5h2V21h-2zM4 21l.004-10h2L6 21H4zm9.248 0v-7h2v7h-2z"/></svg>',
   verified: '<svg class="im-verified" viewBox="0 0 24 24" fill="currentColor" aria-label="已认证"><path d="M12 2l2.4 1.8 2.6-.5.9 2.4 2.6.8-1 2.5 1.5 3-1.5 3 1 2.5-2.6.8-.9 2.4-2.6-.5L12 22l-2.4-1.8-2.6.5-.9-2.4-2.6-.8 1-2.5L3 12l1.5-3-1-2.5 2.6-.8.9-2.4 2.6.5z"/><path d="M9.5 12l1.8 1.8 3.4-3.6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   sortDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v11M4 11l4 5 4-5"/><path d="M16 19V8M12 13l4-5 4 5"/></svg>',
+  imageOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M10.41 10.41a2 2 0 1 0 2.83 2.83"/><path d="M13.5 13.5 6 21h12a2 2 0 0 0 2-2V9.5"/><path d="M4 16.5 4 5a2 2 0 0 1 2-2h10.5"/></svg>',
 };
 
 export const ICONS = { ...IM_ICONS, ...X_EXTRAS };

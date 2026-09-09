@@ -25,6 +25,7 @@
   const CHAT_KEY = "x-im-chat";
   const SORT_KEY = "x-im-sort";
   const ORG_NAME_KEY = "x-im-org-name";
+  const HIDE_MEDIA_KEY = "x-im-hide-media";
   const PINNED = [
     { id: "home", name: "推荐流", handle: "For You", path: "/home", tab: "for-you", preview: "信息流同步中", tag: "工作台", bio: "X 推荐时间线，按 IM 会话展示。" },
     { id: "follow", name: "关注动态", handle: "Following", path: "/home", tab: "following", preview: "已关注账号更新", tag: "部门群", bio: "关注页时间线。" },
@@ -7374,6 +7375,24 @@ html.im-theme .im-dm-prev {
 html.im-theme .im-feed-col > .im-msg,
 html.im-theme .im-detail-body .im-msg { margin-top: 6px; margin-bottom: 16px; }
 html.im-theme .im-dm-thread .im-msg { margin-top: 6px; margin-bottom: 16px; }
+
+/* —— 纯文本模式：隐藏所有推文配图、视频播放器、引用缩略图、外链配图与抽屉配图 —— */
+html.im-theme.im-hide-media .im-msg-photos,
+html.im-theme.im-hide-media .im-video,
+html.im-theme.im-hide-media .im-quote-video,
+html.im-theme.im-hide-media .im-quote-thumb,
+html.im-theme.im-hide-media .im-quote-pop-photos,
+html.im-theme.im-hide-media .im-link-card .im-link-thumb,
+html.im-theme.im-hide-media .im-thread-pin-photos,
+html.im-theme.im-hide-media .im-thread-pin video,
+html.im-theme.im-hide-media .im-thread-pin .im-video,
+html.im-theme.im-hide-media .xim-video-lifted {
+  display: none !important;
+}
+html.im-theme .im-hide-media-toggle.is-on {
+  color: var(--im-accent, #3370ff) !important;
+  background: var(--im-accent-soft, #e8f0ff) !important;
+}
 html.im-theme .im-dm-thread .im-thread-pin { margin-bottom: 6px; }
 
 /* —— 回车发布二次确认条 —— */
@@ -8509,6 +8528,19 @@ ${quoteEl.innerText || ""}`;
     }
     return users;
   }
+  function isHideMedia() {
+    try {
+      return localStorage.getItem(HIDE_MEDIA_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }
+  function setHideMedia(on) {
+    try {
+      localStorage.setItem(HIDE_MEDIA_KEY, on ? "1" : "0");
+    } catch {
+    }
+  }
   function isMaskAvatar() {
     try {
       return localStorage.getItem(MASK_AVATAR_KEY) === "1";
@@ -8721,7 +8753,8 @@ ${quoteEl.innerText || ""}`;
     play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 6.5l9 5.5-9 5.5z"/></svg>',
     chart: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.75 21V3h2v18h-2zM18 21V8.5h2V21h-2zM4 21l.004-10h2L6 21H4zm9.248 0v-7h2v7h-2z"/></svg>',
     verified: '<svg class="im-verified" viewBox="0 0 24 24" fill="currentColor" aria-label="已认证"><path d="M12 2l2.4 1.8 2.6-.5.9 2.4 2.6.8-1 2.5 1.5 3-1.5 3 1 2.5-2.6.8-.9 2.4-2.6-.5L12 22l-2.4-1.8-2.6.5-.9-2.4-2.6-.8 1-2.5L3 12l1.5-3-1-2.5 2.6-.8.9-2.4 2.6.5z"/><path d="M9.5 12l1.8 1.8 3.4-3.6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    sortDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v11M4 11l4 5 4-5"/><path d="M16 19V8M12 13l4-5 4 5"/></svg>'
+    sortDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v11M4 11l4 5 4-5"/><path d="M16 19V8M12 13l4-5 4 5"/></svg>',
+    imageOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M10.41 10.41a2 2 0 1 0 2.83 2.83"/><path d="M13.5 13.5 6 21h12a2 2 0 0 0 2-2V9.5"/><path d="M4 16.5 4 5a2 2 0 0 1 2-2h10.5"/></svg>'
   };
   const ICONS = { ...ICONS$1, ...X_EXTRAS };
   if (!ICONS.wiki) ICONS.wiki = ICONS.doc;
@@ -10586,7 +10619,7 @@ ${quoteEl.innerText || ""}`;
   </div>`;
   }
   function ensureChatPanel() {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
     let panel = document.querySelector(".im-chat-panel");
     if (!panel) {
       panel = document.createElement("div");
@@ -10606,6 +10639,7 @@ ${quoteEl.innerText || ""}`;
         <div class="im-chat-tools"></div>
         <div class="im-chat-actions">
           <button type="button" class="im-icon-btn" data-act="refresh" title="刷新">${ICONS.refresh}</button>
+          <button type="button" class="im-icon-btn im-hide-media-toggle${isHideMedia() ? " is-on" : ""}" data-act="hide-media" title="${isHideMedia() ? "显示媒体（图片/视频）" : "隐藏媒体：纯文本摸鱼模式"}">${isHideMedia() ? ICONS.imageOff : ICONS.image}</button>
           <button type="button" class="im-icon-btn" data-act="compose" title="发帖">${ICONS.compose}</button>
         </div>
       </div>
@@ -10627,7 +10661,20 @@ ${quoteEl.innerText || ""}`;
       </div>`;
       (document.body || document.documentElement).appendChild(panel);
       (_a = panel.querySelector('[data-act="compose"]')) == null ? void 0 : _a.addEventListener("click", () => openCompose());
-      (_b = panel.querySelector('[data-act="refresh"]')) == null ? void 0 : _b.addEventListener("click", (e) => {
+      (_b = panel.querySelector('[data-act="hide-media"]')) == null ? void 0 : _b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const on = !isHideMedia();
+        setHideMedia(on);
+        document.documentElement.classList.toggle("im-hide-media", on);
+        syncChatHeader(panel);
+        const listBtn = document.querySelector(".im-list-panel .im-hide-media-toggle");
+        if (listBtn) {
+          listBtn.classList.toggle("is-on", on);
+          listBtn.innerHTML = on ? ICONS.imageOff : ICONS.image;
+        }
+        toast(on ? "已开启纯文本摸鱼模式（隐藏图片与视频）" : "已恢复显示图片与视频");
+      });
+      (_c = panel.querySelector('[data-act="refresh"]')) == null ? void 0 : _c.addEventListener("click", (e) => {
         var _a2;
         e.stopPropagation();
         refreshHomeFeed();
@@ -10642,12 +10689,12 @@ ${quoteEl.innerText || ""}`;
       const confirmBar = document.createElement("div");
       confirmBar.className = "im-send-confirm";
       confirmBar.innerHTML = `<span>确认发布这条推文？</span><div class="spacer"></div><span class="cf-hint">再次回车 · 5秒后自动取消</span><button type="button" class="cf-cancel">取消</button><button type="button" class="cf-ok">发布</button>`;
-      (_c = panel.querySelector(".im-composer-card")) == null ? void 0 : _c.appendChild(confirmBar);
+      (_d = panel.querySelector(".im-composer-card")) == null ? void 0 : _d.appendChild(confirmBar);
       const replyBar = document.createElement("div");
       replyBar.className = "im-reply-bar";
       replyBar.innerHTML = `<span class="im-reply-bar-tag">回复</span><span class="im-reply-bar-handle"></span><span class="spacer"></span><button type="button" class="im-reply-bar-x" title="取消回复">×</button>`;
-      (_d = panel.querySelector(".im-composer-card")) == null ? void 0 : _d.prepend(replyBar);
-      (_e = replyBar.querySelector(".im-reply-bar-x")) == null ? void 0 : _e.addEventListener("click", () => {
+      (_e = panel.querySelector(".im-composer-card")) == null ? void 0 : _e.prepend(replyBar);
+      (_f = replyBar.querySelector(".im-reply-bar-x")) == null ? void 0 : _f.addEventListener("click", () => {
         stopReply(panel);
         composeBox == null ? void 0 : composeBox.focus();
       });
@@ -10668,11 +10715,11 @@ ${quoteEl.innerText || ""}`;
       confirmBar.addEventListener("click", (e) => {
         e.stopPropagation();
       });
-      (_f = confirmBar.querySelector(".cf-cancel")) == null ? void 0 : _f.addEventListener("click", () => {
+      (_g = confirmBar.querySelector(".cf-cancel")) == null ? void 0 : _g.addEventListener("click", () => {
         hideConfirm();
         composeBox == null ? void 0 : composeBox.focus();
       });
-      (_g = confirmBar.querySelector(".cf-ok")) == null ? void 0 : _g.addEventListener("click", () => {
+      (_h = confirmBar.querySelector(".cf-ok")) == null ? void 0 : _h.addEventListener("click", () => {
         hideConfirm();
         sendNow();
       });
@@ -10702,7 +10749,7 @@ ${quoteEl.innerText || ""}`;
         if (e.relatedTarget && (q.contains(e.relatedTarget) || (quoteFloat == null ? void 0 : quoteFloat.contains(e.relatedTarget)))) return;
         quoteFloatHide = setTimeout(hideQuoteFloat, 120);
       });
-      (_h = panel.querySelector(".im-chat-tabs")) == null ? void 0 : _h.addEventListener("click", (e) => {
+      (_i = panel.querySelector(".im-chat-tabs")) == null ? void 0 : _i.addEventListener("click", (e) => {
         const tab = e.target.closest(".im-chat-tab");
         if (!tab) return;
         if (tab.dataset.notifyTab) {
@@ -10736,7 +10783,7 @@ ${quoteEl.innerText || ""}`;
         }
         toast("装饰标签，暂无内容");
       });
-      (_i = panel.querySelector(".im-chat-avatar")) == null ? void 0 : _i.addEventListener("click", () => {
+      (_j = panel.querySelector(".im-chat-avatar")) == null ? void 0 : _j.addEventListener("click", () => {
         var _a2;
         const h = (_a2 = panel.querySelector(".im-chat-avatar")) == null ? void 0 : _a2.dataset.handle;
         if (h) navigateX("/" + h);
@@ -10756,6 +10803,13 @@ ${quoteEl.innerText || ""}`;
     syncComposerMode(panel, false);
     const refreshBtn = panel.querySelector("[data-act='refresh']");
     if (refreshBtn) refreshBtn.hidden = !(routeKind() === "home" || id === "home" || id === "follow");
+    const mediaBtn = panel.querySelector(".im-hide-media-toggle");
+    if (mediaBtn) {
+      const on = isHideMedia();
+      mediaBtn.classList.toggle("is-on", on);
+      mediaBtn.innerHTML = on ? ICONS.imageOff : ICONS.image;
+      mediaBtn.title = on ? "显示媒体（图片/视频）" : "隐藏媒体：纯文本摸鱼模式";
+    }
     const tabsEl = panel.querySelector(".im-chat-tabs");
     const sId = currentSkinId();
     if (routeKind() === "notify" || id === "notify") {
@@ -12304,6 +12358,7 @@ ${quoteEl.innerText || ""}`;
       <button type="button" class="im-icon-btn im-mask-anon-toggle${isMaskAvatar() && isMaskTitle() ? " is-on" : ""}" data-act="mask-anon" title="匿名模式：一键开关头像与标题伪装">${ICONS.disguise}</button>
       <button type="button" class="im-icon-btn im-mask-avatar-toggle${isMaskAvatar() ? " is-on" : ""}" data-act="mask-ava" title="伪装头像">${ICONS.eyes}</button>
       <button type="button" class="im-icon-btn im-mask-title-toggle${isMaskTitle() ? " is-on" : ""}" data-act="mask-title" title="伪装标题">${ICONS.win}</button>
+      <button type="button" class="im-icon-btn im-hide-media-toggle${isHideMedia() ? " is-on" : ""}" data-act="hide-media" title="${isHideMedia() ? "显示媒体（图片/视频）" : "隐藏媒体：纯文本摸鱼模式"}">${isHideMedia() ? ICONS.imageOff : ICONS.image}</button>
       <button type="button" class="im-icon-btn xim-skin-btn" title="切换外观">${ICONS.swap}</button>
     </div>`;
     if (head.dataset.sig === html) return;
@@ -12462,6 +12517,18 @@ ${quoteEl.innerText || ""}`;
       } else if (a === "mask-title") {
         setMaskTitle(!isMaskTitle());
         refreshMaskedChrome();
+      } else if (a === "hide-media") {
+        const on = !isHideMedia();
+        setHideMedia(on);
+        document.documentElement.classList.toggle("im-hide-media", on);
+        ensureListPanel();
+        const chatBtn = document.querySelector(".im-chat-panel .im-hide-media-toggle");
+        if (chatBtn) {
+          chatBtn.classList.toggle("is-on", on);
+          chatBtn.innerHTML = on ? ICONS.imageOff : ICONS.image;
+          chatBtn.title = on ? "显示媒体（图片/视频）" : "隐藏媒体：纯文本摸鱼模式";
+        }
+        toast(on ? "已开启纯文本摸鱼模式（隐藏图片与视频）" : "已恢复显示图片与视频");
       }
       return;
     }
@@ -12624,6 +12691,7 @@ ${quoteEl.innerText || ""}`;
     html.classList.add(ROOT_CLASS, LOCK_CLASS);
     html.setAttribute("data-xim-skin", skin);
     html.setAttribute("data-xim-mask", isMaskAvatar() ? "1" : "0");
+    html.classList.toggle("im-hide-media", isHideMedia());
     applyColorMode();
     const s = SKINS[skin];
     html.style.setProperty("--im-nav", s.railWidth + "px");
@@ -12634,7 +12702,7 @@ ${quoteEl.innerText || ""}`;
   }
   function clearRootAttrs() {
     const html = document.documentElement;
-    html.classList.remove(ROOT_CLASS, LOCK_CLASS);
+    html.classList.remove(ROOT_CLASS, LOCK_CLASS, "im-hide-media");
     html.removeAttribute("data-xim-skin");
     html.removeAttribute("data-xim-dark");
     html.removeAttribute("data-xim-mask");

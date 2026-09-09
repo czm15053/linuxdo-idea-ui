@@ -1,7 +1,7 @@
 import { ICONS } from "../config/icons.js";
 import { PINNED } from "../config/constants.js";
 import { currentSkinId, SKINS } from "../config/skins.js";
-import { isMaskAvatar, isMaskTitle, setMaskAvatar, setMaskTitle, getChatId, setChatId } from "../state/prefs.js";
+import { isMaskAvatar, isMaskTitle, setMaskAvatar, setMaskTitle, getChatId, setChatId, isHideMedia, setHideMedia } from "../state/prefs.js";
 import { escapeHtml, stripText } from "../utils/html.js";
 import { convAvatarHtml, displayTitle, disguiseTitle } from "./avatars.js";
 import { clickHomeTab, navigateX, openCompose, openSearch, badgeCount, extractDmConversations, harvestFeedAvatars } from "../bridge/x-dom.js";
@@ -9,6 +9,7 @@ import { chatIdFromRoute, routeKind } from "../bridge/router.js";
 import { resetChatMessages } from "./chat-panel.js";
 import { ensureRail } from "./rail.js";
 import { ensureTitlebar } from "./titlebar.js";
+import { toast } from "./toast.js";
 
 let filterUnread = false;
 
@@ -48,6 +49,7 @@ function renderListHeader(panel) {
       <button type="button" class="im-icon-btn im-mask-anon-toggle${isMaskAvatar() && isMaskTitle() ? " is-on" : ""}" data-act="mask-anon" title="匿名模式：一键开关头像与标题伪装">${ICONS.disguise}</button>
       <button type="button" class="im-icon-btn im-mask-avatar-toggle${isMaskAvatar() ? " is-on" : ""}" data-act="mask-ava" title="伪装头像">${ICONS.eyes}</button>
       <button type="button" class="im-icon-btn im-mask-title-toggle${isMaskTitle() ? " is-on" : ""}" data-act="mask-title" title="伪装标题">${ICONS.win}</button>
+      <button type="button" class="im-icon-btn im-hide-media-toggle${isHideMedia() ? " is-on" : ""}" data-act="hide-media" title="${isHideMedia() ? "显示媒体（图片/视频）" : "隐藏媒体：纯文本摸鱼模式"}">${isHideMedia() ? ICONS.imageOff : ICONS.image}</button>
       <button type="button" class="im-icon-btn xim-skin-btn" title="切换外观">${ICONS.swap}</button>
     </div>`;
   void skin;
@@ -215,6 +217,19 @@ function onListClick(e) {
       refreshMaskedChrome();
     } else if (a === "mask-ava") { setMaskAvatar(!isMaskAvatar()); refreshMaskedChrome(); }
     else if (a === "mask-title") { setMaskTitle(!isMaskTitle()); refreshMaskedChrome(); }
+    else if (a === "hide-media") {
+      const on = !isHideMedia();
+      setHideMedia(on);
+      document.documentElement.classList.toggle("im-hide-media", on);
+      ensureListPanel();
+      const chatBtn = document.querySelector(".im-chat-panel .im-hide-media-toggle");
+      if (chatBtn) {
+        chatBtn.classList.toggle("is-on", on);
+        chatBtn.innerHTML = on ? ICONS.imageOff : ICONS.image;
+        chatBtn.title = on ? "显示媒体（图片/视频）" : "隐藏媒体：纯文本摸鱼模式";
+      }
+      toast(on ? "已开启纯文本摸鱼模式（隐藏图片与视频）" : "已恢复显示图片与视频");
+    }
     return;
   }
   const conv = e.target.closest(".im-conv");

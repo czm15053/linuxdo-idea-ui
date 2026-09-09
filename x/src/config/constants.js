@@ -12,6 +12,7 @@ export const MASK_TITLE_KEY = "x-im-mask-title";
 export const CHAT_KEY = "x-im-chat";
 export const SORT_KEY = "x-im-sort";
 export const ORG_NAME_KEY = "x-im-org-name";
+export const HIDE_MEDIA_KEY = "x-im-hide-media";
 
 export const PINNED = [
   { id: "home", name: "推荐流", handle: "For You", path: "/home", tab: "for-you", preview: "信息流同步中", tag: "工作台", bio: "X 推荐时间线，按 IM 会话展示。" },

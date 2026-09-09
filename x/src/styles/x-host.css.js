@@ -927,6 +927,24 @@ html.im-theme .im-dm-prev {
 html.im-theme .im-feed-col > .im-msg,
 html.im-theme .im-detail-body .im-msg { margin-top: 6px; margin-bottom: 16px; }
 html.im-theme .im-dm-thread .im-msg { margin-top: 6px; margin-bottom: 16px; }
+
+/* —— 纯文本模式：隐藏所有推文配图、视频播放器、引用缩略图、外链配图与抽屉配图 —— */
+html.im-theme.im-hide-media .im-msg-photos,
+html.im-theme.im-hide-media .im-video,
+html.im-theme.im-hide-media .im-quote-video,
+html.im-theme.im-hide-media .im-quote-thumb,
+html.im-theme.im-hide-media .im-quote-pop-photos,
+html.im-theme.im-hide-media .im-link-card .im-link-thumb,
+html.im-theme.im-hide-media .im-thread-pin-photos,
+html.im-theme.im-hide-media .im-thread-pin video,
+html.im-theme.im-hide-media .im-thread-pin .im-video,
+html.im-theme.im-hide-media .xim-video-lifted {
+  display: none !important;
+}
+html.im-theme .im-hide-media-toggle.is-on {
+  color: var(--im-accent, #3370ff) !important;
+  background: var(--im-accent-soft, #e8f0ff) !important;
+}
 html.im-theme .im-dm-thread .im-thread-pin { margin-bottom: 6px; }
 
 /* —— 回车发布二次确认条 —— */

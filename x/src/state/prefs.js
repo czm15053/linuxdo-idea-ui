@@ -1,4 +1,11 @@
-import { MASK_AVATAR_KEY, MASK_TITLE_KEY, CHAT_KEY, SORT_KEY } from "../config/constants.js";
+import { MASK_AVATAR_KEY, MASK_TITLE_KEY, CHAT_KEY, SORT_KEY, HIDE_MEDIA_KEY } from "../config/constants.js";
+
+export function isHideMedia() {
+  try { return localStorage.getItem(HIDE_MEDIA_KEY) === "1"; } catch { return false; }
+}
+export function setHideMedia(on) {
+  try { localStorage.setItem(HIDE_MEDIA_KEY, on ? "1" : "0"); } catch { /* ignore */ }
+}
 
 export function isMaskAvatar() {
   try { return localStorage.getItem(MASK_AVATAR_KEY) === "1"; } catch { return false; }
