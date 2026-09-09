@@ -92,3 +92,10 @@ pnpm dev
 pnpm lint
 pnpm build
 ```
+
+---
+
+## 友链
+
+- [linux.do](https://linux.do/)
+
