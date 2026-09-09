@@ -207,6 +207,7 @@ function toTweet(node, userHandle) {
     replyTo,
     verified: !!(ulRaw.verified || uTop.is_blue_verified || uTop.verified || r.verified_type),
     mine: false,
+    following: !!(ulRaw.following || uTop.following || false),
   };
 }
 

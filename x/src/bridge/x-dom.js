@@ -452,13 +452,26 @@ export function extractTweet(article) {
     const liked = !!article.querySelector('[data-testid="unlike"]');
     const retweeted = !!article.querySelector('[data-testid="unretweet"]');
     const bookmarked = !!article.querySelector('[data-testid="removeBookmark"]');
+    const followBtn = article.querySelector('[data-testid*="-follow"], [aria-label*="关注 @"], [aria-label*="Follow @"]');
+    const unfollowBtn = article.querySelector('[data-testid*="-unfollow"], [aria-label*="正在关注"], [aria-label*="Following"]');
+
+    let isFollowing = false;
+    if (currentHomeTab() === "following") {
+      isFollowing = true;
+    } else if (unfollowBtn) {
+      isFollowing = true;
+    } else if (followBtn) {
+      isFollowing = false;
+    }
+
+    const canFollow = !mine && !!handle;
 
     return {
       id, href, name: displayName || handle || "用户", handle, text, html, time, datetime,
       avatar, photos, alts, live, quote, linkCard, video, poll, isNote,
       replyCount, rtCount, likeCount, bookmarkCount, viewCount,
       liked, retweeted, bookmarked,
-      reposter, repliedTo, replyTo, verified, mine, translated,
+      reposter, repliedTo, replyTo, verified, mine, translated, canFollow, isFollowing,
     };
   } catch {
     return null;

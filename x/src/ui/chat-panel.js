@@ -10,7 +10,10 @@ import {
   refreshHomeFeed, currentHomeTab, switchFollowingSort, extractUserCells,
 } from "../bridge/x-dom.js";
 import { chatIdFromRoute, routeKind } from "../bridge/router.js";
-import { sendViaModal, replyViaModal, sendDmViaNative, toggleLike, toggleRetweet, toggleBookmark } from "../bridge/tweet.js";
+import {
+  sendViaModal, replyViaModal, sendDmViaNative, toggleLike, toggleRetweet, toggleBookmark,
+  toggleFollowOnProfile, toggleFollowViaCaret, toggleTweetFollow, getProfileFollowState,
+} from "../bridge/tweet.js";
 import { fetchTweetDetail, fetchNotificationsTimeline, fetchSearchTimeline, posterVideoSrc, requestXTranslation } from "../bridge/feed-api.js";
 import { openImImageModal, playInlineVideo, closeImVideoModal, openImVideoModal } from "./lightbox.js";
 import { toast } from "./toast.js";
@@ -126,6 +129,11 @@ function threadPinHtml(t) {
   const transAct = transWanted(t) !== undefined
     ? `<button type="button" class="im-thread-pin-act" data-act="trans" title="译成中文"><span>译文</span></button>`
     : "";
+  const me = (nativeProfilePath() || "").replace(/^\//, "").toLowerCase();
+  const isMe = me && t.handle && me === t.handle.toLowerCase();
+  const followBtnHtml = (!isMe && t.handle)
+    ? `<button type="button" class="im-profile-follow im-pin-follow-btn${t.following ? " on" : ""}" data-handle="${escapeHtml(t.handle)}" data-pin-id="${escapeHtml(t.id || "")}">${t.following ? "已关注" : "+ 关注"}</button>`
+    : "";
   return `<div class="im-thread-pin" data-pin-id="${escapeHtml(t.id || "")}" data-lang="orig">
     <div class="im-thread-pin-head">
       ${ava}
@@ -133,6 +141,7 @@ function threadPinHtml(t) {
         <span class="im-thread-pin-name">${escapeHtml(t.name)}</span>
         <span class="im-thread-pin-handle">@${escapeHtml(t.handle || "")} · ${escapeHtml(t.time || "")}</span>
       </div>
+      ${followBtnHtml}
     </div>
     <div class="im-thread-pin-body">${body}</div>
     ${quote}
@@ -414,7 +423,29 @@ function syncChatHeader(panel) {
       if (title) title.textContent = name;
       if (chips) chips.innerHTML = isMaskTitle() ? "" : `<a class="im-chat-chip">主页</a>`;
       if (sub) sub.textContent = (prof?.bio || "@" + handle).slice(0, 80);
-      if (tools) tools.innerHTML = "";
+      if (tools) {
+        const me = (nativeProfilePath() || "").replace(/^\//, "").toLowerCase();
+        const isMe = me && me === handle.toLowerCase();
+        if (!isMe) {
+          const followState = getProfileFollowState();
+          tools.innerHTML = `<button type="button" class="im-profile-follow${followState.following ? " on" : ""}" data-act="profile-follow" data-handle="${escapeHtml(handle)}">${followState.following ? "已关注" : "+ 关注"}</button>`;
+          tools.querySelector('[data-act="profile-follow"]')?.addEventListener("click", async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            const res = await toggleFollowOnProfile();
+            btn.disabled = false;
+            if (res.ok) {
+              btn.classList.toggle("on", res.following);
+              btn.textContent = res.following ? "已关注" : "+ 关注";
+              toast(res.following ? `已关注 @${handle}` : `已取消关注 @${handle}`);
+            } else {
+              toast(res.msg || "操作失败，请重试");
+            }
+          });
+        } else {
+          tools.innerHTML = "";
+        }
+      }
     }
     panel.querySelector(".im-chat-tabs")?.style.removeProperty("display");
     return;
@@ -776,12 +807,15 @@ function msgHtml(t, forceReal) {
     t.viewCount ? `浏览 ${t.viewCount}` : "",
   ].filter(Boolean).join(" · ");
   const bubbleTitle = statsSummary ? ` title="${escapeHtml(statsSummary)}"` : (long ? ' title="点击展开全部"' : "");
+  const followTag = (t.canFollow && !t.mine && handle)
+    ? `<button type="button" class="im-msg-follow${t.isFollowing ? " on" : ""}" data-id="${escapeHtml(t.id)}" data-handle="${escapeHtml(handle)}" title="${t.isFollowing ? "已关注" : "关注"} @${escapeHtml(handle)}">${t.isFollowing ? "已关注" : "+ 关注"}</button>`
+    : "";
 
   return `<div class="im-msg im-msg-${side}" data-id="${escapeHtml(t.id)}" data-href="${escapeHtml(t.href || "")}" data-handle="${escapeHtml(handle)}" data-translated="${escapeHtml(String(translated))}">
     ${ava}
     <div class="im-msg-content">
       <span class="im-msg-head">
-        <span class="im-msg-name" title="@${escapeHtml(handle)}" style="cursor:pointer">${escapeHtml(t.name)}${nameMark}</span>${forceReal ? "" : metaHtml}
+        <span class="im-msg-name" title="@${escapeHtml(handle)}" style="cursor:pointer">${escapeHtml(t.name)}${nameMark}</span>${followTag}${forceReal ? "" : metaHtml}
       </span>
       <div class="im-msg-bubble"${bubbleTitle}>${context}${livetag}${replyQuote}${quote}${body}${extras}${photos}</div>
       ${forceReal ? metaHtml : ""}
@@ -1364,6 +1398,23 @@ function onMsgClick(e) {
     openQuotedTweet(quote);
     return;
   }
+  const pinFollow = e.target.closest(".im-pin-follow-btn");
+  if (pinFollow) {
+    const pinId = pinFollow.dataset.pinId;
+    const handle = pinFollow.dataset.handle;
+    pinFollow.disabled = true;
+    toggleFollowViaCaret(pinId).then((res) => {
+      pinFollow.disabled = false;
+      if (res.ok) {
+        pinFollow.classList.toggle("on", res.following);
+        pinFollow.textContent = res.following ? "已关注" : "+ 关注";
+        toast(res.following ? `已关注 @${handle}` : `已取消关注 @${handle}`);
+      } else {
+        toast(res.msg || "操作失败，请重试");
+      }
+    });
+    return;
+  }
   const pinAct = e.target.closest(".im-thread-pin-act");
   if (pinAct) {
     const pinEl = pinAct.closest(".im-thread-pin");
@@ -1387,6 +1438,30 @@ function onMsgClick(e) {
     } else if (pinAct.dataset.act === "bookmark") {
       handlePinBookmark(pinAct, pinId, art);
     }
+    return;
+  }
+  const msgFollow = e.target.closest(".im-msg-follow");
+  if (msgFollow) {
+    e.preventDefault();
+    e.stopPropagation();
+    const id = msgFollow.dataset.id;
+    const handle = msgFollow.dataset.handle;
+    const isCurrentlyOn = msgFollow.classList.contains("on");
+    msgFollow.disabled = true;
+    toggleTweetFollow(id, isCurrentlyOn).then((res) => {
+      msgFollow.disabled = false;
+      if (res.ok) {
+        msgFollow.classList.toggle("on", res.following);
+        msgFollow.textContent = res.following ? "已关注" : "+ 关注";
+        if (res.already) {
+          toast(`已在关注列表中 (@${handle})`);
+        } else {
+          toast(res.following ? `已关注 @${handle}` : `已取消关注 @${handle}`);
+        }
+      } else {
+        toast(res.msg || "关注失败，请重试");
+      }
+    });
     return;
   }
   const person = e.target.closest(".im-msg-avatar, .im-msg-name");

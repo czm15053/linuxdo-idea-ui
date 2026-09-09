@@ -381,9 +381,84 @@ html.im-theme .im-thread-pin-avatar {
   color: #fff; font-size: 14px; font-weight: 600;
 }
 html.im-theme .im-thread-pin-avatar img { width: 100%; height: 100%; object-fit: cover; }
-html.im-theme .im-thread-pin-names { min-width: 0; display: flex; flex-direction: column; }
+html.im-theme .im-thread-pin-names { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 html.im-theme .im-thread-pin-name { font-size: 14px; font-weight: 600; color: var(--im-text, #1f2329); }
 html.im-theme .im-thread-pin-handle { font-size: 12px; color: var(--im-text-3, #8f959e); }
+html.im-theme .im-profile-follow,
+html.im-theme .im-pin-follow-btn {
+  flex: none;
+  cursor: pointer;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--im-accent, #3370ff);
+  background: transparent;
+  color: var(--im-accent, #3370ff);
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s ease;
+  user-select: none;
+}
+html.im-theme .im-profile-follow:hover,
+html.im-theme .im-pin-follow-btn:hover {
+  background: var(--im-accent-soft, #e8f0ff);
+}
+html.im-theme .im-profile-follow.on,
+html.im-theme .im-pin-follow-btn.on {
+  border-color: var(--im-border, #e8e9eb);
+  color: var(--im-text-2, #646a73);
+  background: transparent;
+}
+html.im-theme .im-profile-follow.on:hover,
+html.im-theme .im-pin-follow-btn.on:hover {
+  border-color: rgba(244, 33, 46, 0.4);
+  color: #f4212e;
+  background: rgba(244, 33, 46, 0.08);
+}
+html.im-theme .im-profile-follow:disabled,
+html.im-theme .im-pin-follow-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+html.im-theme .im-msg-follow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  padding: 0 7px;
+  margin-left: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--im-accent, #3370ff);
+  background: transparent;
+  color: var(--im-accent, #3370ff);
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 500;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: all .15s ease;
+  user-select: none;
+}
+html.im-theme .im-msg-follow:hover {
+  background: var(--im-accent-soft, #e8f0ff);
+}
+html.im-theme .im-msg-follow.on {
+  border-color: var(--im-border, #e8e9eb);
+  color: var(--im-text-3, #8f959e);
+  background: transparent;
+}
+html.im-theme .im-msg-follow.on:hover {
+  border-color: rgba(244, 33, 46, 0.4);
+  color: #f4212e;
+  background: rgba(244, 33, 46, 0.08);
+}
+html.im-theme .im-msg-follow:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 html.im-theme .im-thread-pin-body {
   margin-top: 10px; font-size: 14px; line-height: 1.55; color: var(--im-text, #1f2329);
   white-space: normal; word-break: break-word;
