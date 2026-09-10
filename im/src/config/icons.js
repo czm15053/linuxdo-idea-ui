@@ -66,7 +66,8 @@ export const ICONS = {
   heartFilled: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 14.36 2 11.28 2 7.5 2 4.42 4.42 2 7.5 2c1.74 0 3.41.81 4.5 2.09C13.09 2.81 14.76 2 16.5 2 19.58 2 22 4.42 22 7.5c0 3.78-3.4 6.86-8.55 12.54L12 21.35Z"/></svg>`,
   scrollTop: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   bookmarkFill: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3.5h10A1.2 1.2 0 0 1 18.2 4.7v14.8c0 .9-1 1.4-1.7.9L12 16.9l-4.5 3.5c-.7.5-1.7 0-1.7-.9V4.7A1.2 1.2 0 0 1 7 3.5Z"/></svg>`,
-  shield: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3L4 6.5V11c0 5.25 3.4 10.15 8 11.5 4.6-1.35 8-6.25 8-11.5V6.5L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`
+  shield: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3L4 6.5V11c0 5.25 3.4 10.15 8 11.5 4.6-1.35 8-6.25 8-11.5V6.5L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`,
+  highlighter: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 19l7-7 3 3-7 7-3-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M2 22h20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`
 };
 ICONS.chat = ICONS.msg;
 ICONS.list = ICONS.msg;

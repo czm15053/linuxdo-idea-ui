@@ -28,3 +28,4 @@ export const AI_AVATAR_KEY = "linuxdo-im-ai-avatar"; // data URL / http(s) URL�
 export const AI_DEFAULT_NAME = "豆包";
 
 export const SPAM_FILTER_KEY = "linuxdo-im-spam-filter";
+export const HIGHLIGHT_KEY = "linuxdo-im-highlight-keywords";

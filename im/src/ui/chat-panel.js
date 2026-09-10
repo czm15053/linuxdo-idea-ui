@@ -41,6 +41,31 @@ export function extractTextSnippet(html, maxLen = 60) {
     return "";
   }
 }
+function ensureSpamToggleButton(panel) {
+  if (!panel) return;
+  const actions = panel.querySelector(".im-chat-actions");
+  if (!actions) return;
+  let btn = actions.querySelector(".im-chat-spam-toggle");
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "im-icon-btn im-chat-spam-toggle";
+    btn.title = "水贴过滤设置";
+    btn.innerHTML = ICONS.shield;
+    const summarize = actions.querySelector(".im-chat-summarize");
+    if (summarize) actions.insertBefore(btn, summarize);
+    else actions.appendChild(btn);
+  }
+  if (btn.dataset.bound !== "1") {
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openSpamConfigDialog();
+    });
+  }
+}
+
 export function ensureChatPanel() {
   let panel = document.querySelector(".im-chat-panel");
   if (panel && (!panel.querySelector(".im-chat-compose") || !panel.querySelector(".im-composer-card"))) {
@@ -52,6 +77,7 @@ export function ensureChatPanel() {
       panel.dataset.composeBound = "1";
       bindChatPanelEvents(panel);
     }
+    ensureSpamToggleButton(panel);
     chatHooks.wireComposer?.(panel);
     chatHooks.ensureAiSummaryButton?.(panel);
     return panel;
@@ -120,6 +146,7 @@ export function ensureChatPanel() {
   `;
   document.body.appendChild(panel);
   bindChatPanelEvents(panel);
+  ensureSpamToggleButton(panel);
   chatHooks.wireComposer?.(panel);
   chatHooks.ensureAiSummaryButton?.(panel);
   return panel;

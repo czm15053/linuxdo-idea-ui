@@ -22,6 +22,8 @@ const checks = [
   ["function syncAiSummary(", 1],
   ["function isSpamPost(", 1],
   ["function openSpamConfigDialog(", 1],
+  ["function highlightTitleText(", 1],
+  ["function openHighlightConfigDialog(", 1],
   ["const LIST_NAV_KEY", 1],
   ["const MASK_AVATAR_KEY", 1],
   ["const MASK_TITLE_KEY", 1],

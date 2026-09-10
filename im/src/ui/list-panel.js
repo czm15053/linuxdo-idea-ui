@@ -23,11 +23,18 @@ import {
   convDisplayTitle, convDisplaySummary,
 } from "./shared/avatars.js";
 import {
-  isMaskAvatar, isHideCatTags,
+  isMaskAvatar, isHideCatTags, isMaskTitle, setMaskTitle,
   setMaskAvatar, ensureMaskAvatarToggle, ensureMaskTitleToggle,
 } from "./shared/toggles.js";
 import { setViewMode } from "../state/view-state.js";
 import { syncNewToggle } from "./new-toggle.js";
+import {
+  loadHighlightConfig,
+  highlightTitleText,
+  hasHighlightedKeyword,
+  onHighlightConfigChange
+} from "../features/highlight-keywords.js";
+import { openHighlightConfigDialog } from "./highlight-config-dialog.js";
 
 let listNavOpen = (() => {
   try { return localStorage.getItem(LIST_NAV_KEY) === "1"; } catch { return false; }
@@ -132,6 +139,22 @@ function bindListPanelClicks(panel) {
       return;
     }
 
+    const maskTitleBtn = e.target.closest(".im-mask-title-toggle");
+    if (maskTitleBtn && panel.contains(maskTitleBtn)) {
+      e.preventDefault();
+      e.stopPropagation();
+      setMaskTitle(!isMaskTitle());
+      return;
+    }
+
+    const hlBtn = e.target.closest(".im-highlight-toggle");
+    if (hlBtn && panel.contains(hlBtn)) {
+      e.preventDefault();
+      e.stopPropagation();
+      openHighlightConfigDialog();
+      return;
+    }
+
     const btn = e.target.closest(".im-list-nav-toggle");
     if (btn && panel.contains(btn)) {
       e.preventDefault();
@@ -200,6 +223,7 @@ export function ensureListPanel() {
     bindListSearch(panel);
     ensureMaskAvatarToggle(panel);
     ensureMaskTitleToggle(panel);
+    ensureHighlightToggle(panel);
     applyListNavDom();
     syncNewToggle(panel, () => loadList(listState.apiPath || "/new.json", true));
     return panel;
@@ -221,6 +245,7 @@ export function ensureListPanel() {
         <button type="button" class="im-icon-btn im-new-topic-btn" title="发帖（原生编辑器）">${ICONS.compose}</button>
         <button type="button" class="im-icon-btn im-mask-avatar-toggle" title="伪装头像：关（点击开启）" aria-pressed="false">${ICONS.disguise}</button>
         <button type="button" class="im-icon-btn im-mask-title-toggle" title="伪装标题：关（点击开启）" aria-pressed="false">${ICONS.win}</button>
+        <button type="button" class="im-icon-btn im-highlight-toggle" title="关键词高亮配置">${ICONS.highlighter}</button>
       </div>
     </div>
     <div class="im-list-pins"></div>
@@ -233,6 +258,7 @@ export function ensureListPanel() {
   bindListSearch(panel);
   ensureMaskAvatarToggle(panel);
   ensureMaskTitleToggle(panel);
+  ensureHighlightToggle(panel);
   panel.querySelector(".im-list-body").addEventListener("scroll", () => {
     onListBodyScroll(panel.querySelector(".im-list-body"));
   });
@@ -278,19 +304,22 @@ function convRowHtml(topic, usersById) {
   const summary = convDisplaySummary(topic, rawSummary);
   // 匿名模式隐藏分类 chip，避免暴露真实板块
   const tag = isMaskAvatar() ? "" : convCategoryTag(topic);
+  const isHl = hasHighlightedKeyword(title) || hasHighlightedKeyword(summary);
+  const highlightedTitle = highlightTitleText(title);
+  const highlightedSummary = highlightTitleText(summary);
   return `
-    <a class="im-conv" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.id}" title="${escapeHtml(title)}">
+    <a class="im-conv${isHl ? " is-highlighted" : ""}" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.id}" title="${escapeHtml(title)}">
       ${convAvatarHtml(topic, usersById)}
       <span class="im-conv-info">
         <span class="im-conv-top">
           <span class="im-conv-title">
-            <span class="im-conv-name">${escapeHtml(title)}</span>
+            <span class="im-conv-name">${highlightedTitle}</span>
             ${tag}
           </span>
           <span class="im-conv-time">${escapeHtml(formatTime(topic.bumped_at || topic.last_activity_at || topic.created_at))}</span>
         </span>
         <span class="im-conv-bottom">
-          <span class="im-conv-msg">${escapeHtml(summary)}</span>
+          <span class="im-conv-msg">${highlightedSummary}</span>
           ${unread ? `<span class="im-conv-badge">${unread > 99 ? "99+" : unread}</span>` : ""}
         </span>
       </span>
@@ -432,3 +461,40 @@ export async function loadMoreList() {
     listState.loading = false;
   }
 }
+
+export function ensureHighlightToggle(panel) {
+  if (!panel) return;
+  const actions = panel.querySelector(".im-list-actions");
+  if (!actions) return;
+  let btn = actions.querySelector(".im-highlight-toggle");
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "im-icon-btn im-highlight-toggle";
+    btn.innerHTML = ICONS.highlighter;
+    actions.appendChild(btn);
+  }
+  if (btn.dataset.bound !== "1") {
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openHighlightConfigDialog();
+    });
+  }
+  const cfg = loadHighlightConfig();
+  const on = cfg.enabled && cfg.keywords.length > 0;
+  btn.title = on
+    ? `关键词高亮：开（${cfg.keywords.length}个词，点击配置）`
+    : "关键词高亮：关（点击配置）";
+  btn.setAttribute("aria-pressed", on ? "true" : "false");
+  btn.classList.toggle("is-on", on);
+}
+
+// 关键词高亮配置变动：刷新按钮态并重绘列表行
+onHighlightConfigChange(() => {
+  const panel = document.querySelector(".im-list-panel");
+  if (panel) ensureHighlightToggle(panel);
+  renderListRows();
+});
+

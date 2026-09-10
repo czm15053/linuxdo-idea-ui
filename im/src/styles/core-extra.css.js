@@ -2199,17 +2199,17 @@ color: #7AA3D6;
       border-color: var(--im-accent);
     }
 
-    /* 水贴配置对话框 */
-    .im-modal-overlay.im-spam-dialog-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 10000;
-      background: rgba(0, 0, 0, 0.45);
-      backdrop-filter: blur(2px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--im-font);
+    /* 通用模态弹窗遮罩（水贴过滤、关键词高亮等） */
+    .im-modal-overlay {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 100000 !important;
+      background: rgba(0, 0, 0, 0.45) !important;
+      backdrop-filter: blur(2px) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-family: var(--im-font) !important;
     }
     .im-spam-dialog {
       width: min(620px, 92vw);
@@ -2496,5 +2496,53 @@ color: #7AA3D6;
     }
     .im-spam-btn-reset:hover {
       background: rgba(229, 62, 62, 0.08);
+    }
+
+    /* ============ 中栏帖子列表关键词常驻高亮 ============ */
+    .__ROOT_CLASS__ .im-list-hl {
+      background: rgba(255, 204, 0, 0.42) !important;
+      color: inherit !important;
+      border-radius: 3px;
+      padding: 0 2px;
+      font-weight: 600;
+      box-shadow: 0 0 0 1px rgba(255, 180, 0, 0.28);
+    }
+    .__ROOT_CLASS__.__DARK_CLASS__ .im-list-hl {
+      background: rgba(255, 214, 102, 0.22) !important;
+      color: #FFE58F !important;
+      box-shadow: 0 0 0 1px rgba(255, 214, 102, 0.3);
+    }
+    /* 命中的会话行：左侧微色条 */
+    .__ROOT_CLASS__ .im-conv.is-highlighted {
+      position: relative;
+    }
+    .__ROOT_CLASS__ .im-conv.is-highlighted::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 6px;
+      bottom: 6px;
+      width: 3px;
+      border-radius: 0 2px 2px 0;
+      background: #FAAD14;
+    }
+    .__ROOT_CLASS__.__DARK_CLASS__ .im-conv.is-highlighted::before {
+      background: #D48806;
+    }
+    .im-hl-tag-pill {
+      background: rgba(250, 173, 20, 0.15) !important;
+      color: #D48806 !important;
+      border: 1px solid rgba(250, 173, 20, 0.3) !important;
+    }
+    .__ROOT_CLASS__.__DARK_CLASS__ .im-hl-tag-pill {
+      background: rgba(250, 173, 20, 0.22) !important;
+      color: #FFD666 !important;
+      border-color: rgba(250, 173, 20, 0.4) !important;
+    }
+    .im-spam-tags-empty {
+      font-size: 12px;
+      color: var(--im-text-3);
+      padding: 10px 4px;
+      display: inline-block;
     }
 `

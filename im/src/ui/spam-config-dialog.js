@@ -31,7 +31,10 @@ function onDialogKeydown(e) {
  * 弹出水贴屏蔽设置面板
  */
 export function openSpamConfigDialog() {
-  if (dialogOverlay) return;
+  if (dialogOverlay) {
+    if (document.body.contains(dialogOverlay)) return;
+    dialogOverlay = null;
+  }
 
   const current = loadSpamConfig();
   // 浅拷贝以供编辑
@@ -48,6 +51,7 @@ export function openSpamConfigDialog() {
 
   const overlay = document.createElement("div");
   overlay.className = "im-modal-overlay im-spam-dialog-overlay";
+  overlay.style.cssText = "position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);backdrop-filter:blur(2px);";
 
   const panel = document.createElement("div");
   panel.className = "im-modal-panel im-spam-dialog";

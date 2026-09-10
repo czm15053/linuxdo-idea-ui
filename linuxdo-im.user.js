@@ -205,6 +205,7 @@
   const AI_AVATAR_KEY = "linuxdo-im-ai-avatar";
   const AI_DEFAULT_NAME = "豆包";
   const SPAM_FILTER_KEY = "linuxdo-im-spam-filter";
+  const HIGHLIGHT_KEY = "linuxdo-im-highlight-keywords";
   const CSS_DD = String.raw`
     /* ---------- Token ---------- */
     .__ROOT_CLASS__ {
@@ -5103,17 +5104,17 @@ color: #7AA3D6;
       border-color: var(--im-accent);
     }
 
-    /* 水贴配置对话框 */
-    .im-modal-overlay.im-spam-dialog-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 10000;
-      background: rgba(0, 0, 0, 0.45);
-      backdrop-filter: blur(2px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--im-font);
+    /* 通用模态弹窗遮罩（水贴过滤、关键词高亮等） */
+    .im-modal-overlay {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 100000 !important;
+      background: rgba(0, 0, 0, 0.45) !important;
+      backdrop-filter: blur(2px) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-family: var(--im-font) !important;
     }
     .im-spam-dialog {
       width: min(620px, 92vw);
@@ -5400,6 +5401,54 @@ color: #7AA3D6;
     }
     .im-spam-btn-reset:hover {
       background: rgba(229, 62, 62, 0.08);
+    }
+
+    /* ============ 中栏帖子列表关键词常驻高亮 ============ */
+    .__ROOT_CLASS__ .im-list-hl {
+      background: rgba(255, 204, 0, 0.42) !important;
+      color: inherit !important;
+      border-radius: 3px;
+      padding: 0 2px;
+      font-weight: 600;
+      box-shadow: 0 0 0 1px rgba(255, 180, 0, 0.28);
+    }
+    .__ROOT_CLASS__.__DARK_CLASS__ .im-list-hl {
+      background: rgba(255, 214, 102, 0.22) !important;
+      color: #FFE58F !important;
+      box-shadow: 0 0 0 1px rgba(255, 214, 102, 0.3);
+    }
+    /* 命中的会话行：左侧微色条 */
+    .__ROOT_CLASS__ .im-conv.is-highlighted {
+      position: relative;
+    }
+    .__ROOT_CLASS__ .im-conv.is-highlighted::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 6px;
+      bottom: 6px;
+      width: 3px;
+      border-radius: 0 2px 2px 0;
+      background: #FAAD14;
+    }
+    .__ROOT_CLASS__.__DARK_CLASS__ .im-conv.is-highlighted::before {
+      background: #D48806;
+    }
+    .im-hl-tag-pill {
+      background: rgba(250, 173, 20, 0.15) !important;
+      color: #D48806 !important;
+      border: 1px solid rgba(250, 173, 20, 0.3) !important;
+    }
+    .__ROOT_CLASS__.__DARK_CLASS__ .im-hl-tag-pill {
+      background: rgba(250, 173, 20, 0.22) !important;
+      color: #FFD666 !important;
+      border-color: rgba(250, 173, 20, 0.4) !important;
+    }
+    .im-spam-tags-empty {
+      font-size: 12px;
+      color: var(--im-text-3);
+      padding: 10px 4px;
+      display: inline-block;
     }
 `;
   const CSS_WECOM = String.raw`
@@ -7232,7 +7281,8 @@ html.im-theme {
     heartFilled: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 14.36 2 11.28 2 7.5 2 4.42 4.42 2 7.5 2c1.74 0 3.41.81 4.5 2.09C13.09 2.81 14.76 2 16.5 2 19.58 2 22 4.42 22 7.5c0 3.78-3.4 6.86-8.55 12.54L12 21.35Z"/></svg>`,
     scrollTop: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     bookmarkFill: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3.5h10A1.2 1.2 0 0 1 18.2 4.7v14.8c0 .9-1 1.4-1.7.9L12 16.9l-4.5 3.5c-.7.5-1.7 0-1.7-.9V4.7A1.2 1.2 0 0 1 7 3.5Z"/></svg>`,
-    shield: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3L4 6.5V11c0 5.25 3.4 10.15 8 11.5 4.6-1.35 8-6.25 8-11.5V6.5L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`
+    shield: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3L4 6.5V11c0 5.25 3.4 10.15 8 11.5 4.6-1.35 8-6.25 8-11.5V6.5L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`,
+    highlighter: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 19l7-7 3 3-7 7-3-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M2 22h20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`
   };
   ICONS.chat = ICONS.msg;
   ICONS.list = ICONS.msg;
@@ -8313,34 +8363,34 @@ html.im-theme {
     }
     return valid;
   }
-  let activeConfig = null;
+  let activeConfig$1 = null;
   function loadSpamConfig() {
-    if (activeConfig) return activeConfig;
+    if (activeConfig$1) return activeConfig$1;
     try {
       const raw = localStorage.getItem(SPAM_FILTER_KEY);
       if (raw) {
-        activeConfig = validateSpamConfig(JSON.parse(raw));
-        return activeConfig;
+        activeConfig$1 = validateSpamConfig(JSON.parse(raw));
+        return activeConfig$1;
       }
     } catch {
     }
-    activeConfig = { ...DEFAULT_SPAM_CONFIG };
-    return activeConfig;
+    activeConfig$1 = { ...DEFAULT_SPAM_CONFIG };
+    return activeConfig$1;
   }
-  const listeners = /* @__PURE__ */ new Set();
+  const listeners$1 = /* @__PURE__ */ new Set();
   function onSpamFilterChange(fn) {
-    listeners.add(fn);
-    return () => listeners.delete(fn);
+    listeners$1.add(fn);
+    return () => listeners$1.delete(fn);
   }
   function saveSpamConfig(config) {
-    activeConfig = validateSpamConfig(config);
+    activeConfig$1 = validateSpamConfig(config);
     try {
-      localStorage.setItem(SPAM_FILTER_KEY, JSON.stringify(activeConfig));
+      localStorage.setItem(SPAM_FILTER_KEY, JSON.stringify(activeConfig$1));
     } catch {
     }
-    for (const fn of listeners) {
+    for (const fn of listeners$1) {
       try {
-        fn(activeConfig);
+        fn(activeConfig$1);
       } catch {
       }
     }
@@ -8424,15 +8474,15 @@ html.im-theme {
     }
     return { isSpam: false };
   }
-  let dialogOverlay = null;
+  let dialogOverlay$1 = null;
   function closeSpamConfigDialog() {
-    if (dialogOverlay) {
-      dialogOverlay.remove();
-      dialogOverlay = null;
-      document.removeEventListener("keydown", onDialogKeydown, true);
+    if (dialogOverlay$1) {
+      dialogOverlay$1.remove();
+      dialogOverlay$1 = null;
+      document.removeEventListener("keydown", onDialogKeydown$1, true);
     }
   }
-  function onDialogKeydown(e) {
+  function onDialogKeydown$1(e) {
     if (e.key === "Escape") {
       e.preventDefault();
       e.stopPropagation();
@@ -8440,7 +8490,10 @@ html.im-theme {
     }
   }
   function openSpamConfigDialog() {
-    if (dialogOverlay) return;
+    if (dialogOverlay$1) {
+      if (document.body.contains(dialogOverlay$1)) return;
+      dialogOverlay$1 = null;
+    }
     const current = loadSpamConfig();
     const form = {
       enabled: current.enabled,
@@ -8454,6 +8507,7 @@ html.im-theme {
     };
     const overlay = document.createElement("div");
     overlay.className = "im-modal-overlay im-spam-dialog-overlay";
+    overlay.style.cssText = "position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);backdrop-filter:blur(2px);";
     const panel = document.createElement("div");
     panel.className = "im-modal-panel im-spam-dialog";
     panel.setAttribute("role", "dialog");
@@ -8562,8 +8616,8 @@ html.im-theme {
   `;
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
-    dialogOverlay = overlay;
-    document.addEventListener("keydown", onDialogKeydown, true);
+    dialogOverlay$1 = overlay;
+    document.addEventListener("keydown", onDialogKeydown$1, true);
     function renderTags(containerId, countId, list) {
       const container = panel.querySelector(`#${containerId}`);
       const countEl = panel.querySelector(`#${countId}`);
@@ -8683,6 +8737,30 @@ html.im-theme {
       return "";
     }
   }
+  function ensureSpamToggleButton(panel) {
+    if (!panel) return;
+    const actions = panel.querySelector(".im-chat-actions");
+    if (!actions) return;
+    let btn = actions.querySelector(".im-chat-spam-toggle");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "im-icon-btn im-chat-spam-toggle";
+      btn.title = "水贴过滤设置";
+      btn.innerHTML = ICONS.shield;
+      const summarize = actions.querySelector(".im-chat-summarize");
+      if (summarize) actions.insertBefore(btn, summarize);
+      else actions.appendChild(btn);
+    }
+    if (btn.dataset.bound !== "1") {
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openSpamConfigDialog();
+      });
+    }
+  }
   function ensureChatPanel() {
     var _a2, _b2, _c, _d;
     let panel = document.querySelector(".im-chat-panel");
@@ -8695,6 +8773,7 @@ html.im-theme {
         panel.dataset.composeBound = "1";
         bindChatPanelEvents(panel);
       }
+      ensureSpamToggleButton(panel);
       (_a2 = chatHooks.wireComposer) == null ? void 0 : _a2.call(chatHooks, panel);
       (_b2 = chatHooks.ensureAiSummaryButton) == null ? void 0 : _b2.call(chatHooks, panel);
       return panel;
@@ -8760,6 +8839,7 @@ html.im-theme {
   `;
     document.body.appendChild(panel);
     bindChatPanelEvents(panel);
+    ensureSpamToggleButton(panel);
     (_c = chatHooks.wireComposer) == null ? void 0 : _c.call(chatHooks, panel);
     (_d = chatHooks.ensureAiSummaryButton) == null ? void 0 : _d.call(chatHooks, panel);
     return panel;
@@ -12685,6 +12765,267 @@ ${data.raw}
     }
     row.style.display = "";
   }
+  const DEFAULT_HIGHLIGHT_CONFIG = {
+    enabled: true,
+    keywords: []
+  };
+  function validateHighlightConfig(config) {
+    if (!config || typeof config !== "object") return { ...DEFAULT_HIGHLIGHT_CONFIG };
+    const valid = { ...DEFAULT_HIGHLIGHT_CONFIG };
+    valid.enabled = typeof config.enabled === "boolean" ? config.enabled : true;
+    if (Array.isArray(config.keywords)) {
+      valid.keywords = config.keywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
+    } else {
+      valid.keywords = [];
+    }
+    return valid;
+  }
+  let activeConfig = null;
+  function loadHighlightConfig() {
+    if (activeConfig) return activeConfig;
+    try {
+      const raw = localStorage.getItem(HIGHLIGHT_KEY);
+      if (raw) {
+        activeConfig = validateHighlightConfig(JSON.parse(raw));
+        return activeConfig;
+      }
+    } catch {
+    }
+    activeConfig = { ...DEFAULT_HIGHLIGHT_CONFIG };
+    return activeConfig;
+  }
+  const listeners = /* @__PURE__ */ new Set();
+  function onHighlightConfigChange(fn) {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
+  }
+  function saveHighlightConfig(config) {
+    activeConfig = validateHighlightConfig(config);
+    try {
+      localStorage.setItem(HIGHLIGHT_KEY, JSON.stringify(activeConfig));
+    } catch {
+    }
+    for (const fn of listeners) {
+      try {
+        fn(activeConfig);
+      } catch {
+      }
+    }
+  }
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+  let cachedPattern = null;
+  let cachedKeywordsSig = null;
+  function getSearchRegex(keywords) {
+    const sig = keywords.join("\0");
+    if (cachedKeywordsSig === sig && cachedPattern !== null) {
+      return cachedPattern;
+    }
+    cachedKeywordsSig = sig;
+    if (!keywords.length) {
+      cachedPattern = null;
+      return null;
+    }
+    const sorted = [...keywords].sort((a, b) => b.length - a.length);
+    const pattern = sorted.map(escapeRegExp).filter(Boolean).join("|");
+    cachedPattern = pattern ? new RegExp(pattern, "gi") : null;
+    return cachedPattern;
+  }
+  function hasHighlightedKeyword(text) {
+    if (!text || typeof text !== "string") return false;
+    const cfg = loadHighlightConfig();
+    if (!cfg.enabled || !cfg.keywords.length) return false;
+    const regex = getSearchRegex(cfg.keywords);
+    if (!regex) return false;
+    regex.lastIndex = 0;
+    return regex.test(text);
+  }
+  function highlightTitleText(text) {
+    if (!text || typeof text !== "string") return "";
+    const cfg = loadHighlightConfig();
+    if (!cfg.enabled || !cfg.keywords.length) {
+      return escapeHtml(text);
+    }
+    const regex = getSearchRegex(cfg.keywords);
+    if (!regex) return escapeHtml(text);
+    let lastIndex = 0;
+    let match;
+    regex.lastIndex = 0;
+    const parts = [];
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(escapeHtml(text.slice(lastIndex, match.index)));
+      }
+      parts.push(`<mark class="im-list-hl">${escapeHtml(match[0])}</mark>`);
+      lastIndex = regex.lastIndex;
+      if (match.index === regex.lastIndex) regex.lastIndex++;
+    }
+    if (lastIndex < text.length) {
+      parts.push(escapeHtml(text.slice(lastIndex)));
+    }
+    return parts.join("");
+  }
+  let dialogOverlay = null;
+  function closeHighlightConfigDialog() {
+    if (dialogOverlay) {
+      dialogOverlay.remove();
+      dialogOverlay = null;
+      document.removeEventListener("keydown", onDialogKeydown, true);
+    }
+  }
+  function onDialogKeydown(e) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      closeHighlightConfigDialog();
+    }
+  }
+  function openHighlightConfigDialog() {
+    if (dialogOverlay) {
+      if (document.body.contains(dialogOverlay)) return;
+      dialogOverlay = null;
+    }
+    const current = loadHighlightConfig();
+    const form = {
+      enabled: current.enabled,
+      keywords: [...current.keywords]
+    };
+    const overlay = document.createElement("div");
+    overlay.className = "im-modal-overlay im-highlight-dialog-overlay";
+    overlay.style.cssText = "position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);backdrop-filter:blur(2px);";
+    const panel = document.createElement("div");
+    panel.className = "im-modal-panel im-spam-dialog im-highlight-dialog";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-label", "关键词高亮配置");
+    panel.innerHTML = `
+    <div class="im-modal-header">
+      <div class="im-modal-title">
+        <span class="im-spam-dialog-icon">🖍️</span>
+        <span>关键词高亮配置</span>
+      </div>
+      <button type="button" class="im-modal-close" title="关闭 (Esc)">×</button>
+    </div>
+    <div class="im-modal-body im-spam-dialog-body">
+      <!-- 总开关 -->
+      <div class="im-spam-sec im-spam-main-switch">
+        <div class="im-spam-row">
+          <label class="im-switch">
+            <input type="checkbox" id="hl-cfg-main-switch" ${form.enabled ? "checked" : ""}>
+            <span class="im-switch-slider"></span>
+          </label>
+          <div class="im-spam-label-group">
+            <span class="im-spam-label-title">开启列表关键词高亮</span>
+            <span class="im-spam-label-desc">在中栏帖子标题与副标题中常驻高亮显示关注的重点词汇</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 关键词管理 -->
+      <div class="im-spam-sec" id="sec-hl-keywords">
+        <div class="im-spam-sec-head">
+          <span class="im-spam-sec-title">关注词库</span>
+        </div>
+        <div class="im-spam-sec-body">
+          <div class="im-spam-tags-header">
+            <span>高亮关键词列表:</span>
+            <span class="im-spam-tags-count" id="count-hl-kw"></span>
+          </div>
+          <div class="im-spam-tags-container" id="container-hl-kw"></div>
+          <div class="im-spam-tag-add-row">
+            <input type="text" class="im-spam-input" id="input-hl-kw" placeholder="输入关注词（如 DeepSeek、抽奖、优惠），回车添加..." maxlength="40">
+            <button type="button" class="im-spam-btn im-spam-add-btn" id="btn-add-hl-kw">添加</button>
+          </div>
+          <div class="im-spam-unit" style="margin-top: 6px;">💡 不区分大小写；最多支持 500 个关键词，单词最长 40 字符。</div>
+        </div>
+      </div>
+    </div>
+    <div class="im-modal-footer">
+      <button type="button" class="im-spam-btn im-spam-btn-reset" id="hl-cfg-btn-clear">清空词库</button>
+      <div class="im-modal-actions">
+        <button type="button" class="im-spam-btn im-spam-btn-cancel" id="hl-cfg-btn-cancel">取消</button>
+        <button type="button" class="im-spam-btn im-spam-btn-save" id="hl-cfg-btn-save">保存配置</button>
+      </div>
+    </div>
+  `;
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+    dialogOverlay = overlay;
+    document.addEventListener("keydown", onDialogKeydown, true);
+    const container = panel.querySelector("#container-hl-kw");
+    const countEl = panel.querySelector("#count-hl-kw");
+    const inputEl2 = panel.querySelector("#input-hl-kw");
+    const addBtn = panel.querySelector("#btn-add-hl-kw");
+    function renderTags() {
+      container.innerHTML = "";
+      countEl.textContent = `(${form.keywords.length}/500)`;
+      if (!form.keywords.length) {
+        const emptyTip = document.createElement("span");
+        emptyTip.className = "im-spam-tags-empty";
+        emptyTip.textContent = "暂无关键词，请在下方输入并添加";
+        container.appendChild(emptyTip);
+        return;
+      }
+      for (let i = 0; i < form.keywords.length; i++) {
+        const kw = form.keywords[i];
+        const tag = document.createElement("span");
+        tag.className = "im-spam-tag-pill im-hl-tag-pill";
+        tag.innerHTML = `<span>${escapeHtml(kw)}</span><button type="button" class="im-spam-tag-del" title="删除">×</button>`;
+        tag.querySelector(".im-spam-tag-del").addEventListener("click", () => {
+          form.keywords.splice(i, 1);
+          renderTags();
+        });
+        container.appendChild(tag);
+      }
+    }
+    function doAdd() {
+      const val = inputEl2.value.trim();
+      if (!val) return;
+      if (form.keywords.length >= 500) {
+        alert("已达到 500 个关键词上限");
+        return;
+      }
+      if (!form.keywords.some((k) => k.toLowerCase() === val.toLowerCase())) {
+        form.keywords.push(val.substring(0, 40));
+        renderTags();
+      }
+      inputEl2.value = "";
+      inputEl2.focus();
+    }
+    addBtn.addEventListener("click", doAdd);
+    inputEl2.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        doAdd();
+      }
+    });
+    renderTags();
+    overlay.addEventListener("mousedown", (e) => {
+      if (e.target === overlay) closeHighlightConfigDialog();
+    });
+    panel.querySelector(".im-modal-close").addEventListener("click", closeHighlightConfigDialog);
+    panel.querySelector("#hl-cfg-btn-cancel").addEventListener("click", closeHighlightConfigDialog);
+    panel.querySelector("#hl-cfg-btn-clear").addEventListener("click", () => {
+      if (form.keywords.length && confirm("确定清空所有高亮关键词吗？")) {
+        form.keywords = [];
+        renderTags();
+      }
+    });
+    panel.querySelector("#hl-cfg-btn-save").addEventListener("click", () => {
+      var _a2;
+      const chkMain = panel.querySelector("#hl-cfg-main-switch");
+      const newConfig = {
+        enabled: chkMain.checked,
+        keywords: form.keywords
+      };
+      saveHighlightConfig(newConfig);
+      closeHighlightConfigDialog();
+      (_a2 = chatHooks.toast) == null ? void 0 : _a2.call(
+        chatHooks,
+        newConfig.enabled ? `关键词高亮已生效（共 ${newConfig.keywords.length} 个词）` : "关键词高亮已关闭"
+      );
+    });
+  }
   let listNavOpen = (() => {
     try {
       return localStorage.getItem(LIST_NAV_KEY) === "1";
@@ -12783,6 +13124,20 @@ ${data.raw}
         setMaskAvatar(!isMaskAvatar());
         return;
       }
+      const maskTitleBtn = e.target.closest(".im-mask-title-toggle");
+      if (maskTitleBtn && panel.contains(maskTitleBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        setMaskTitle(!isMaskTitle());
+        return;
+      }
+      const hlBtn = e.target.closest(".im-highlight-toggle");
+      if (hlBtn && panel.contains(hlBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        openHighlightConfigDialog();
+        return;
+      }
       const btn = e.target.closest(".im-list-nav-toggle");
       if (btn && panel.contains(btn)) {
         e.preventDefault();
@@ -12837,6 +13192,7 @@ ${data.raw}
       bindListSearch(panel);
       ensureMaskAvatarToggle(panel);
       ensureMaskTitleToggle(panel);
+      ensureHighlightToggle(panel);
       applyListNavDom();
       syncNewToggle(panel, () => loadList(listState.apiPath || "/new.json", true));
       return panel;
@@ -12856,6 +13212,7 @@ ${data.raw}
         <button type="button" class="im-icon-btn im-new-topic-btn" title="发帖（原生编辑器）">${ICONS.compose}</button>
         <button type="button" class="im-icon-btn im-mask-avatar-toggle" title="伪装头像：关（点击开启）" aria-pressed="false">${ICONS.disguise}</button>
         <button type="button" class="im-icon-btn im-mask-title-toggle" title="伪装标题：关（点击开启）" aria-pressed="false">${ICONS.win}</button>
+        <button type="button" class="im-icon-btn im-highlight-toggle" title="关键词高亮配置">${ICONS.highlighter}</button>
       </div>
     </div>
     <div class="im-list-pins"></div>
@@ -12868,6 +13225,7 @@ ${data.raw}
     bindListSearch(panel);
     ensureMaskAvatarToggle(panel);
     ensureMaskTitleToggle(panel);
+    ensureHighlightToggle(panel);
     panel.querySelector(".im-list-body").addEventListener("scroll", () => {
       onListBodyScroll(panel.querySelector(".im-list-body"));
     });
@@ -12910,19 +13268,22 @@ ${data.raw}
     const title = convDisplayTitle(topic);
     const summary = convDisplaySummary(topic, rawSummary);
     const tag = isMaskAvatar() ? "" : convCategoryTag(topic);
+    const isHl = hasHighlightedKeyword(title) || hasHighlightedKeyword(summary);
+    const highlightedTitle = highlightTitleText(title);
+    const highlightedSummary = highlightTitleText(summary);
     return `
-    <a class="im-conv" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.id}" title="${escapeHtml(title)}">
+    <a class="im-conv${isHl ? " is-highlighted" : ""}" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.id}" title="${escapeHtml(title)}">
       ${convAvatarHtml(topic, usersById)}
       <span class="im-conv-info">
         <span class="im-conv-top">
           <span class="im-conv-title">
-            <span class="im-conv-name">${escapeHtml(title)}</span>
+            <span class="im-conv-name">${highlightedTitle}</span>
             ${tag}
           </span>
           <span class="im-conv-time">${escapeHtml(formatTime(topic.bumped_at || topic.last_activity_at || topic.created_at))}</span>
         </span>
         <span class="im-conv-bottom">
-          <span class="im-conv-msg">${escapeHtml(summary)}</span>
+          <span class="im-conv-msg">${highlightedSummary}</span>
           ${unread ? `<span class="im-conv-badge">${unread > 99 ? "99+" : unread}</span>` : ""}
         </span>
       </span>
@@ -13048,6 +13409,37 @@ ${data.raw}
       listState.loading = false;
     }
   }
+  function ensureHighlightToggle(panel) {
+    if (!panel) return;
+    const actions = panel.querySelector(".im-list-actions");
+    if (!actions) return;
+    let btn = actions.querySelector(".im-highlight-toggle");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "im-icon-btn im-highlight-toggle";
+      btn.innerHTML = ICONS.highlighter;
+      actions.appendChild(btn);
+    }
+    if (btn.dataset.bound !== "1") {
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openHighlightConfigDialog();
+      });
+    }
+    const cfg = loadHighlightConfig();
+    const on = cfg.enabled && cfg.keywords.length > 0;
+    btn.title = on ? `关键词高亮：开（${cfg.keywords.length}个词，点击配置）` : "关键词高亮：关（点击配置）";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.classList.toggle("is-on", on);
+  }
+  onHighlightConfigChange(() => {
+    const panel = document.querySelector(".im-list-panel");
+    if (panel) ensureHighlightToggle(panel);
+    renderListRows();
+  });
   const TTL = 3e4;
   const TABS = [
     { key: "summary", label: "总结" },
