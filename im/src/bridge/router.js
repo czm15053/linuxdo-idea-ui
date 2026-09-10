@@ -23,22 +23,41 @@ export function isHomePath(pathname) {
     /^\/c\//.test(pathname) || /^\/tag\//.test(pathname);
 }
 /** 中栏列表 JSON 端点按路由映射 */
-export function listApiForPath(pathname) {
-  if (pathname === "/" || pathname === "/latest") return "/latest.json";
-  if (pathname === "/new") return "/new.json";
-  if (pathname === "/unread" || pathname === "/unseen") return "/unseen.json";
-  if (pathname === "/top") return "/top.json";
-  const top = pathname.match(/^\/top\/(weekly|monthly|quarterly|yearly|all)$/);
+export function listApiForPath(urlOrPath) {
+  let path = urlOrPath || "";
+  let search = "";
+  const qIdx = path.indexOf("?");
+  if (qIdx !== -1) {
+    search = path.slice(qIdx);
+    path = path.slice(0, qIdx);
+  }
+  const searchParams = new URLSearchParams(search);
+
+  if (path === "/" || path === "/latest") return "/latest.json";
+  if (path === "/new") {
+    const subset = searchParams.get("subset");
+    if (subset === "topics" || subset === "replies") {
+      return `/new.json?subset=${subset}`;
+    }
+    return "/new.json";
+  }
+  if (path === "/unread" || path === "/unseen") return "/unseen.json";
+  if (path === "/top") {
+    const period = searchParams.get("period");
+    if (period) return `/top.json?period=${period}`;
+    return "/top.json";
+  }
+  const top = path.match(/^\/top\/(weekly|monthly|quarterly|yearly|all)$/);
   if (top) return `/top.json?period=${top[1]}`;
-  if (pathname === "/hot") return "/hot.json";
-  if (pathname === "/posted") return "/posted.json";
-  if (pathname === "/read") return "/read.json";
-  if (pathname === "/bookmarks") return "/bookmarks.json";
+  if (path === "/hot") return "/hot.json";
+  if (path === "/posted") return "/posted.json";
+  if (path === "/read") return "/read.json";
+  if (path === "/bookmarks") return "/bookmarks.json";
   // 类别页本身不是话题流；中栏仍拉 latest，避免 categories.json 无 topic_list
-  if (pathname === "/categories") return "/latest.json";
-  const c = pathname.match(/^\/c\/([\w-]+(?:\/[\w-]+)?)/);
+  if (path === "/categories") return "/latest.json";
+  const c = path.match(/^\/c\/([\w-]+(?:\/[\w-]+)?)/);
   if (c) return `/c/${c[1]}.json`;
-  const t = pathname.match(/^\/tag\/([\w-]+)/);
+  const t = path.match(/^\/tag\/([\w-]+)/);
   if (t) return `/tag/${t[1]}.json`;
   return "/latest.json";
 }

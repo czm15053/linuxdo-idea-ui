@@ -7561,21 +7561,39 @@ html.im-theme {
   function isHomePath(pathname) {
     return pathname === "/" || /^\/(latest|new|unread|unseen|top|categories|hot|posted|read|bookmarks)\b/.test(pathname) || /^\/c\//.test(pathname) || /^\/tag\//.test(pathname);
   }
-  function listApiForPath(pathname) {
-    if (pathname === "/" || pathname === "/latest") return "/latest.json";
-    if (pathname === "/new") return "/new.json";
-    if (pathname === "/unread" || pathname === "/unseen") return "/unseen.json";
-    if (pathname === "/top") return "/top.json";
-    const top = pathname.match(/^\/top\/(weekly|monthly|quarterly|yearly|all)$/);
+  function listApiForPath(urlOrPath) {
+    let path = urlOrPath || "";
+    let search = "";
+    const qIdx = path.indexOf("?");
+    if (qIdx !== -1) {
+      search = path.slice(qIdx);
+      path = path.slice(0, qIdx);
+    }
+    const searchParams = new URLSearchParams(search);
+    if (path === "/" || path === "/latest") return "/latest.json";
+    if (path === "/new") {
+      const subset = searchParams.get("subset");
+      if (subset === "topics" || subset === "replies") {
+        return `/new.json?subset=${subset}`;
+      }
+      return "/new.json";
+    }
+    if (path === "/unread" || path === "/unseen") return "/unseen.json";
+    if (path === "/top") {
+      const period = searchParams.get("period");
+      if (period) return `/top.json?period=${period}`;
+      return "/top.json";
+    }
+    const top = path.match(/^\/top\/(weekly|monthly|quarterly|yearly|all)$/);
     if (top) return `/top.json?period=${top[1]}`;
-    if (pathname === "/hot") return "/hot.json";
-    if (pathname === "/posted") return "/posted.json";
-    if (pathname === "/read") return "/read.json";
-    if (pathname === "/bookmarks") return "/bookmarks.json";
-    if (pathname === "/categories") return "/latest.json";
-    const c = pathname.match(/^\/c\/([\w-]+(?:\/[\w-]+)?)/);
+    if (path === "/hot") return "/hot.json";
+    if (path === "/posted") return "/posted.json";
+    if (path === "/read") return "/read.json";
+    if (path === "/bookmarks") return "/bookmarks.json";
+    if (path === "/categories") return "/latest.json";
+    const c = path.match(/^\/c\/([\w-]+(?:\/[\w-]+)?)/);
     if (c) return `/c/${c[1]}.json`;
-    const t = pathname.match(/^\/tag\/([\w-]+)/);
+    const t = path.match(/^\/tag\/([\w-]+)/);
     if (t) return `/tag/${t[1]}.json`;
     return "/latest.json";
   }
@@ -11870,7 +11888,7 @@ ${data.raw}
     }
     renderListRows();
     if (!isTopicPath(location.pathname) && !listState.topics.length) {
-      loadList(listApiForPath(location.pathname) || "/latest.json");
+      loadList(listApiForPath(location.pathname + location.search) || "/latest.json");
     }
   }
   function bindSourceControls(panel) {
@@ -12696,7 +12714,7 @@ ${data.raw}
   }
   function nativeButton(mod) {
     try {
-      return document.querySelector(`${WRAPPER_SEL} .topics-replies-toggle.${mod}`);
+      return document.querySelector(`${WRAPPER_SEL} .topics-replies-toggle.--${mod}`) || document.querySelector(`${WRAPPER_SEL} .topics-replies-toggle.${mod}`);
     } catch {
       return null;
     }
@@ -12713,10 +12731,29 @@ ${data.raw}
     const wrapper = document.querySelector(WRAPPER_SEL);
     if (!wrapper) return "all";
     for (const mod of ["topics", "replies", "all"]) {
-      const btn = wrapper.querySelector(`.topics-replies-toggle.${mod}`);
+      const btn = wrapper.querySelector(`.topics-replies-toggle.--${mod}`) || wrapper.querySelector(`.topics-replies-toggle.${mod}`);
       if (btn && btn.classList.contains("active")) return mod;
     }
     return "all";
+  }
+  function currentActiveMod() {
+    if (!isNewRoute()) return "all";
+    const params = new URLSearchParams(location.search);
+    const subset = params.get("subset");
+    if (subset === "topics" || subset === "replies") return subset;
+    if (subset === "all") return "all";
+    if (localMod) return localMod;
+    return nativeActiveMod() || "all";
+  }
+  function targetUrlForMod(mod) {
+    if (mod === "topics") return "/new?subset=topics";
+    if (mod === "replies") return "/new?subset=replies";
+    return "/new";
+  }
+  function targetApiForMod(mod) {
+    if (mod === "topics") return "/new.json?subset=topics";
+    if (mod === "replies") return "/new.json?subset=replies";
+    return "/new.json";
   }
   function buttonHtml(mod, label, count, active) {
     const title = {
@@ -12732,6 +12769,7 @@ ${data.raw}
     let row = panel.querySelector(".im-new-toggle");
     const show = isNewRoute();
     if (!show) {
+      localMod = null;
       if (row) row.style.display = "none";
       return;
     }
@@ -12739,25 +12777,32 @@ ${data.raw}
       row = document.createElement("div");
       row.className = "im-new-toggle";
       (_a2 = panel.querySelector(".im-list-header")) == null ? void 0 : _a2.after(row);
+    }
+    if (row.dataset.bound !== "1") {
+      row.dataset.bound = "1";
       row.addEventListener("click", (e) => {
         var _a3, _b2;
         const btn = e.target.closest(".im-new-toggle-btn");
         if (!btn || !row.contains(btn)) return;
         const mod = btn.dataset.mod;
         localMod = mod;
+        for (const b of row.querySelectorAll(".im-new-toggle-btn")) {
+          b.classList.toggle("active", b.dataset.mod === mod);
+        }
+        const targetUrl = targetUrlForMod(mod);
+        const targetApi = targetApiForMod(mod);
+        navigateInApp(targetUrl);
         try {
           (_b2 = (_a3 = nativeButton(mod)) == null ? void 0 : _a3.click) == null ? void 0 : _b2.call(_a3);
         } catch {
         }
         try {
-          onRefresh == null ? void 0 : onRefresh();
+          onRefresh == null ? void 0 : onRefresh(targetApi);
         } catch {
         }
       });
     }
-    if (!row.dataset.bound) row.dataset.bound = "1";
-    if (!localMod) localMod = nativeActiveMod() || "all";
-    const active = localMod;
+    const active = currentActiveMod();
     const html = buttonHtml("all", "所有", countOf(nativeButton("all")), active === "all") + buttonHtml("topics", "话题", countOf(nativeButton("topics")), active === "topics") + buttonHtml("replies", "回复", countOf(nativeButton("replies")), active === "replies");
     if (row.dataset.sig !== html) {
       row.dataset.sig = html;
@@ -13194,7 +13239,7 @@ ${data.raw}
       ensureMaskTitleToggle(panel);
       ensureHighlightToggle(panel);
       applyListNavDom();
-      syncNewToggle(panel, () => loadList(listState.apiPath || "/new.json", true));
+      syncNewToggle(panel, (targetApi) => loadList(targetApi || listApiForPath(location.pathname + location.search) || "/new.json", true));
       return panel;
     }
     panel = document.createElement("div");
@@ -13230,7 +13275,7 @@ ${data.raw}
       onListBodyScroll(panel.querySelector(".im-list-body"));
     });
     applyListNavDom();
-    syncNewToggle(panel, () => loadList(listState.apiPath || "/new.json", true));
+    syncNewToggle(panel, (targetApi) => loadList(targetApi || listApiForPath(location.pathname + location.search) || "/new.json", true));
     return panel;
   }
   function topicHref(topic) {
@@ -16562,7 +16607,7 @@ ${data.raw}
     onRouteApply(scheduleApply);
     onListReload((mode) => {
       if (mode === "rows") renderListRows();
-      else loadList(listState.apiPath || listApiForPath(location.pathname) || "/latest.json", true);
+      else loadList(listState.apiPath || listApiForPath(location.pathname + location.search) || "/latest.json", true);
     });
     function injectStyle() {
       let style = document.getElementById(STYLE_ID);
@@ -16684,7 +16729,7 @@ ${data.raw}
         loadTopic(topicIdFromPath(pathname));
         syncNewPostsFromDom();
       } else {
-        loadList(listApiForPath(pathname), false);
+        loadList(listApiForPath(pathname + location.search), false);
         renderChatEmpty();
       }
       syncListActive();

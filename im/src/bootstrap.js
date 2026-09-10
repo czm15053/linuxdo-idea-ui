@@ -77,7 +77,7 @@ export function run() {
   // 伪装开关改动 → 重绘（有数据）或按当前路由重拉（无数据）
   onListReload((mode) => {
     if (mode === "rows") renderListRows();
-    else loadList(listState.apiPath || listApiForPath(location.pathname) || "/latest.json", true);
+    else loadList(listState.apiPath || listApiForPath(location.pathname + location.search) || "/latest.json", true);
   });
 
 
@@ -267,7 +267,7 @@ export function run() {
       loadTopic(topicIdFromPath(pathname));
       syncNewPostsFromDom();
     } else {
-      loadList(listApiForPath(pathname), false);
+      loadList(listApiForPath(pathname + location.search), false);
       renderChatEmpty();
     }
     syncListActive();

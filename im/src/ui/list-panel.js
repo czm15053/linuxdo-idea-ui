@@ -4,7 +4,7 @@ import { SKIN_ID } from "../config/skins.js";
 import { ICONS } from "../config/icons.js";
 import { escapeHtml } from "../utils/html.js";
 import { api } from "../bridge/api.js";
-import { topicIdFromPath, navigateInApp } from "../bridge/router.js";
+import { topicIdFromPath, navigateInApp, listApiForPath } from "../bridge/router.js";
 import { chatHooks } from "./hooks.js";
 import { openNewTopicComposer } from "./composer.js";
 import { categoryById } from "../bridge/categories.js";
@@ -225,7 +225,7 @@ export function ensureListPanel() {
     ensureMaskTitleToggle(panel);
     ensureHighlightToggle(panel);
     applyListNavDom();
-    syncNewToggle(panel, () => loadList(listState.apiPath || "/new.json", true));
+    syncNewToggle(panel, (targetApi) => loadList(targetApi || listApiForPath(location.pathname + location.search) || "/new.json", true));
     return panel;
   }
   panel = document.createElement("div");
@@ -263,7 +263,7 @@ export function ensureListPanel() {
     onListBodyScroll(panel.querySelector(".im-list-body"));
   });
   applyListNavDom();
-  syncNewToggle(panel, () => loadList(listState.apiPath || "/new.json", true));
+  syncNewToggle(panel, (targetApi) => loadList(targetApi || listApiForPath(location.pathname + location.search) || "/new.json", true));
   return panel;
 }
 export function topicHref(topic) {

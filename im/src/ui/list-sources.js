@@ -97,7 +97,7 @@ function renderChatSource(panel) {
   // 通知列切回 chat 时：若当前是列表页但会话列表还没拉过（进话题后一直没回列表页，
   // listState.topics 可能是空/旧），按当前路径重新拉一次，保证回到帖子列表。
   if (!isTopicPath(location.pathname) && !listState.topics.length) {
-    loadList(listApiForPath(location.pathname) || "/latest.json");
+    loadList(listApiForPath(location.pathname + location.search) || "/latest.json");
   }
 }
 
