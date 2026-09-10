@@ -19,6 +19,10 @@ import { avatarColor, avatarLetter, userDisplayName, fullAvatarUrl, convDisplayT
 import { isMaskAvatar } from "./shared/toggles.js";
 import { syncListActive } from "./list-panel.js";
 import { showUserCard } from "./user-card.js";
+import {
+  isSpamPost, isPostExpanded, expandPost, clearExpandedPosts, onSpamFilterChange
+} from "../features/spam-filter.js";
+import { openSpamConfigDialog } from "./spam-config-dialog.js";
 
 function afterChatPaint(body) {
   chatHooks.enhancePolls?.(body);
@@ -97,6 +101,7 @@ export function ensureChatPanel() {
         <button class="im-level-btn" title="等级进度" style="display:none"></button>
         <button class="im-icon-btn im-chat-scrolltop" title="回到顶部">${ICONS.scrollTop}</button>
         <button class="im-icon-btn im-chat-refresh" title="刷新本话题">${ICONS.refresh}</button>
+        <button class="im-icon-btn im-chat-spam-toggle" title="水贴过滤设置">${ICONS.shield}</button>
         <button class="im-icon-btn im-chat-summarize" title="AI 总结">${ICONS.spark}<span>总结</span></button>
         <button class="im-icon-btn im-chat-native" title="切换原生视图">${ICONS.external}</button>
       </div>
@@ -158,6 +163,12 @@ function bindChatPanelEvents(panel) {
         chatState.topicId = null;
         loadTopic(topicIdFromPath(location.pathname));
       }
+      return;
+    }
+    if (e.target.closest(".im-chat-spam-toggle")) {
+      e.preventDefault();
+      e.stopPropagation();
+      openSpamConfigDialog();
       return;
     }
     if (e.target.closest(".im-chat-summarize")) {
@@ -327,6 +338,27 @@ function bindChatPanelEvents(panel) {
       e.stopPropagation();
       const msg = rocketBtn.closest(".im-msg");
       if (msg) chatHooks.openBoostComposer(msg);
+      return;
+    }
+    const spamExpandBtn = e.target.closest(".im-spam-expand-btn");
+    if (spamExpandBtn && panel.contains(spamExpandBtn)) {
+      e.preventDefault();
+      e.stopPropagation();
+      const spamRow = spamExpandBtn.closest(".im-msg-spam-row");
+      const postNumber = spamRow ? Number(spamRow.dataset.postNumber) : null;
+      if (postNumber) {
+        expandPost(postNumber);
+        const post = topicPostsMap.get(postNumber);
+        if (post) {
+          const temp = document.createElement("div");
+          temp.innerHTML = bubbleHtml(post, getCurrentUsername());
+          const newEl = temp.firstElementChild;
+          if (newEl) {
+            spamRow.replaceWith(newEl);
+            afterChatPaint(panel.querySelector(".im-chat-body"));
+          }
+        }
+      }
       return;
     }
   });
@@ -648,7 +680,7 @@ function getRememberedPost(topicId) {
 }
 export function scrollChatToPost(body, postNumber, highlight = false) {
   if (!body || !postNumber) return false;
-  const el = body.querySelector(`.im-msg[data-post-number="${postNumber}"]`);
+  const el = body.querySelector(`.im-msg[data-post-number="${postNumber}"], .im-msg-spam-row[data-post-number="${postNumber}"]`);
   if (!el) return false;
   const delta = el.getBoundingClientRect().top - body.getBoundingClientRect().top;
   body.scrollTop = Math.max(0, body.scrollTop + delta);
@@ -664,7 +696,7 @@ export function visibleTopicPosts(body) {
   if (!body) return [];
   const rect = body.getBoundingClientRect();
   const posts = [];
-  for (const msg of body.querySelectorAll(".im-msg[data-post-number]")) {
+  for (const msg of body.querySelectorAll(".im-msg[data-post-number], .im-msg-spam-row[data-post-number]")) {
     const box = msg.getBoundingClientRect();
     if (box.bottom <= rect.top + 8 || box.top >= rect.bottom - 8) continue;
     const number = Number(msg.dataset.postNumber) || 0;
@@ -689,6 +721,23 @@ const trackVisibleTopicPost = debounce(() => {
 }, 220);
 
 
+function renderPostOrSpam(post, myName) {
+  if (!isPostExpanded(post.post_number)) {
+    const spam = isSpamPost(post);
+    if (spam.isSpam) {
+      const displayName = userDisplayName(post, post.username || "?");
+      return `
+        <div class="im-msg-spam-row" data-post-number="${post.post_number}"${post.id ? ` data-post-id="${post.id}"` : ""}>
+          <span class="im-spam-tag">${ICONS.shield} 简短回复已折叠</span>
+          <span class="im-spam-author">@${escapeHtml(displayName)}:</span>
+          <span class="im-spam-preview">${escapeHtml(spam.preview || "")}</span>
+          <button type="button" class="im-spam-expand-btn">展开</button>
+        </div>`;
+    }
+  }
+  return bubbleHtml(post, myName);
+}
+
 function renderBubbles(posts, myName) {
   const frag = [];
   let lastTime = 0;
@@ -702,7 +751,7 @@ function renderBubbles(posts, myName) {
       frag.push(`<div class="im-msg-time-sep">${escapeHtml(formatClock(post.created_at))}</div>`);
     }
     lastTime = t;
-    frag.push(bubbleHtml(post, myName));
+    frag.push(renderPostOrSpam(post, myName));
   }
   return frag.join("");
 }
@@ -752,6 +801,7 @@ export async function loadTopic(topicId) {
     syncListActive();
     return;
   }
+  clearExpandedPosts();
   chatState.loading = true;
   chatState.topicId = topicId;
   ensureChatPanel();
@@ -1108,7 +1158,8 @@ export function syncNewPostsFromDom() {
       created_at: (timeEl && (timeEl.getAttribute("title") || timeEl.dataset.time)) || new Date().toISOString(),
       yours: mine
     };
-    body.insertAdjacentHTML("beforeend", bubbleHtml(post, myName));
+    topicPostsMap.set(post.post_number, post);
+    body.insertAdjacentHTML("beforeend", renderPostOrSpam(post, myName));
     chatState.renderedLastNumber = Math.max(chatState.renderedLastNumber, number);
     appended = true;
   }
@@ -1134,5 +1185,15 @@ Object.assign(chatHooks, {
   refreshMaskedChrome() {
     paintChatHeaderChrome();
     renderChatHeaderAvatar();
+  }
+});
+
+// 水贴过滤配置变更：如果当前正在话题页，立即重载重绘
+onSpamFilterChange(() => {
+  if (chatState.topicId) {
+    const curId = chatState.topicId;
+    chatState.topicId = null;
+    clearExpandedPosts();
+    loadTopic(curId);
   }
 });

@@ -204,6 +204,7 @@
   const AI_NAME_KEY = "linuxdo-im-ai-name";
   const AI_AVATAR_KEY = "linuxdo-im-ai-avatar";
   const AI_DEFAULT_NAME = "豆包";
+  const SPAM_FILTER_KEY = "linuxdo-im-spam-filter";
   const CSS_DD = String.raw`
     /* ---------- Token ---------- */
     .__ROOT_CLASS__ {
@@ -5035,6 +5036,371 @@ color: #7AA3D6;
     }
     .__ROOT_CLASS__ .im-level-foot a { color: var(--im-accent); text-decoration: none; white-space: nowrap; }
     .__ROOT_CLASS__ .im-level-foot a:hover { text-decoration: underline; }
+
+    /* ============ 论坛水贴屏蔽与折叠 ============ */
+    .__ROOT_CLASS__ .im-msg-spam-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px auto;
+      max-width: 90%;
+      padding: 5px 12px;
+      border-radius: 16px;
+      background: var(--im-hover);
+      border: 1px dashed var(--im-border);
+      color: var(--im-text-3);
+      font-size: 12px;
+      line-height: 1.4;
+      user-select: none;
+      box-sizing: border-box;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .__ROOT_CLASS__ .im-msg-spam-row:hover {
+      background: var(--im-bg-2, var(--im-hover));
+      border-color: var(--im-border-2, var(--im-border));
+    }
+    .__ROOT_CLASS__ .im-msg-spam-row .im-spam-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-weight: 500;
+      color: var(--im-text-3);
+      flex-shrink: 0;
+    }
+    .__ROOT_CLASS__ .im-msg-spam-row .im-spam-tag svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.8;
+    }
+    .__ROOT_CLASS__ .im-msg-spam-row .im-spam-author {
+      font-weight: 500;
+      color: var(--im-text-2);
+      flex-shrink: 0;
+    }
+    .__ROOT_CLASS__ .im-msg-spam-row .im-spam-preview {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+      opacity: 0.85;
+      font-style: italic;
+    }
+    .__ROOT_CLASS__ .im-msg-spam-row .im-spam-expand-btn {
+      flex-shrink: 0;
+      border: 1px solid var(--im-border);
+      background: var(--im-bg);
+      color: var(--im-accent);
+      border-radius: 10px;
+      padding: 1px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: var(--im-font);
+      transition: all 0.15s ease;
+    }
+    .__ROOT_CLASS__ .im-msg-spam-row .im-spam-expand-btn:hover {
+      background: var(--im-accent-soft);
+      border-color: var(--im-accent);
+    }
+
+    /* 水贴配置对话框 */
+    .im-modal-overlay.im-spam-dialog-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--im-font);
+    }
+    .im-spam-dialog {
+      width: min(620px, 92vw);
+      max-height: 86vh;
+      background: var(--im-bg);
+      color: var(--im-text);
+      border: 1px solid var(--im-border);
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: im-dialog-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes im-dialog-in {
+      from { opacity: 0; transform: scale(0.96) translateY(6px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .im-spam-dialog .im-modal-header {
+      padding: 16px 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--im-border);
+      flex-shrink: 0;
+    }
+    .im-spam-dialog .im-modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .im-spam-dialog .im-modal-close {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--im-text-3);
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .im-spam-dialog .im-modal-close:hover {
+      background: var(--im-hover);
+      color: var(--im-text);
+    }
+    .im-spam-dialog-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .im-spam-sec {
+      background: var(--im-hover);
+      border-radius: 10px;
+      padding: 12px 16px;
+      border: 1px solid var(--im-border);
+    }
+    .im-spam-main-switch {
+      background: var(--im-accent-soft);
+      border-color: transparent;
+    }
+    .im-spam-sec-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--im-text);
+      margin-bottom: 12px;
+    }
+    .im-spam-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .im-spam-label-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .im-spam-label-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--im-text);
+    }
+    .im-spam-label-desc {
+      font-size: 12px;
+      color: var(--im-text-3);
+    }
+    .im-spam-label {
+      color: var(--im-text-2);
+      white-space: nowrap;
+    }
+    .im-spam-unit {
+      color: var(--im-text-3);
+      font-size: 12px;
+    }
+
+    /* Switch 开关组件 */
+    .im-switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .im-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .im-switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--im-border-strong, #ccc);
+      transition: .25s;
+      border-radius: 20px;
+    }
+    .im-switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .25s;
+      border-radius: 50%;
+    }
+    .im-switch input:checked + .im-switch-slider {
+      background-color: var(--im-accent);
+    }
+    .im-switch input:checked + .im-switch-slider:before {
+      transform: translateX(18px);
+    }
+
+    /* 数字微调与通用输入 */
+    .im-number-input {
+      width: 60px;
+      height: 28px;
+      border: 1px solid var(--im-border);
+      border-radius: 6px;
+      padding: 0 6px;
+      background: var(--im-bg);
+      color: var(--im-text);
+      font-size: 13px;
+      text-align: center;
+      outline: none;
+    }
+    .im-number-input:focus { border-color: var(--im-accent); }
+    .im-radio-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--im-text-2);
+    }
+    .im-radio-label input { accent-color: var(--im-accent); }
+
+    /* Tag 容器与胶囊 */
+    .im-spam-tags-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--im-text-3);
+      margin-bottom: 6px;
+    }
+    .im-spam-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 10px;
+      border: 1px solid var(--im-border);
+      border-radius: 8px;
+      background: var(--im-bg);
+      min-height: 52px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+    .im-spam-tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: var(--im-accent-soft);
+      color: var(--im-accent);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .im-spam-tag-del {
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+      margin: 0;
+      font-size: 13px;
+      opacity: 0.6;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+    }
+    .im-spam-tag-del:hover {
+      opacity: 1;
+      background: rgba(0, 0, 0, 0.1);
+    }
+    .im-spam-tag-add-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .im-spam-input {
+      flex: 1;
+      height: 32px;
+      border: 1px solid var(--im-border);
+      border-radius: 6px;
+      padding: 0 10px;
+      background: var(--im-bg);
+      color: var(--im-text);
+      font-size: 13px;
+      outline: none;
+      font-family: var(--im-font);
+    }
+    .im-spam-input:focus { border-color: var(--im-accent); }
+
+    /* 弹窗底部操作区 */
+    .im-spam-dialog .im-modal-footer {
+      padding: 12px 20px 16px;
+      border-top: 1px solid var(--im-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .im-spam-dialog .im-modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .im-spam-btn {
+      height: 32px;
+      padding: 0 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--im-font);
+      border: 1px solid var(--im-border);
+      background: var(--im-bg);
+      color: var(--im-text);
+      transition: all 0.15s ease;
+    }
+    .im-spam-btn:hover { background: var(--im-hover); }
+    .im-spam-add-btn {
+      background: var(--im-accent);
+      color: #fff;
+      border-color: var(--im-accent);
+    }
+    .im-spam-add-btn:hover { filter: brightness(1.06); }
+    .im-spam-btn-save {
+      background: var(--im-accent);
+      color: #fff;
+      border-color: var(--im-accent);
+      font-weight: 500;
+    }
+    .im-spam-btn-save:hover { filter: brightness(1.06); }
+    .im-spam-btn-reset {
+      color: var(--im-danger, #e53e3e);
+      border-color: transparent;
+      background: transparent;
+    }
+    .im-spam-btn-reset:hover {
+      background: rgba(229, 62, 62, 0.08);
+    }
 `;
   const CSS_WECOM = String.raw`
     /* ---------- Token（企业微信 5.x 展开导航版基准） ---------- */
@@ -6865,7 +7231,8 @@ html.im-theme {
     heartOutline: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8 11V20H6a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h2Zm0 0 3.2-6.2A2 2 0 0 1 13 3.6V8h5.2a2 2 0 0 1 1.96 2.4l-1.2 6A2 2 0 0 1 17 18h-9" stroke="currentColor" stroke-width="1.6"/></svg>`,
     heartFilled: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 14.36 2 11.28 2 7.5 2 4.42 4.42 2 7.5 2c1.74 0 3.41.81 4.5 2.09C13.09 2.81 14.76 2 16.5 2 19.58 2 22 4.42 22 7.5c0 3.78-3.4 6.86-8.55 12.54L12 21.35Z"/></svg>`,
     scrollTop: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-    bookmarkFill: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3.5h10A1.2 1.2 0 0 1 18.2 4.7v14.8c0 .9-1 1.4-1.7.9L12 16.9l-4.5 3.5c-.7.5-1.7 0-1.7-.9V4.7A1.2 1.2 0 0 1 7 3.5Z"/></svg>`
+    bookmarkFill: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3.5h10A1.2 1.2 0 0 1 18.2 4.7v14.8c0 .9-1 1.4-1.7.9L12 16.9l-4.5 3.5c-.7.5-1.7 0-1.7-.9V4.7A1.2 1.2 0 0 1 7 3.5Z"/></svg>`,
+    shield: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3L4 6.5V11c0 5.25 3.4 10.15 8 11.5 4.6-1.35 8-6.25 8-11.5V6.5L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`
   };
   ICONS.chat = ICONS.msg;
   ICONS.list = ICONS.msg;
@@ -7851,6 +8218,454 @@ html.im-theme {
     const view = document.querySelector(".im-prof-frame-view");
     if (view == null ? void 0 : view.contentDocument) forceSchemeInDoc(view.contentDocument);
   });
+  const DEFAULT_SHORT_KEYWORDS = [
+    "谢",
+    "mark",
+    "cy",
+    "bd",
+    "dd",
+    "顶",
+    "赞",
+    "支持",
+    "好贴",
+    "学习",
+    "666",
+    "牛",
+    "强",
+    "收藏"
+  ];
+  const DEFAULT_KEYWORDS = [
+    "感谢",
+    "感谢大佬",
+    "感谢分享",
+    "谢谢",
+    "谢谢大佬",
+    "谢谢分享",
+    "顶",
+    "插眼",
+    "mark",
+    "Mark",
+    "MARK",
+    "cy",
+    "CY",
+    "bd",
+    "BD",
+    "战略性mark",
+    "mark.",
+    "L",
+    "l",
+    "dd",
+    "DD",
+    "支持",
+    "好贴",
+    "666",
+    "学习",
+    "学习了",
+    "学到了",
+    "牛逼",
+    "牛蛙",
+    "厉害",
+    "强",
+    "太强了",
+    "收藏",
+    "先马",
+    "马住",
+    "前排撸猫",
+    "感谢大佬!",
+    "感谢佬友分享",
+    "学习一下",
+    "学习一下~",
+    "感谢大佬分享",
+    "感谢大佬分享！",
+    "顶顶",
+    "顶顶顶",
+    "d",
+    "D",
+    "ddd",
+    "DDD"
+  ];
+  const DEFAULT_SPAM_CONFIG = {
+    enabled: true,
+    enableShortReply: true,
+    shortReplyThreshold: 12,
+    requireShortKeyword: true,
+    shortKeywords: DEFAULT_SHORT_KEYWORDS,
+    enableKeywordBlock: true,
+    keywordMatchMode: "exact",
+    // 'exact' | 'contains'
+    keywords: DEFAULT_KEYWORDS
+  };
+  function validateSpamConfig(config) {
+    if (!config || typeof config !== "object") return { ...DEFAULT_SPAM_CONFIG };
+    const valid = { ...DEFAULT_SPAM_CONFIG };
+    valid.enabled = typeof config.enabled === "boolean" ? config.enabled : true;
+    valid.enableShortReply = typeof config.enableShortReply === "boolean" ? config.enableShortReply : true;
+    valid.requireShortKeyword = typeof config.requireShortKeyword === "boolean" ? config.requireShortKeyword : true;
+    valid.enableKeywordBlock = typeof config.enableKeywordBlock === "boolean" ? config.enableKeywordBlock : true;
+    const threshold = parseInt(config.shortReplyThreshold, 10);
+    valid.shortReplyThreshold = isNaN(threshold) || threshold < 1 || threshold > 30 ? 12 : threshold;
+    valid.keywordMatchMode = config.keywordMatchMode === "contains" ? "contains" : "exact";
+    if (Array.isArray(config.shortKeywords)) {
+      valid.shortKeywords = config.shortKeywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
+    }
+    if (Array.isArray(config.keywords)) {
+      valid.keywords = config.keywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
+    }
+    return valid;
+  }
+  let activeConfig = null;
+  function loadSpamConfig() {
+    if (activeConfig) return activeConfig;
+    try {
+      const raw = localStorage.getItem(SPAM_FILTER_KEY);
+      if (raw) {
+        activeConfig = validateSpamConfig(JSON.parse(raw));
+        return activeConfig;
+      }
+    } catch {
+    }
+    activeConfig = { ...DEFAULT_SPAM_CONFIG };
+    return activeConfig;
+  }
+  const listeners = /* @__PURE__ */ new Set();
+  function onSpamFilterChange(fn) {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
+  }
+  function saveSpamConfig(config) {
+    activeConfig = validateSpamConfig(config);
+    try {
+      localStorage.setItem(SPAM_FILTER_KEY, JSON.stringify(activeConfig));
+    } catch {
+    }
+    for (const fn of listeners) {
+      try {
+        fn(activeConfig);
+      } catch {
+      }
+    }
+  }
+  function sanitizePreview(text) {
+    if (!text || typeof text !== "string") return "";
+    return text.trim().substring(0, 30).replace(/[\x00-\x1F\x7F-\x9F]/g, "").replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, "").replace(/[\uFFF0-\uFFFF]/g, "").replace(/[\u0300-\u036F]{3,}/g, "");
+  }
+  function extractPlainText(html) {
+    if (!html) return "";
+    try {
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      return (doc.body.textContent || "").trim();
+    } catch {
+      return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    }
+  }
+  function isExemptPost(post) {
+    if (!post) return true;
+    if (Number(post.post_number) === 1) return true;
+    const cooked = post.cooked || "";
+    if (/<aside\b[^>]*\bclass=["'][^"']*\bquote\b/i.test(cooked) || /<blockquote\b/i.test(cooked)) {
+      return true;
+    }
+    if (/\bpoll\b/i.test(cooked) || /data-poll-/i.test(cooked)) {
+      return true;
+    }
+    if (/<pre\b/i.test(cooked) || /<code\b/i.test(cooked)) {
+      return true;
+    }
+    if (/<img\b(?![^>]*\bclass=["'][^"']*\bemoji\b)[^>]*>/i.test(cooked)) {
+      return true;
+    }
+    return false;
+  }
+  const expandedPostNumbers = /* @__PURE__ */ new Set();
+  function isPostExpanded(postNumber) {
+    return expandedPostNumbers.has(Number(postNumber));
+  }
+  function expandPost(postNumber) {
+    expandedPostNumbers.add(Number(postNumber));
+  }
+  function clearExpandedPosts() {
+    expandedPostNumbers.clear();
+  }
+  function isSpamPost(post) {
+    const config = loadSpamConfig();
+    if (!config.enabled) return { isSpam: false };
+    if (!post || isExemptPost(post)) return { isSpam: false };
+    const rawText = extractPlainText(post.cooked);
+    if (!rawText) return { isSpam: false };
+    if (rawText.length > 1e3) return { isSpam: false };
+    const cleanText = rawText.trim();
+    const lowerText = cleanText.toLowerCase();
+    const noSpaceText = cleanText.replace(/\s+/g, "").toLowerCase();
+    if (config.enableShortReply) {
+      if (cleanText.length <= config.shortReplyThreshold) {
+        if (!config.requireShortKeyword) {
+          return { isSpam: true, preview: sanitizePreview(cleanText) };
+        }
+        for (const kw of config.shortKeywords) {
+          if (lowerText.includes(kw.toLowerCase())) {
+            return { isSpam: true, preview: sanitizePreview(cleanText) };
+          }
+        }
+      }
+    }
+    if (config.enableKeywordBlock) {
+      if (config.keywordMatchMode === "exact") {
+        const keywordSet = new Set(config.keywords.map((k) => k.toLowerCase()));
+        if (keywordSet.has(lowerText) || keywordSet.has(noSpaceText)) {
+          return { isSpam: true, preview: sanitizePreview(cleanText) };
+        }
+      } else {
+        for (const kw of config.keywords) {
+          if (lowerText.includes(kw.toLowerCase())) {
+            return { isSpam: true, preview: sanitizePreview(cleanText) };
+          }
+        }
+      }
+    }
+    return { isSpam: false };
+  }
+  let dialogOverlay = null;
+  function closeSpamConfigDialog() {
+    if (dialogOverlay) {
+      dialogOverlay.remove();
+      dialogOverlay = null;
+      document.removeEventListener("keydown", onDialogKeydown, true);
+    }
+  }
+  function onDialogKeydown(e) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      closeSpamConfigDialog();
+    }
+  }
+  function openSpamConfigDialog() {
+    if (dialogOverlay) return;
+    const current = loadSpamConfig();
+    const form = {
+      enabled: current.enabled,
+      enableShortReply: current.enableShortReply,
+      shortReplyThreshold: current.shortReplyThreshold,
+      requireShortKeyword: current.requireShortKeyword,
+      shortKeywords: [...current.shortKeywords],
+      enableKeywordBlock: current.enableKeywordBlock,
+      keywordMatchMode: current.keywordMatchMode,
+      keywords: [...current.keywords]
+    };
+    const overlay = document.createElement("div");
+    overlay.className = "im-modal-overlay im-spam-dialog-overlay";
+    const panel = document.createElement("div");
+    panel.className = "im-modal-panel im-spam-dialog";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-label", "水贴过滤配置");
+    panel.innerHTML = `
+    <div class="im-modal-header">
+      <div class="im-modal-title">
+        <span class="im-spam-dialog-icon">🛡️</span>
+        <span>水贴过滤配置</span>
+      </div>
+      <button type="button" class="im-modal-close" title="关闭 (Esc)">×</button>
+    </div>
+    <div class="im-modal-body im-spam-dialog-body">
+      <!-- 总开关 -->
+      <div class="im-spam-sec im-spam-main-switch">
+        <div class="im-spam-row">
+          <label class="im-switch">
+            <input type="checkbox" id="spam-cfg-main-switch" ${form.enabled ? "checked" : ""}>
+            <span class="im-switch-slider"></span>
+          </label>
+          <div class="im-spam-label-group">
+            <span class="im-spam-label-title">开启水贴过滤</span>
+            <span class="im-spam-label-desc">在 IM 聊天流中折叠“谢谢、mark、占位”等低信息密度回复</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 短回复屏蔽 -->
+      <div class="im-spam-sec" id="sec-short-reply">
+        <div class="im-spam-sec-head">
+          <label class="im-switch">
+            <input type="checkbox" id="spam-cfg-enable-short" ${form.enableShortReply ? "checked" : ""}>
+            <span class="im-switch-slider"></span>
+          </label>
+          <span class="im-spam-sec-title">短回复屏蔽</span>
+        </div>
+        <div class="im-spam-sec-body" id="body-short-reply">
+          <div class="im-spam-row">
+            <span class="im-spam-label">字数阈值:</span>
+            <input type="number" class="im-number-input" id="spam-cfg-short-threshold" value="${form.shortReplyThreshold}" min="1" max="30">
+            <span class="im-spam-unit">字以内（范围 1-30 字符，约 0.5-15 个汉字）</span>
+          </div>
+          <div class="im-spam-row" style="margin-top: 10px;">
+            <label class="im-switch">
+              <input type="checkbox" id="spam-cfg-require-short-kw" ${form.requireShortKeyword ? "checked" : ""}>
+              <span class="im-switch-slider"></span>
+            </label>
+            <span class="im-spam-label">仅屏蔽包含以下短特征词的回复</span>
+          </div>
+          <div id="wrap-short-keywords" style="margin-top: 10px;">
+            <div class="im-spam-tags-header">
+              <span>短词列表:</span>
+              <span class="im-spam-tags-count" id="count-short-kw"></span>
+            </div>
+            <div class="im-spam-tags-container" id="container-short-kw"></div>
+            <div class="im-spam-tag-add-row">
+              <input type="text" class="im-spam-input" id="input-short-kw" placeholder="输入短词，回车添加..." maxlength="40">
+              <button type="button" class="im-spam-btn im-spam-add-btn" id="btn-add-short-kw">添加</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 全局关键词屏蔽 -->
+      <div class="im-spam-sec" id="sec-keyword-block">
+        <div class="im-spam-sec-head">
+          <label class="im-switch">
+            <input type="checkbox" id="spam-cfg-enable-kw" ${form.enableKeywordBlock ? "checked" : ""}>
+            <span class="im-switch-slider"></span>
+          </label>
+          <span class="im-spam-sec-title">关键词屏蔽</span>
+        </div>
+        <div class="im-spam-sec-body" id="body-keyword-block">
+          <div class="im-spam-row">
+            <span class="im-spam-label">匹配模式:</span>
+            <label class="im-radio-label">
+              <input type="radio" name="spam-match-mode" value="exact" ${form.keywordMatchMode === "exact" ? "checked" : ""}>
+              <span>全文匹配（整楼仅含关键词时才折叠，推荐）</span>
+            </label>
+            <label class="im-radio-label">
+              <input type="radio" name="spam-match-mode" value="contains" ${form.keywordMatchMode === "contains" ? "checked" : ""}>
+              <span>包含匹配</span>
+            </label>
+          </div>
+          <div style="margin-top: 10px;">
+            <div class="im-spam-tags-header">
+              <span>屏蔽词列表:</span>
+              <span class="im-spam-tags-count" id="count-kw"></span>
+            </div>
+            <div class="im-spam-tags-container" id="container-kw"></div>
+            <div class="im-spam-tag-add-row">
+              <input type="text" class="im-spam-input" id="input-kw" placeholder="输入关键词，回车添加..." maxlength="40">
+              <button type="button" class="im-spam-btn im-spam-add-btn" id="btn-add-kw">添加</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="im-modal-footer">
+      <button type="button" class="im-spam-btn im-spam-btn-reset" id="spam-cfg-btn-reset">恢复默认</button>
+      <div class="im-modal-actions">
+        <button type="button" class="im-spam-btn im-spam-btn-cancel" id="spam-cfg-btn-cancel">取消</button>
+        <button type="button" class="im-spam-btn im-spam-btn-save" id="spam-cfg-btn-save">保存配置</button>
+      </div>
+    </div>
+  `;
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+    dialogOverlay = overlay;
+    document.addEventListener("keydown", onDialogKeydown, true);
+    function renderTags(containerId, countId, list) {
+      const container = panel.querySelector(`#${containerId}`);
+      const countEl = panel.querySelector(`#${countId}`);
+      if (!container || !countEl) return;
+      container.innerHTML = "";
+      countEl.textContent = `(${list.length}/500)`;
+      for (let i = 0; i < list.length; i++) {
+        const kw = list[i];
+        const tag = document.createElement("span");
+        tag.className = "im-spam-tag-pill";
+        tag.innerHTML = `<span>${escapeHtml(kw)}</span><button type="button" class="im-spam-tag-del" title="删除">×</button>`;
+        tag.querySelector(".im-spam-tag-del").addEventListener("click", () => {
+          list.splice(i, 1);
+          renderTags(containerId, countId, list);
+        });
+        container.appendChild(tag);
+      }
+    }
+    function setupTagInput(inputId, btnId, containerId, countId, list) {
+      const input = panel.querySelector(`#${inputId}`);
+      const btn = panel.querySelector(`#${btnId}`);
+      if (!input || !btn) return;
+      const doAdd = () => {
+        const val = input.value.trim();
+        if (!val) return;
+        if (list.length >= 500) {
+          alert("已达到 500 个关键词上限");
+          return;
+        }
+        if (!list.some((k) => k.toLowerCase() === val.toLowerCase())) {
+          list.push(val.substring(0, 40));
+          renderTags(containerId, countId, list);
+        }
+        input.value = "";
+        input.focus();
+      };
+      btn.addEventListener("click", doAdd);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          doAdd();
+        }
+      });
+    }
+    renderTags("container-short-kw", "count-short-kw", form.shortKeywords);
+    renderTags("container-kw", "count-kw", form.keywords);
+    setupTagInput("input-short-kw", "btn-add-short-kw", "container-short-kw", "count-short-kw", form.shortKeywords);
+    setupTagInput("input-kw", "btn-add-kw", "container-kw", "count-kw", form.keywords);
+    const chkMain = panel.querySelector("#spam-cfg-main-switch");
+    const chkShort = panel.querySelector("#spam-cfg-enable-short");
+    const chkReqShort = panel.querySelector("#spam-cfg-require-short-kw");
+    const chkKw = panel.querySelector("#spam-cfg-enable-kw");
+    const bodyShort = panel.querySelector("#body-short-reply");
+    const wrapShortKw = panel.querySelector("#wrap-short-keywords");
+    const bodyKw = panel.querySelector("#body-keyword-block");
+    function syncSections() {
+      bodyShort.style.display = chkShort.checked ? "" : "none";
+      wrapShortKw.style.display = chkReqShort.checked ? "" : "none";
+      bodyKw.style.display = chkKw.checked ? "" : "none";
+    }
+    chkShort.addEventListener("change", syncSections);
+    chkReqShort.addEventListener("change", syncSections);
+    chkKw.addEventListener("change", syncSections);
+    syncSections();
+    overlay.addEventListener("mousedown", (e) => {
+      if (e.target === overlay) closeSpamConfigDialog();
+    });
+    panel.querySelector(".im-modal-close").addEventListener("click", closeSpamConfigDialog);
+    panel.querySelector("#spam-cfg-btn-cancel").addEventListener("click", closeSpamConfigDialog);
+    panel.querySelector("#spam-cfg-btn-reset").addEventListener("click", () => {
+      chkMain.checked = DEFAULT_SPAM_CONFIG.enabled;
+      chkShort.checked = DEFAULT_SPAM_CONFIG.enableShortReply;
+      panel.querySelector("#spam-cfg-short-threshold").value = DEFAULT_SPAM_CONFIG.shortReplyThreshold;
+      chkReqShort.checked = DEFAULT_SPAM_CONFIG.requireShortKeyword;
+      chkKw.checked = DEFAULT_SPAM_CONFIG.enableKeywordBlock;
+      const r = panel.querySelector(`input[name="spam-match-mode"][value="${DEFAULT_SPAM_CONFIG.keywordMatchMode}"]`);
+      if (r) r.checked = true;
+      form.shortKeywords = [...DEFAULT_SHORT_KEYWORDS];
+      form.keywords = [...DEFAULT_KEYWORDS];
+      renderTags("container-short-kw", "count-short-kw", form.shortKeywords);
+      renderTags("container-kw", "count-kw", form.keywords);
+      syncSections();
+    });
+    panel.querySelector("#spam-cfg-btn-save").addEventListener("click", () => {
+      var _a2;
+      const threshold = parseInt(panel.querySelector("#spam-cfg-short-threshold").value, 10);
+      const modeRadio = panel.querySelector("input[name='spam-match-mode']:checked");
+      const newConfig = {
+        enabled: chkMain.checked,
+        enableShortReply: chkShort.checked,
+        shortReplyThreshold: isNaN(threshold) ? 12 : Math.max(1, Math.min(30, threshold)),
+        requireShortKeyword: chkReqShort.checked,
+        shortKeywords: form.shortKeywords,
+        enableKeywordBlock: chkKw.checked,
+        keywordMatchMode: modeRadio ? modeRadio.value : "exact",
+        keywords: form.keywords
+      };
+      saveSpamConfig(newConfig);
+      closeSpamConfigDialog();
+      (_a2 = chatHooks.toast) == null ? void 0 : _a2.call(chatHooks, newConfig.enabled ? "水贴过滤配置已保存并生效" : "水贴过滤已关闭");
+    });
+  }
   function afterChatPaint(body) {
     var _a2, _b2;
     (_a2 = chatHooks.enhancePolls) == null ? void 0 : _a2.call(chatHooks, body);
@@ -7926,6 +8741,7 @@ html.im-theme {
         <button class="im-level-btn" title="等级进度" style="display:none"></button>
         <button class="im-icon-btn im-chat-scrolltop" title="回到顶部">${ICONS.scrollTop}</button>
         <button class="im-icon-btn im-chat-refresh" title="刷新本话题">${ICONS.refresh}</button>
+        <button class="im-icon-btn im-chat-spam-toggle" title="水贴过滤设置">${ICONS.shield}</button>
         <button class="im-icon-btn im-chat-summarize" title="AI 总结">${ICONS.spark}<span>总结</span></button>
         <button class="im-icon-btn im-chat-native" title="切换原生视图">${ICONS.external}</button>
       </div>
@@ -7982,6 +8798,12 @@ html.im-theme {
           chatState.topicId = null;
           loadTopic(topicIdFromPath(location.pathname));
         }
+        return;
+      }
+      if (e.target.closest(".im-chat-spam-toggle")) {
+        e.preventDefault();
+        e.stopPropagation();
+        openSpamConfigDialog();
         return;
       }
       if (e.target.closest(".im-chat-summarize")) {
@@ -8138,6 +8960,27 @@ html.im-theme {
         e.stopPropagation();
         const msg = rocketBtn.closest(".im-msg");
         if (msg) chatHooks.openBoostComposer(msg);
+        return;
+      }
+      const spamExpandBtn = e.target.closest(".im-spam-expand-btn");
+      if (spamExpandBtn && panel.contains(spamExpandBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const spamRow = spamExpandBtn.closest(".im-msg-spam-row");
+        const postNumber = spamRow ? Number(spamRow.dataset.postNumber) : null;
+        if (postNumber) {
+          expandPost(postNumber);
+          const post = topicPostsMap.get(postNumber);
+          if (post) {
+            const temp = document.createElement("div");
+            temp.innerHTML = bubbleHtml(post, getCurrentUsername());
+            const newEl = temp.firstElementChild;
+            if (newEl) {
+              spamRow.replaceWith(newEl);
+              afterChatPaint(panel.querySelector(".im-chat-body"));
+            }
+          }
+        }
         return;
       }
     });
@@ -8444,7 +9287,7 @@ html.im-theme {
   }
   function scrollChatToPost(body, postNumber, highlight = false) {
     if (!body || !postNumber) return false;
-    const el = body.querySelector(`.im-msg[data-post-number="${postNumber}"]`);
+    const el = body.querySelector(`.im-msg[data-post-number="${postNumber}"], .im-msg-spam-row[data-post-number="${postNumber}"]`);
     if (!el) return false;
     const delta = el.getBoundingClientRect().top - body.getBoundingClientRect().top;
     body.scrollTop = Math.max(0, body.scrollTop + delta);
@@ -8459,7 +9302,7 @@ html.im-theme {
     if (!body) return [];
     const rect = body.getBoundingClientRect();
     const posts = [];
-    for (const msg of body.querySelectorAll(".im-msg[data-post-number]")) {
+    for (const msg of body.querySelectorAll(".im-msg[data-post-number], .im-msg-spam-row[data-post-number]")) {
       const box = msg.getBoundingClientRect();
       if (box.bottom <= rect.top + 8 || box.top >= rect.bottom - 8) continue;
       const number = Number(msg.dataset.postNumber) || 0;
@@ -8479,6 +9322,22 @@ html.im-theme {
       metrics.innerHTML = `${ICONS.chat}${postNumber}<span class="im-metrics-sep">/</span>${chatState.totalPosts}`;
     }
   }, 220);
+  function renderPostOrSpam(post, myName) {
+    if (!isPostExpanded(post.post_number)) {
+      const spam = isSpamPost(post);
+      if (spam.isSpam) {
+        const displayName = userDisplayName(post, post.username || "?");
+        return `
+        <div class="im-msg-spam-row" data-post-number="${post.post_number}"${post.id ? ` data-post-id="${post.id}"` : ""}>
+          <span class="im-spam-tag">${ICONS.shield} 简短回复已折叠</span>
+          <span class="im-spam-author">@${escapeHtml(displayName)}:</span>
+          <span class="im-spam-preview">${escapeHtml(spam.preview || "")}</span>
+          <button type="button" class="im-spam-expand-btn">展开</button>
+        </div>`;
+      }
+    }
+    return bubbleHtml(post, myName);
+  }
   function renderBubbles(posts, myName) {
     const frag = [];
     let lastTime = 0;
@@ -8492,7 +9351,7 @@ html.im-theme {
         frag.push(`<div class="im-msg-time-sep">${escapeHtml(formatClock(post.created_at))}</div>`);
       }
       lastTime = t;
-      frag.push(bubbleHtml(post, myName));
+      frag.push(renderPostOrSpam(post, myName));
     }
     return frag.join("");
   }
@@ -8539,6 +9398,7 @@ html.im-theme {
       syncListActive();
       return;
     }
+    clearExpandedPosts();
     chatState.loading = true;
     chatState.topicId = topicId;
     ensureChatPanel();
@@ -8871,7 +9731,8 @@ html.im-theme {
         created_at: timeEl && (timeEl.getAttribute("title") || timeEl.dataset.time) || (/* @__PURE__ */ new Date()).toISOString(),
         yours: mine
       };
-      body.insertAdjacentHTML("beforeend", bubbleHtml(post, myName));
+      topicPostsMap.set(post.post_number, post);
+      body.insertAdjacentHTML("beforeend", renderPostOrSpam(post, myName));
       chatState.renderedLastNumber = Math.max(chatState.renderedLastNumber, number);
       appended = true;
     }
@@ -8893,6 +9754,14 @@ html.im-theme {
     refreshMaskedChrome() {
       paintChatHeaderChrome();
       renderChatHeaderAvatar();
+    }
+  });
+  onSpamFilterChange(() => {
+    if (chatState.topicId) {
+      const curId = chatState.topicId;
+      chatState.topicId = null;
+      clearExpandedPosts();
+      loadTopic(curId);
     }
   });
   const ESC_MAP = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
