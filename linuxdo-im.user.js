@@ -13375,7 +13375,9 @@ ${data.raw}
   }
   function renderListRows() {
     var _a2;
-    const body = document.querySelector(".im-list-body");
+    const panel = document.querySelector(".im-list-panel");
+    if (!panel || panel.dataset.railKey && panel.dataset.railKey !== "chat") return;
+    const body = panel.querySelector(".im-list-body");
     if (!body) return;
     const q = "".trim().toLowerCase();
     const topics = q ? listState.topics.filter((t) => `${t.title || ""} ${t.slug || ""}`.toLowerCase().includes(q)) : listState.topics;
@@ -15974,6 +15976,12 @@ ${data.raw}
       (item) => `<div class="im-rail-item">${navIcon(item.icon)}<span>${item.label}</span></div>`
     ).join("");
     rail.appendChild(items);
+    items.addEventListener("click", (e) => {
+      const btn = e.target.closest(".im-rail-item[data-rail-key]");
+      if (!btn || !items.contains(btn)) return;
+      const key = btn.dataset.railKey;
+      if (key && hasSource(key)) setActiveRailKey(key, { force: true });
+    });
     document.body.appendChild(rail);
     bindRailSearch(rail);
     bindRailAvatarNotif(rail);
@@ -16641,6 +16649,7 @@ ${data.raw}
       (_g = document.querySelector(".im-titlebar")) == null ? void 0 : _g.remove();
     }
     let scheduled = false;
+    let lastPath = null;
     function scheduleApply() {
       if (scheduled) return;
       scheduled = true;
@@ -16689,6 +16698,9 @@ ${data.raw}
       if (SKIN_ID === "wecom" || SKIN_ID === "feishu") setRailCollapsed(isRailCollapsed());
       else syncRailFold();
       const pathname = location.pathname;
+      const currentPath = pathname + location.search;
+      const routeChanged = lastPath !== null && lastPath !== currentPath;
+      lastPath = currentPath;
       const isTopic = isTopicPath(pathname);
       const isHome = isHomePath(pathname);
       const profile = parseProfilePath(pathname);
@@ -16703,7 +16715,7 @@ ${data.raw}
       }
       ensureListPanel();
       ensureRailSources();
-      resetRailToChat();
+      if (routeChanged) resetRailToChat();
       if (!profile) renderActiveSource();
       bindHeaderUserMenuInterception();
       ensureChatPanel();
@@ -16721,18 +16733,24 @@ ${data.raw}
         renderProfilePanel(profile.username, profile.tab);
         renderChatEmpty();
       } else if (isTopic) {
-        if (listState.topics.length && listState.apiPath) {
-          syncListActive();
-        } else {
-          loadList(listState.apiPath || "/latest.json", false);
+        if (activeRailKey() === "chat") {
+          if (listState.topics.length && listState.apiPath) {
+            syncListActive();
+          } else {
+            loadList(listState.apiPath || "/latest.json", false);
+          }
         }
         loadTopic(topicIdFromPath(pathname));
         syncNewPostsFromDom();
       } else {
-        loadList(listApiForPath(pathname + location.search), false);
+        if (activeRailKey() === "chat") {
+          loadList(listApiForPath(pathname + location.search), false);
+        }
         renderChatEmpty();
       }
-      syncListActive();
+      if (activeRailKey() === "chat") {
+        syncListActive();
+      }
     }
     function bootstrap() {
       console.info(`[linuxdo-im] v${"1.2.0"} loaded, skin=${SKIN_ID}`);

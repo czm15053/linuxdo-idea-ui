@@ -13,6 +13,7 @@ import { bindSearchTrigger } from "../ui/search-popup.js";
 import {
   getColorTheme, isDarkEffective, toggleColorTheme,
 } from "../theme/color-mode.js";
+import { hasSource, setActiveRailKey } from "../ui/list-sources.js";
 import { skinHooks } from "./hooks.js";
 
 /* ============================== 飞书皮肤专属 ============================== */
@@ -111,6 +112,13 @@ export function ensureRailFeishu() {
       `<div class="im-rail-item">${navIcon(item.icon)}<span>${item.label}</span></div>`
     ).join("");
   rail.appendChild(items);
+
+  items.addEventListener("click", (e) => {
+    const btn = e.target.closest(".im-rail-item[data-rail-key]");
+    if (!btn || !items.contains(btn)) return;
+    const key = btn.dataset.railKey;
+    if (key && hasSource(key)) setActiveRailKey(key, { force: true });
+  });
 
   document.body.appendChild(rail);
   bindRailSearch(rail);

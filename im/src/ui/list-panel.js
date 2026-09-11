@@ -369,7 +369,9 @@ function groupAvatarHtml(topic, usersById) {
   return `<span class="im-conv-avatar is-group" style="grid-template-columns: repeat(${n}, 1fr); grid-template-rows: repeat(${n}, 1fr);">${cells.join("")}</span>`;
 }
 export function renderListRows() {
-  const body = document.querySelector(".im-list-body");
+  const panel = document.querySelector(".im-list-panel");
+  if (!panel || (panel.dataset.railKey && panel.dataset.railKey !== "chat")) return;
+  const body = panel.querySelector(".im-list-body");
   if (!body) return;
   // 本地搜索：按标题过滤当前已加载话题（不重新请求）
   const q = (listState.query || "").trim().toLowerCase();

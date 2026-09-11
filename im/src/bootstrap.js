@@ -66,7 +66,7 @@ import {
   ensureChatPanel, renderChatEmpty, loadTopic, syncNewPostsFromDom,
   startRealtimeChatPolling, subscribeTopicRealtime,
 } from "./ui/chat-panel.js";
-import { resetRailToChat } from "./ui/list-sources.js";
+import { resetRailToChat, activeRailKey } from "./ui/list-sources.js";
 export function run() {
   migratePrefs();
   onColorThemeChange(syncDarkModeToggle);
@@ -152,6 +152,7 @@ export function run() {
 
 
   let scheduled = false;
+  let lastPath = null;
 
   function scheduleApply() {
     if (scheduled) return;
@@ -218,6 +219,10 @@ export function run() {
     else syncRailFold(); // dingtalk：宽/窄条按钮态跟随当前宽度（点按钮、拖宽都算）
 
     const pathname = location.pathname;
+    const currentPath = pathname + location.search;
+    const routeChanged = lastPath !== null && lastPath !== currentPath;
+    lastPath = currentPath;
+
     const isTopic = isTopicPath(pathname);
     const isHome = isHomePath(pathname);
     const profile = parseProfilePath(pathname);
@@ -236,8 +241,8 @@ export function run() {
 
     ensureListPanel();
     ensureRailSources();
-    // 路由变化 → 中栏回到会话列表（通知列是临时覆盖，不应跨路由占住中栏）
-    resetRailToChat();
+    // 路由真正变化时才重置回会话列表（通知列是临时覆盖，不应跨路由占住中栏）
+    if (routeChanged) resetRailToChat();
     if (!profile) renderActiveSource();
     bindHeaderUserMenuInterception();
     ensureChatPanel();
@@ -259,18 +264,24 @@ export function run() {
       renderChatEmpty();
     } else if (isTopic) {
       // 进帖子：保留当前会话列表，只更新选中态 + 加载右栏
-      if (listState.topics.length && listState.apiPath) {
-        syncListActive();
-      } else {
-        loadList(listState.apiPath || "/latest.json", false);
+      if (activeRailKey() === "chat") {
+        if (listState.topics.length && listState.apiPath) {
+          syncListActive();
+        } else {
+          loadList(listState.apiPath || "/latest.json", false);
+        }
       }
       loadTopic(topicIdFromPath(pathname));
       syncNewPostsFromDom();
     } else {
-      loadList(listApiForPath(pathname + location.search), false);
+      if (activeRailKey() === "chat") {
+        loadList(listApiForPath(pathname + location.search), false);
+      }
       renderChatEmpty();
     }
-    syncListActive();
+    if (activeRailKey() === "chat") {
+      syncListActive();
+    }
   }
 
   function bootstrap() {
