@@ -838,9 +838,10 @@ export async function loadTopic(topicId) {
     body.innerHTML = `<div class="im-chat-loading">加载中…</div>`;
   }
   try {
-    // 定位优先级：路由携带的楼层（通知行 /t/.../id/N）> 记忆阅读位置 > 第 1 楼
+    // 定位优先级：路由携带的楼层（通知行 /t/.../id/N）> 服务端阅读进度（登录态）> 第 1 楼；匿名才用本机记忆兜底
     const routePost = postNumberFromPath(location.pathname);
-    const rememberedPost = getRememberedPost(topicId);
+    // 登录态信任服务端「上次阅读处」（原生 last_read 语义，跨设备一致）；匿名无服务端进度，才用本机记忆兜底
+    const rememberedPost = getCurrentUsername() ? 0 : getRememberedPost(topicId);
     const anchorPost = routePost > 1 ? routePost : rememberedPost;
     // 自发拉话题主体时补浏览上报头（IM 直入话题不经原生路由时，阅读量/浏览行为与原生一致）
     const trackHeaders = trackViewHeaders(topicId);
@@ -858,25 +859,30 @@ export async function loadTopic(topicId) {
     }
     if (chatState.topicId !== topicId) return; // 路由已切走
     let posts = (data.post_stream && data.post_stream.posts) || [];
-    // 登录态下 Discourse 的窗口可能锚定在「上次阅读处」；按 IM 观感固定从第 1 楼开始展示
+    // 登录态下服务端窗口已锚定在「上次阅读处」（原生语义）：窗口不从第 1 楼开始时保留窗口，
+    // 落到第一未读楼（last_read+1）；字段缺失或落点不在窗口时 scrollToPost 保持 0，自然落在窗口顶部
+    if (!scrollToPost && posts.length && Number(posts[0].post_number) !== 1) {
+      scrollToPost = (Number(data.last_read_post_number) || 0) + 1;
+      if (!posts.some((p) => p.post_number === scrollToPost)) scrollToPost = 0;
+    }
+    // 服务端窗口从第 1 楼开始 = 已全部读完（无未读）：回到上次停的楼层（服务端进度，跨设备），而非每次从头看
+    const serverRead = Number(data.last_read_post_number) || 0;
     if (
       !scrollToPost &&
       posts.length &&
-      Number(posts[0].post_number) !== 1 &&
-      Array.isArray(data.post_stream?.stream)
+      Number(posts[0].post_number) === 1 &&
+      serverRead > (Number(posts[posts.length - 1]?.post_number) || 0)
     ) {
-      const headIds = data.post_stream.stream.slice(0, 20);
-      if (headIds.length) {
-        try {
-          const qs = headIds.map((id) => `post_ids[]=${id}`).join("&");
-          const headData = await api(`/t/${topicId}/posts.json?${qs}`);
-          const headPosts = sortPostsByStream(
-            (headData.post_stream && headData.post_stream.posts) || headData.posts || [],
-            headIds
-          );
-          if (headPosts.length) posts = headPosts;
-        } catch { /* 取不到头部时保留原窗口 */ }
-      }
+      try {
+        const readData = await api(`/t/${topicId}/${serverRead}.json`, trackHeaders);
+        if (chatState.topicId !== topicId) return;
+        const readPosts = (readData.post_stream && readData.post_stream.posts) || [];
+        if (readPosts.length) {
+          data = readData;
+          posts = readPosts;
+          scrollToPost = serverRead;
+        }
+      } catch { /* 拉取失败时保留头部窗口 */ }
     }
     chatState.stream = (data.post_stream && data.post_stream.stream) || posts.map((p) => p.id);
     chatState.renderedFirstIdx = chatState.stream.indexOf(posts.length ? posts[0].id : -1);
@@ -918,7 +924,7 @@ export async function loadTopic(topicId) {
       if (replyTotal) {
         metrics.style.display = "";
         metrics.title = "点击选择楼层";
-        const startFloor = scrollToPost || (anchorPost > 1 ? anchorPost : 1);
+        const startFloor = scrollToPost || Number(posts[0]?.post_number) || 1;
         metrics.innerHTML = `${ICONS.chat}${Math.min(startFloor, replyTotal)}<span class="im-metrics-sep">/</span>${replyTotal}`;
       } else {
         metrics.style.display = "none";

@@ -9490,7 +9490,7 @@ html.im-theme {
     }
   }
   async function loadTopic(topicId) {
-    var _a2, _b2;
+    var _a2, _b2, _c;
     if (!topicId || chatState.loading) return;
     if (chatState.topicId === topicId) {
       syncListActive();
@@ -9507,7 +9507,7 @@ html.im-theme {
     }
     try {
       const routePost = postNumberFromPath(location.pathname);
-      const rememberedPost = getRememberedPost(topicId);
+      const rememberedPost = getCurrentUsername() ? 0 : getRememberedPost(topicId);
       const anchorPost = routePost > 1 ? routePost : rememberedPost;
       const trackHeaders = trackViewHeaders(topicId);
       let data;
@@ -9524,19 +9524,22 @@ html.im-theme {
       }
       if (chatState.topicId !== topicId) return;
       let posts = data.post_stream && data.post_stream.posts || [];
-      if (!scrollToPost && posts.length && Number(posts[0].post_number) !== 1 && Array.isArray((_a2 = data.post_stream) == null ? void 0 : _a2.stream)) {
-        const headIds = data.post_stream.stream.slice(0, 20);
-        if (headIds.length) {
-          try {
-            const qs = headIds.map((id) => `post_ids[]=${id}`).join("&");
-            const headData = await api(`/t/${topicId}/posts.json?${qs}`);
-            const headPosts = sortPostsByStream(
-              headData.post_stream && headData.post_stream.posts || headData.posts || [],
-              headIds
-            );
-            if (headPosts.length) posts = headPosts;
-          } catch {
+      if (!scrollToPost && posts.length && Number(posts[0].post_number) !== 1) {
+        scrollToPost = (Number(data.last_read_post_number) || 0) + 1;
+        if (!posts.some((p) => p.post_number === scrollToPost)) scrollToPost = 0;
+      }
+      const serverRead = Number(data.last_read_post_number) || 0;
+      if (!scrollToPost && posts.length && Number(posts[0].post_number) === 1 && serverRead > (Number((_a2 = posts[posts.length - 1]) == null ? void 0 : _a2.post_number) || 0)) {
+        try {
+          const readData = await api(`/t/${topicId}/${serverRead}.json`, trackHeaders);
+          if (chatState.topicId !== topicId) return;
+          const readPosts = readData.post_stream && readData.post_stream.posts || [];
+          if (readPosts.length) {
+            data = readData;
+            posts = readPosts;
+            scrollToPost = serverRead;
           }
+        } catch {
         }
       }
       chatState.stream = data.post_stream && data.post_stream.stream || posts.map((p) => p.id);
@@ -9575,14 +9578,14 @@ html.im-theme {
         if (replyTotal) {
           metrics.style.display = "";
           metrics.title = "点击选择楼层";
-          const startFloor = scrollToPost || (anchorPost > 1 ? anchorPost : 1);
+          const startFloor = scrollToPost || Number((_b2 = posts[0]) == null ? void 0 : _b2.post_number) || 1;
           metrics.innerHTML = `${ICONS.chat}${Math.min(startFloor, replyTotal)}<span class="im-metrics-sep">/</span>${replyTotal}`;
         } else {
           metrics.style.display = "none";
           metrics.textContent = "";
         }
       }
-      (_b2 = skinHooks.syncChatTabs) == null ? void 0 : _b2.call(skinHooks, data, topicId);
+      (_c = skinHooks.syncChatTabs) == null ? void 0 : _c.call(skinHooks, data, topicId);
       renderChatHeaderAvatar();
       loadCategories().then(() => {
         if (chatState.topicId !== topicId) return;
