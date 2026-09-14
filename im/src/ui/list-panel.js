@@ -433,8 +433,13 @@ function applyListJson(data, append) {
   renderListRows();
   refreshRail();
 }
+// 列表端点失败后 30s 冷却：异常页（404/无权限）下 applyTheme 会反复触发加载，
+// 持续请求会触发 CF 挑战甚至卡死；force=true（手动刷新/切换筛选）不受限
+let lastListFailAt = 0;
+let lastListFailPath = "";
 export async function loadList(apiPath, force) {
   if (!apiPath) return;
+  if (!force && lastListFailPath === apiPath && Date.now() - lastListFailAt < 30000) return;
   // 用列表 API 做缓存键：进帖子时 pathname 会变，但不应重拉会话列表
   if (!force && listState.apiPath === apiPath && listState.topics.length) {
     syncListActive();
@@ -445,8 +450,12 @@ export async function loadList(apiPath, force) {
   listState.apiPath = apiPath;
   try {
     const data = await api(apiPath);
+    lastListFailAt = 0;
+    lastListFailPath = "";
     applyListJson(data, false);
   } catch {
+    lastListFailAt = Date.now();
+    lastListFailPath = apiPath;
     const body = document.querySelector(".im-list-body");
     if (body) body.innerHTML = `<div class="im-list-status">列表加载失败，请点右上角刷新重试</div>`;
   } finally {

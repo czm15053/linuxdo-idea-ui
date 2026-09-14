@@ -1,10 +1,18 @@
-export async function api(path, extraHeaders) {
-  const resp = await fetch(path, {
-    headers: { Accept: "application/json", ...extraHeaders },
-    credentials: "same-origin"
-  });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-  return resp.json();
+export async function api(path, extraHeaders, { timeout = 20000 } = {}) {
+  // 异常页 / 被 CF 拦的请求可能悬挂，加超时避免 UI 卡在「加载中」
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const resp = await fetch(path, {
+      headers: { Accept: "application/json", ...extraHeaders },
+      credentials: "same-origin",
+      signal: ctrl.signal
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**

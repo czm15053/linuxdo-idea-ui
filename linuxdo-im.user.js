@@ -7654,13 +7654,20 @@ html.im-theme {
     div.innerHTML = html;
     return (div.textContent || "").replace(/\s+/g, " ").trim();
   }
-  async function api(path, extraHeaders) {
-    const resp = await fetch(path, {
-      headers: { Accept: "application/json", ...extraHeaders },
-      credentials: "same-origin"
-    });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    return resp.json();
+  async function api(path, extraHeaders, { timeout = 2e4 } = {}) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeout);
+    try {
+      const resp = await fetch(path, {
+        headers: { Accept: "application/json", ...extraHeaders },
+        credentials: "same-origin",
+        signal: ctrl.signal
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      return await resp.json();
+    } finally {
+      clearTimeout(timer);
+    }
   }
   function trackViewHeaders(topicId) {
     return {
@@ -13429,8 +13436,11 @@ ${data.raw}
     renderListRows();
     refreshRail();
   }
+  let lastListFailAt = 0;
+  let lastListFailPath = "";
   async function loadList(apiPath, force) {
     if (!apiPath) return;
+    if (!force && lastListFailPath === apiPath && Date.now() - lastListFailAt < 3e4) return;
     if (!force && listState.apiPath === apiPath && listState.topics.length) {
       syncListActive();
       return;
@@ -13440,8 +13450,12 @@ ${data.raw}
     listState.apiPath = apiPath;
     try {
       const data = await api(apiPath);
+      lastListFailAt = 0;
+      lastListFailPath = "";
       applyListJson(data, false);
     } catch {
+      lastListFailAt = Date.now();
+      lastListFailPath = apiPath;
       const body = document.querySelector(".im-list-body");
       if (body) body.innerHTML = `<div class="im-list-status">列表加载失败，请点右上角刷新重试</div>`;
     } finally {
@@ -16653,19 +16667,46 @@ ${data.raw}
     }
     let scheduled = false;
     let lastPath = null;
+    let lastApplyAt = 0;
+    let observer = null;
+    const APPLY_MIN_INTERVAL = 250;
+    const WATCHDOG_WINDOW = 5e3;
+    const WATCHDOG_MAX = 16;
+    let watchdogStart = 0;
+    let watchdogCount = 0;
+    let watchdogTripped = false;
     function scheduleApply() {
-      if (scheduled) return;
+      if (scheduled || watchdogTripped) return;
       scheduled = true;
       requestAnimationFrame(() => {
         scheduled = false;
+        if (cfBlocked() || nativeNotFound()) return;
+        const now = Date.now();
+        if (now - lastApplyAt < APPLY_MIN_INTERVAL) return;
+        lastApplyAt = now;
+        if (now - watchdogStart > WATCHDOG_WINDOW) {
+          watchdogStart = now;
+          watchdogCount = 0;
+        }
+        if (++watchdogCount > WATCHDOG_MAX) {
+          watchdogTripped = true;
+          observer == null ? void 0 : observer.disconnect();
+          removePanels();
+          document.documentElement.classList.remove(ROOT_CLASS$1, DARK_CLASS, LOCK_CLASS, "im-topic-open");
+          console.warn("[linuxdo-im] 页面持续 DOM 抖动，已自动回退原生界面。地址:", location.href);
+          return;
+        }
         applyTheme();
       });
     }
     const scheduleSyncNewPosts = debounce(syncNewPostsFromDom, 600);
     bootstrap();
+    function nativeNotFound() {
+      return !!document.querySelector("meta#discourse-error, #discourse-error, .page-not-found");
+    }
     function applyTheme() {
       var _a2, _b2, _c;
-      if (cfBlocked()) {
+      if (cfBlocked() || nativeNotFound()) {
         document.documentElement.classList.remove(ROOT_CLASS$1, DARK_CLASS, LOCK_CLASS, "im-topic-open");
         removePanels();
         return;
@@ -16761,7 +16802,7 @@ ${data.raw}
         setTimeout(bootstrap, 0);
         return;
       }
-      if (cfBlocked()) ;
+      if (cfBlocked() || nativeNotFound()) ;
       else {
         injectStyle();
         if (!otherThemeActive()) {
@@ -16784,7 +16825,8 @@ ${data.raw}
         });
       }
       const IM_UI_SEL = ".im-list-panel, .im-chat-panel, .im-rail, .im-strip, .im-titlebar, .im-mode-fab, .im-search-pop-overlay, #linuxdo-im-theme";
-      const observer = new MutationObserver((mutations) => {
+      observer = new MutationObserver((mutations) => {
+        if (cfBlocked() || nativeNotFound()) return;
         const external = mutations.some((m) => {
           const t = m.target;
           if (!(t instanceof Element) && !(t instanceof CharacterData)) return true;

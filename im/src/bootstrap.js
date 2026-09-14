@@ -153,12 +153,40 @@ export function run() {
 
   let scheduled = false;
   let lastPath = null;
+  let lastApplyAt = 0;
+  let observer = null;
+  // 异常页（404 / CF 挑战等）可能持续变动 DOM，observer 每帧都会触发；
+  // 若 applyTheme 也每帧全量重建三栏会把主线程占满导致标签卡死。加最小执行间隔。
+  const APPLY_MIN_INTERVAL = 250;
+  // 看门狗：短窗口内 applyTheme 仍被高频触发（异常页持续抖动的典型特征）时，
+  // 摘掉 observer 并回退原生界面，避免主线程被拖死；console 留现场证据便于定位。
+  const WATCHDOG_WINDOW = 5000;
+  const WATCHDOG_MAX = 16;
+  let watchdogStart = 0;
+  let watchdogCount = 0;
+  let watchdogTripped = false;
 
   function scheduleApply() {
-    if (scheduled) return;
+    if (scheduled || watchdogTripped) return;
     scheduled = true;
     requestAnimationFrame(() => {
       scheduled = false;
+      if (cfBlocked() || nativeNotFound()) return; // CF 挑战页/无效话题页完全静默：不执行 applyTheme，避免干扰挑战脚本重试
+      const now = Date.now();
+      if (now - lastApplyAt < APPLY_MIN_INTERVAL) return;
+      lastApplyAt = now;
+      if (now - watchdogStart > WATCHDOG_WINDOW) {
+        watchdogStart = now;
+        watchdogCount = 0;
+      }
+      if (++watchdogCount > WATCHDOG_MAX) {
+        watchdogTripped = true;
+        observer?.disconnect();
+        removePanels();
+        document.documentElement.classList.remove(ROOT_CLASS, DARK_CLASS, LOCK_CLASS, "im-topic-open");
+        console.warn("[linuxdo-im] 页面持续 DOM 抖动，已自动回退原生界面。地址:", location.href);
+        return;
+      }
       applyTheme();
     });
   }
@@ -174,10 +202,16 @@ export function run() {
 
   /* ============================== 编排（合并版） ============================== */
 
+  // 无效话题页（Discourse 服务端直接渲染的 404：.page-not-found / #discourse-error）：
+  // 与 CF 挑战一样不套皮、不发请求——对不存在话题的 API 请求会触发 Cloudflare 挑战导致卡死
+  function nativeNotFound() {
+    return !!document.querySelector("meta#discourse-error, #discourse-error, .page-not-found");
+  }
+
   function applyTheme() {
-    if (cfBlocked()) {
-      // 被 Cloudflare 挑战/拦截：整体降级为原生页面（原皮），
-      // 不注入皮肤样式、不建 IM 壳；挑战通过真实内容替换后复检自动恢复
+    if (cfBlocked() || nativeNotFound()) {
+      // 被 Cloudflare 挑战/拦截 / 无效话题页：整体降级为原生页面（原皮），
+      // 不注入皮肤样式、不建 IM 壳、不发请求；内容替换后复检自动恢复
       document.documentElement.classList.remove(ROOT_CLASS, DARK_CLASS, LOCK_CLASS, "im-topic-open");
       removePanels();
       return;
@@ -290,8 +324,8 @@ export function run() {
       setTimeout(bootstrap, 0);
       return;
     }
-    if (cfBlocked()) {
-      // 挑战页：document-start 不做任何套皮（原皮），等真实内容替换后由 observer 复检恢复
+    if (cfBlocked() || nativeNotFound()) {
+      // 挑战页 / 无效话题页：document-start 不做任何套皮（原皮），等真实内容替换后由 observer 复检恢复
     } else {
       injectStyle();
       if (!otherThemeActive()) {
@@ -318,7 +352,9 @@ export function run() {
     }
 
     const IM_UI_SEL = ".im-list-panel, .im-chat-panel, .im-rail, .im-strip, .im-titlebar, .im-mode-fab, .im-search-pop-overlay, #linuxdo-im-theme";
-    const observer = new MutationObserver((mutations) => {
+    observer = new MutationObserver((mutations) => {
+      // CF 挑战页/无效话题页完全静默：页面脚本会持续改 DOM，若在此调度 applyTheme 会加剧主线程占用
+      if (cfBlocked() || nativeNotFound()) return;
       // 忽略我们自己面板内部的 DOM 变动，否则点开筛选会立刻触发 applyTheme 回写/闪断
       const external = mutations.some((m) => {
         const t = m.target;
