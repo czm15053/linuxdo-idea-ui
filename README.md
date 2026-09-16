@@ -1,6 +1,6 @@
-# 摸鱼办公皮肤合集 · Linux DO & X (Twitter)
+# 摸鱼办公皮肤合集 · Linux DO & X (Twitter) & 小红书
 
-为 **Linux DO** 和 **X (Twitter)** 深度定制的办公界面伪装外观脚本，支持 **钉钉 PC 端**、**飞书 IM**、**企业微信 5.x**、**JetBrains IDE**、**终端 TUI** 等多种风格。只换皮，不碰数据——内容、链接、按钮与交互全部保留。
+为 **Linux DO**、**X (Twitter)** 和 **小红书** 深度定制的办公界面伪装外观脚本，支持 **钉钉 PC 端**、**飞书 IM**、**企业微信 5.x**、**JetBrains IDE**、**终端 TUI** 等多种风格。只换皮，不碰数据——内容、链接、按钮与交互全部保留。
 
 > ⚠️ 同一站点内的不同外观脚本**互斥**，同一时刻对同一网站只启用一个外观。
 
@@ -17,6 +17,9 @@
 
 ### 🐦 X (Twitter) 专区
 - [X.com 专属：IM 三合一外观（`x-im.user.js`）](#x-twitter-专属im-三合一外观x-imuserjs)
+
+### 📕 小红书专区
+- [小红书专属：IM 三合一外观（`xhs-im.user.js`）](#小红书专属im-三合一外观xhs-imuserjs)
 
 ### 📌 其他
 - [License](#license)
@@ -66,6 +69,24 @@ https://github.com/czm15053/linuxdo-idea-ui/raw/main/x/x-im.user.js
 ```
 
 完整架构、效果截图占位与开发说明详见 [`x/README.md`](./x/README.md)。
+
+## 小红书专属：IM 三合一外观（`xhs-im.user.js`）
+
+为 [xiaohongshu.com](https://www.xiaohongshu.com/) 深度定制的办公 IM 伪装脚本。将发现推荐流伪装为 **钉钉 / 飞书 / 企业微信** 聊天界面，笔记以聊天气泡呈现，支持详情抽屉与多级评论树、点赞/收藏/关注原生代理、触底自动加载与防窥脱敏。
+
+### 安装
+
+1. 安装 [Tampermonkey](https://www.tampermonkey.net/)（或 Violentmonkey）
+2. 打开 [`xhs/xhs-im.user.js`](./xhs/xhs-im.user.js)，点 **Raw** 后安装
+3. 访问 <https://www.xiaohongshu.com/> 自动生效（初次安装后请硬刷新一次）
+
+Raw 直链（仓库公开后可用）：
+
+```text
+https://github.com/czm15053/linuxdo-idea-ui/raw/main/xhs/xhs-im.user.js
+```
+
+完整功能说明与开发构建详见 [`xhs/README.md`](./xhs/README.md)。
 
 ## 脚本二：JetBrains / Darcula 外观（`linuxdo-idea.user.js`）
 
@@ -260,7 +281,7 @@ https://github.com/czm15053/linuxdo-idea-ui/raw/main/linuxdo-codex.user.js
 
 MIT © czm15053
 
-JetBrains、IntelliJ IDEA、PyCharm 均为 JetBrains s.r.o. 商标；飞书为字节跳动旗下产品商标；钉钉为阿里巴巴集团产品商标；Codex、OpenAI 为 OpenAI 商标。本项目为非官方、非关联作品。
+JetBrains、IntelliJ IDEA、PyCharm 均为 JetBrains s.r.o. 商标；飞书为字节跳动旗下产品商标；钉钉为阿里巴巴集团产品商标；Codex、OpenAI 为 OpenAI 商标；小红书为行吟信息科技（上海）有限公司产品商标。本项目为非官方、非关联作品。
 
 ## 友链
 
