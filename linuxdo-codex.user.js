@@ -263,6 +263,7 @@
 
   /* ============================== composer 拖图片上传（移植自 terminal 皮肤 35bd821） ============================== */
 
+  let cxComposerSubmitting = false;
   let composerUploading = false;
 
   function cxTransferImages(event) {
