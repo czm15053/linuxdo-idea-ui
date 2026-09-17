@@ -544,10 +544,15 @@ function snip(s) {
   return t.length > 64 ? [...t].slice(0, 64).join("") + "…" : t;
 }
 
+/** 气泡要渲染的图片组：有视频时剔除与海报相同的封面，防止同一张图重复出现 */
+function photosOf(t) {
+  return (t.photos || []).filter((src) => !(t.video && (src === t.video.poster || /video_thumb|amplify_video/.test(src)))).slice(0, 4);
+}
+
 function msgHtml(t, forceReal) {
   const side = t.mine ? "me" : "other";
   const ava = personAvatarHtml("im-msg-avatar", t.name, t.avatar, t.id || t.handle, !!forceReal);
-  const ps = (t.photos || []).filter((src) => !(t.video && /video_thumb|amplify_video/.test(src))).slice(0, 4);
+  const ps = photosOf(t);
   const as = t.alts || [];
   const photos = ps.length
     ? `<div class="im-msg-photos im-photos-${ps.length}">${ps.map((src, i) => `<div class="im-photo">${as[i] ? '<span class="im-alt-badge">ALT</span>' : ""}<img src="${escapeHtml(src)}" alt="" loading="lazy"></div>`).join("")}</div>`
@@ -641,14 +646,16 @@ export function syncChatMessages() {
     const t = extractTweet(article);
     if (!t) continue;
     if (seen.has(t.id)) {
-      // 已渲染消息需要重建的条件：① X 自带翻译状态翻转（原文↔译文）；② 图 lazy 到位后补渲染（首次 sync 时 article 的 img src 常为空导致漏图）
+      // 已渲染消息需要重建的条件：① 翻译状态翻转；② 图 lazy 到位后补渲染（首次 sync 时 article 的 img src 常为空导致漏图）；
+      // ③ 头像从色块换成真图。图片比对必须用与渲染一致的过滤结果（视频帖剔除海报重复项），否则视频帖会每次同步误判重建
       const oldEl = body.querySelector(`.im-msg[data-id="${t.id}"]`);
       let needRebuild = false;
       if (oldEl) {
         if (t.translated !== undefined && oldEl.dataset.translated !== String(t.translated ? "1" : "0")) needRebuild = true;
-        if (!needRebuild && t.photos && t.photos.length) {
+        const ps = photosOf(t);
+        if (!needRebuild && ps.length) {
           const dom = [...(oldEl.querySelectorAll(".im-msg-photos img"))].map((i) => i.src || "");
-          if (dom.length !== t.photos.length || !dom.every((s, i) => s === t.photos[i])) needRebuild = true;
+          if (dom.length !== ps.length || !dom.every((s, i) => s === ps[i])) needRebuild = true;
         }
         if (!needRebuild && t.avatar && oldEl.querySelector(".im-msg-avatar.is-text-avatar, .im-msg-avatar.is-grid-mask")) {
           needRebuild = true;

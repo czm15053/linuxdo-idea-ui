@@ -6063,6 +6063,16 @@ html.im-theme .im-reply-quote-tag {
 }
 html.im-theme .im-quote-name { font-weight: 600; margin-right: 4px; }
 
+/* 卡片/胶囊底色变量：深色下引用各皮肤已有的暗色变量，避免 fallback 白底穿帮 */
+html.im-theme {
+  --im-card: #fff;
+  --im-chip-bg: #f2f3f5;
+}
+html.im-theme.im-dark {
+  --im-card: var(--im-bubble-other, #1e222a);
+  --im-chip-bg: var(--im-hover, #22262e);
+}
+
 /* 详情卡片：主笔记卡片 */
 html.im-theme .im-thread-pin {
   margin: 8px 14px 10px; padding: 12px;
@@ -9699,10 +9709,13 @@ ${pin.text || "无"}
     const t = String(s || "").replace(/\s+/g, " ").trim();
     return t.length > 64 ? [...t].slice(0, 64).join("") + "…" : t;
   }
+  function photosOf(t) {
+    return (t.photos || []).filter((src) => !(t.video && (src === t.video.poster || /video_thumb|amplify_video/.test(src)))).slice(0, 4);
+  }
   function msgHtml(t, forceReal) {
     const side = t.mine ? "me" : "other";
     const ava = personAvatarHtml("im-msg-avatar", t.name, t.avatar, t.id || t.handle, !!forceReal);
-    const ps = (t.photos || []).filter((src) => !(t.video && /video_thumb|amplify_video/.test(src))).slice(0, 4);
+    const ps = photosOf(t);
     const as = t.alts || [];
     const photos = ps.length ? `<div class="im-msg-photos im-photos-${ps.length}">${ps.map((src, i) => `<div class="im-photo">${as[i] ? '<span class="im-alt-badge">ALT</span>' : ""}<img src="${escapeHtml(src)}" alt="" loading="lazy"></div>`).join("")}</div>` : "";
     const quote = t.quote ? quoteHtml(t.quote) : "";
@@ -9780,9 +9793,10 @@ ${pin.text || "无"}
         let needRebuild = false;
         if (oldEl) {
           if (t.translated !== void 0 && oldEl.dataset.translated !== String(t.translated ? "1" : "0")) needRebuild = true;
-          if (!needRebuild && t.photos && t.photos.length) {
+          const ps = photosOf(t);
+          if (!needRebuild && ps.length) {
             const dom = [...oldEl.querySelectorAll(".im-msg-photos img")].map((i) => i.src || "");
-            if (dom.length !== t.photos.length || !dom.every((s, i) => s === t.photos[i])) needRebuild = true;
+            if (dom.length !== ps.length || !dom.every((s, i) => s === ps[i])) needRebuild = true;
           }
           if (!needRebuild && t.avatar && oldEl.querySelector(".im-msg-avatar.is-text-avatar, .im-msg-avatar.is-grid-mask")) {
             needRebuild = true;

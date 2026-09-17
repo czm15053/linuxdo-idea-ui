@@ -170,6 +170,16 @@ html.im-theme .im-reply-quote-tag {
 }
 html.im-theme .im-quote-name { font-weight: 600; margin-right: 4px; }
 
+/* 卡片/胶囊底色变量：深色下引用各皮肤已有的暗色变量，避免 fallback 白底穿帮 */
+html.im-theme {
+  --im-card: #fff;
+  --im-chip-bg: #f2f3f5;
+}
+html.im-theme.im-dark {
+  --im-card: var(--im-bubble-other, #1e222a);
+  --im-chip-bg: var(--im-hover, #22262e);
+}
+
 /* 详情卡片：主笔记卡片 */
 html.im-theme .im-thread-pin {
   margin: 8px 14px 10px; padding: 12px;
