@@ -316,7 +316,7 @@ export const CSS_FS = String.raw`
       box-shadow: none !important;
       width: 100%; min-width: 0;
       height: 100%;
-      padding: 0;
+      margin: 0; padding: 0;
       font-size: 15px; line-height: 1.2;
       color: var(--im-text);
       font-family: var(--im-font);

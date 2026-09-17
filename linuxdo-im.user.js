@@ -498,7 +498,7 @@
     .im-titlebar .title-search input {
       flex: 1; min-width: 0; border: 0; outline: none; background: transparent;
       color: var(--im-text); font-size: 12px; font-family: var(--im-font);
-      text-align: center; line-height: 26px; padding: 0; height: 100%;
+      text-align: center; line-height: 26px; margin: 0; padding: 0; height: 100%;
     }
     .im-titlebar .title-search input::placeholder { color: var(--im-text-4); text-align: center; }
     .im-titlebar .title-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px; flex-shrink: 0; }
@@ -2183,7 +2183,7 @@
       box-shadow: none !important;
       width: 100%; min-width: 0;
       height: 100%;
-      padding: 0;
+      margin: 0; padding: 0;
       font-size: 15px; line-height: 1.2;
       color: var(--im-text);
       font-family: var(--im-font);
@@ -4645,14 +4645,19 @@ color: #7AA3D6;
     }
     .im-search-field:focus-within { border-color: var(--im-accent); }
     .im-search-field svg { width: 18px; height: 18px; flex-shrink: 0; }
-    .im-search-input {
+    /* 三层选择器 (0,3,0) 压过站点 input[type=search] 及其 :focus 规则 (0,2,1)，
+       无需 !important；若站点日后用 !important 强设边框，再考虑提高权重 */
+    .im-search-pop .im-search-field .im-search-input {
       flex: 1; min-width: 0;
+      margin: 0; padding: 0;
       border: 0; outline: 0; background: transparent;
+      box-shadow: none;
+      -webkit-appearance: none; appearance: none;
       font-size: 15px; color: var(--im-text);
       font-family: var(--im-font);
     }
-    .im-search-input::placeholder { color: var(--im-text-3); }
-    .im-search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+    .im-search-pop .im-search-field .im-search-input::placeholder { color: var(--im-text-3); }
+    .im-search-pop .im-search-field .im-search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
     .im-search-clear {
       flex-shrink: 0; cursor: pointer;
       border: 0; background: transparent;
@@ -5724,7 +5729,7 @@ color: #7AA3D6;
     .im-titlebar .title-search input {
       flex: 1; min-width: 0; border: 0; outline: none; background: transparent;
       color: var(--wc-text); font-size: 12px; font-family: var(--wc-font);
-      text-align: center; line-height: 26px; padding: 0; height: 100%;
+      text-align: center; line-height: 26px; margin: 0; padding: 0; height: 100%;
     }
     .im-titlebar .title-search input::placeholder { color: var(--wc-text-4); text-align: center; }
     .im-titlebar .title-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px; flex-shrink: 0; }

@@ -290,7 +290,7 @@ export const CSS_DD = String.raw`
     .im-titlebar .title-search input {
       flex: 1; min-width: 0; border: 0; outline: none; background: transparent;
       color: var(--im-text); font-size: 12px; font-family: var(--im-font);
-      text-align: center; line-height: 26px; padding: 0; height: 100%;
+      text-align: center; line-height: 26px; margin: 0; padding: 0; height: 100%;
     }
     .im-titlebar .title-search input::placeholder { color: var(--im-text-4); text-align: center; }
     .im-titlebar .title-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px; flex-shrink: 0; }
