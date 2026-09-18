@@ -644,10 +644,17 @@ async function submitReplyViaApi(raw, replyToPostNumber) {
     body: JSON.stringify(body)
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const err = payload.errors?.[0] || payload.error || `HTTP ${response.status}`;
-    throw new Error(err);
+  // 站点校验拒绝：HTTP 200 + {action:"create_post", errors:[...]}（如「正文 过短（最少 16 个字符）」）。
+  // 标记 validation：这类错误填进原生编辑器也会被同样拒绝，不应兜底打开原生编辑器
+  const serverErrors = payload.errors?.length
+    ? payload.errors
+    : (payload.error ? [payload.error] : null);
+  if (serverErrors) {
+    const err = new Error(serverErrors.join("；"));
+    err.validation = true;
+    throw err;
   }
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const post = payload.post || payload.created_post || payload;
   if (!post || (!post.id && !post.post_id)) throw new Error("站点未确认回复");
   return post;
@@ -789,6 +796,11 @@ async function submitComposer() {
       const post = await submitReplyViaApi(raw, replyTo);
       completeComposerSubmission(input, post);
     } catch (apiError) {
+      // 站点校验拒绝（字数不足等）：IM 内直接提示，不兜底原生编辑器
+      if (apiError.validation) {
+        setComposeStatus(`发送失败：${apiError.message}`, "error");
+        return;
+      }
       setComposeStatus(`接口发送失败，尝试原生编辑器：${apiError.message || ""}`, "error");
       try {
         await submitNativeReply(raw, replyTo);

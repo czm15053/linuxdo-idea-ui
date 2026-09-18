@@ -10774,10 +10774,13 @@ ${data.raw}
       body: JSON.stringify(body)
     });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const err = ((_a2 = payload.errors) == null ? void 0 : _a2[0]) || payload.error || `HTTP ${response.status}`;
-      throw new Error(err);
+    const serverErrors = ((_a2 = payload.errors) == null ? void 0 : _a2.length) ? payload.errors : payload.error ? [payload.error] : null;
+    if (serverErrors) {
+      const err = new Error(serverErrors.join("；"));
+      err.validation = true;
+      throw err;
     }
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const post = payload.post || payload.created_post || payload;
     if (!post || !post.id && !post.post_id) throw new Error("站点未确认回复");
     return post;
@@ -10920,6 +10923,10 @@ ${data.raw}
         const post = await submitReplyViaApi(raw, replyTo);
         completeComposerSubmission(input, post);
       } catch (apiError) {
+        if (apiError.validation) {
+          setComposeStatus(`发送失败：${apiError.message}`, "error");
+          return;
+        }
         setComposeStatus(`接口发送失败，尝试原生编辑器：${apiError.message || ""}`, "error");
         try {
           await submitNativeReply(raw, replyTo);
@@ -14144,34 +14151,46 @@ ${data.raw}
     skinHooks.msgAvatar = msgAvatarFeishu;
   }
   function watchReplyControl(onChange) {
-    const start = () => {
+    let open = null;
+    let full = null;
+    let node = null;
+    let scheduled = 0;
+    const check = () => {
+      scheduled = 0;
       const rc = document.querySelector("#reply-control");
-      if (!rc) return false;
-      let open = isComposerOpen();
-      let full = !!rc.classList.contains("fullscreen");
-      new MutationObserver(() => {
-        const next = isComposerOpen();
-        const nextFull = !!rc.classList.contains("fullscreen");
-        if (next !== open || nextFull !== full) {
-          open = next;
-          full = nextFull;
-          onChange(next);
-        }
-      }).observe(rc, { attributes: true, attributeFilter: ["class"] });
-      onChange(open);
-      return true;
+      const next = isComposerOpen();
+      const nextFull = !!(rc && rc.classList.contains("fullscreen"));
+      const replaced = rc !== node;
+      if (next !== open || nextFull !== full || replaced) {
+        open = next;
+        full = nextFull;
+        node = rc;
+        onChange(next);
+      }
     };
-    if (start()) return;
-    if (!document.body) {
-      document.addEventListener("DOMContentLoaded", () => {
-        if (!start()) watchReplyControl(onChange);
-      }, { once: true });
+    const schedule = () => {
+      if (scheduled) return;
+      scheduled = requestAnimationFrame(check);
+    };
+    if (document.body) {
+      new MutationObserver(schedule).observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["class", "style"]
+      });
+      check();
       return;
     }
-    const boot = new MutationObserver(() => {
-      if (start()) boot.disconnect();
-    });
-    boot.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("DOMContentLoaded", () => {
+      new MutationObserver(schedule).observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["class", "style"]
+      });
+      check();
+    }, { once: true });
   }
   const ROOT_CLASS = "im-native-compose";
   function applyEmbedState(open) {
