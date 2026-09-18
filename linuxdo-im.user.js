@@ -3958,6 +3958,79 @@ font-size: 12px;
       margin-top: 2px;
 }
 
+/* 引用条右上跳转按钮；点击条本体展开 .im-quote-full 全文 */
+.__ROOT_CLASS__ .im-quote-reply:has(> .im-quote-jump) {
+      position: relative;
+      padding-right: 24px;
+}
+
+.__ROOT_CLASS__ .im-quote-jump {
+position: absolute; top: 3px; right: 2px;
+      width: 18px; height: 18px;
+      border: 0; padding: 3px; border-radius: 4px;
+      background: transparent; color: var(--im-text-3);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+}
+
+.__ROOT_CLASS__ .im-quote-jump svg { width: 100%; height: 100%; }
+
+.__ROOT_CLASS__ .im-quote-jump:hover {
+background: rgba(0, 0, 0, 0.06);
+      color: var(--im-blue);
+}
+
+/* 引用头的原帖标题行：点击跳转被引帖子 */
+.__ROOT_CLASS__ .im-quote-topic-link {
+display: block;
+      margin-top: 3px;
+      font-size: 12px; line-height: 1.4; font-weight: 500;
+      color: var(--im-accent, #1A87FF);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      text-decoration: none;
+}
+
+.__ROOT_CLASS__ .im-quote-topic-link:hover { text-decoration: underline; }
+
+.__ROOT_CLASS__ .im-quote-full {
+display: none;
+      margin-top: 6px; padding-top: 6px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.12);
+      white-space: pre-wrap; word-break: break-word;
+      font-size: 12px; line-height: 1.55; color: var(--im-text-2);
+      max-height: 260px; overflow-y: auto;
+      user-select: text;
+}
+
+.__ROOT_CLASS__ .im-quote-reply.expanded .im-quote-full { display: block; }
+
+.__ROOT_CLASS__ .im-msg-me .im-quote-full { color: #4A6E9B; }
+
+/* 引用别的帖子（跨话题转载块）：橙色系，与回复楼层的蓝色引用条区分 */
+.__ROOT_CLASS__ .im-quote-external {
+border-left-color: rgba(230, 126, 34, 0.55);
+      border-left-style: dashed;
+}
+
+.__ROOT_CLASS__ .im-quote-external:hover { border-left-color: rgba(230, 126, 34, 0.9); }
+
+.__ROOT_CLASS__ .im-quote-external .im-quote-name { color: #B26A1B; }
+
+.__ROOT_CLASS__ .im-msg-me .im-quote-external .im-quote-name { color: #B26A1B; }
+
+.__ROOT_CLASS__ .im-msg-me .im-quote-external { border-left-color: rgba(230, 126, 34, 0.55); }
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-quote-external { border-left-color: rgba(230, 126, 34, 0.45); }
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-quote-external .im-quote-name { color: #E8A25A; }
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-quote-jump:hover { background: rgba(255, 255, 255, 0.08); }
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-quote-full {
+border-top-color: rgba(255, 255, 255, 0.14);
+      color: var(--im-text-2);
+}
+
 .__ROOT_CLASS__ .im-msg-me .im-quote-reply {
 border-left-color: rgba(26, 135, 255, 0.6);
 }
@@ -9002,25 +9075,34 @@ html.im-theme {
       if (quoteBtn && panel.contains(quoteBtn)) {
         e.preventDefault();
         e.stopPropagation();
-        const jumpNum = quoteBtn.dataset.jumpPost;
-        if (jumpNum) {
-          const body = panel.querySelector(".im-chat-body");
-          const currentMsg = quoteBtn.closest(".im-msg");
-          const currentPostNum = currentMsg ? Number(currentMsg.dataset.postNumber) : null;
-          const currentScroll = body ? body.scrollTop : 0;
-          chatHooks.pushQuoteJump(currentPostNum, currentScroll);
-          if (scrollChatToPost(body, Number(jumpNum), true)) {
-            const targetMsg = panel.querySelector(`.im-msg[data-post-number="${jumpNum}"]`);
-            if (targetMsg) {
-              targetMsg.classList.remove("im-msg-highlight");
-              void targetMsg.offsetWidth;
-              targetMsg.classList.add("im-msg-highlight");
-            }
-          } else {
-            chatHooks.toast(`已记录原楼层，正在查找 #${jumpNum} 楼…`, quoteBtn);
-            jumpToFloorRemote(Number(jumpNum));
-          }
+        const topicLink = e.target.closest(".im-quote-topic-link");
+        if (topicLink) {
+          navigateInApp(topicLink.getAttribute("href") || "");
+          return;
         }
+        if (e.target.closest(".im-quote-jump")) {
+          const jumpNum = quoteBtn.dataset.jumpPost;
+          if (jumpNum) {
+            const body = panel.querySelector(".im-chat-body");
+            const currentMsg = quoteBtn.closest(".im-msg");
+            const currentPostNum = currentMsg ? Number(currentMsg.dataset.postNumber) : null;
+            const currentScroll = body ? body.scrollTop : 0;
+            chatHooks.pushQuoteJump(currentPostNum, currentScroll);
+            if (scrollChatToPost(body, Number(jumpNum), true)) {
+              const targetMsg = panel.querySelector(`.im-msg[data-post-number="${jumpNum}"]`);
+              if (targetMsg) {
+                targetMsg.classList.remove("im-msg-highlight");
+                void targetMsg.offsetWidth;
+                targetMsg.classList.add("im-msg-highlight");
+              }
+            } else {
+              chatHooks.toast(`已记录原楼层，正在查找 #${jumpNum} 楼…`, quoteBtn);
+              jumpToFloorRemote(Number(jumpNum));
+            }
+          }
+          return;
+        }
+        toggleQuoteExpand(quoteBtn);
         return;
       }
       const likeBadge = e.target.closest(".im-like-badge");
@@ -9244,7 +9326,7 @@ html.im-theme {
     });
   }
   function cookedWithQuoteBars(post) {
-    var _a2, _b2;
+    var _a2;
     const cooked = post.cooked || "";
     if (!/<aside[\s>][^>]*class="[^"]*\bquote\b/.test(cooked)) return cooked;
     try {
@@ -9252,18 +9334,35 @@ html.im-theme {
       let changed = false;
       for (const aside of [...doc.body.querySelectorAll("aside.quote")]) {
         if (aside.closest("blockquote")) continue;
-        if (post.reply_to_post_number) {
+        const postNo = Number(aside.dataset.post || 0);
+        const crossTopic = !!Number(aside.dataset.topic || 0) && !!chatState.topicId && Number(aside.dataset.topic) !== chatState.topicId;
+        if (post.reply_to_post_number && postNo && post.reply_to_post_number === postNo && topicPostsMap.get(postNo)) {
           aside.remove();
         } else {
           const bar = doc.createElement("div");
-          bar.className = "im-quote-reply";
-          const postNo = Number(aside.dataset.post || 0);
-          if (postNo) bar.dataset.jumpPost = String(postNo);
-          const name = String(aside.dataset.username || (((_a2 = aside.querySelector(".title")) == null ? void 0 : _a2.textContent) || "").replace(/[:：]\s*$/, "").trim() || "引用");
-          const text = extractTextSnippet(((_b2 = aside.querySelector("blockquote")) == null ? void 0 : _b2.innerHTML) || "", 60) || "点击查看引用内容";
-          bar.innerHTML = `<div class="im-quote-name"></div><div class="im-quote-text"></div>`;
-          bar.firstChild.textContent = `${name}:`;
-          bar.lastChild.textContent = text;
+          bar.className = crossTopic ? "im-quote-reply im-quote-external" : "im-quote-reply";
+          bar.title = crossTopic ? "引用自其他话题，点击展开内容" : "点击展开引用内容";
+          const jumpable = postNo && !crossTopic;
+          if (jumpable) bar.dataset.jumpPost = String(postNo);
+          const bodyHtml = ((_a2 = aside.querySelector("blockquote")) == null ? void 0 : _a2.innerHTML) || aside.innerHTML || "";
+          let titleLink = "";
+          const titleA = aside.querySelector(".title a[href]");
+          if (titleA) {
+            let href = titleA.getAttribute("href") || "";
+            try {
+              const u = new URL(href, location.origin);
+              href = u.origin === location.origin ? u.pathname + u.search : "";
+            } catch {
+              href = "";
+            }
+            const label = (titleA.textContent || "").trim();
+            if (href && label) titleLink = `<a class="im-quote-topic-link" href="${escapeHtml(href)}">${escapeHtml(label)}</a>`;
+          }
+          bar.innerHTML = `<div class="im-quote-name"></div>${titleLink}<div class="im-quote-text"></div><div class="im-quote-full"></div>` + (jumpable ? `<button type="button" class="im-quote-jump" title="跳转到引用楼层">${ICONS.external}</button>` : "");
+          bar.querySelector(".im-quote-name").textContent = `${quoteAuthorName(aside)}:`;
+          bar.querySelector(".im-quote-text").textContent = extractTextSnippet(bodyHtml, 60) || "点击查看引用内容";
+          bar.querySelector(".im-quote-full").textContent = extractTextSnippet(bodyHtml, Infinity);
+          if (aside.dataset.expanded === "true") bar.classList.add("expanded");
           aside.replaceWith(bar);
         }
         changed = true;
@@ -9272,6 +9371,30 @@ html.im-theme {
     } catch {
       return cooked;
     }
+  }
+  function toggleQuoteExpand(bar) {
+    var _a2;
+    let full = bar.querySelector(".im-quote-full");
+    if (!full) {
+      const no = Number(bar.dataset.jumpPost || 0);
+      const html = no && ((_a2 = topicPostsMap.get(no)) == null ? void 0 : _a2.cooked) || "";
+      if (!html) return;
+      full = document.createElement("div");
+      full.className = "im-quote-full";
+      full.textContent = extractTextSnippet(html, Infinity);
+      bar.insertBefore(full, bar.querySelector(".im-quote-jump"));
+    }
+    bar.classList.toggle("expanded");
+  }
+  function quoteAuthorName(aside) {
+    var _a2, _b2;
+    const direct = String(aside.dataset.username || "").trim();
+    if (direct) return direct;
+    const src = ((_a2 = aside.querySelector(".title img.avatar")) == null ? void 0 : _a2.getAttribute("src")) || "";
+    const m = src.match(/\/user_avatar\/[^/]+\/([^/]+)\//);
+    if (m) return m[1];
+    const t = (((_b2 = aside.querySelector(".title")) == null ? void 0 : _b2.textContent) || "").replace(/[:：]\s*$/, "").trim();
+    return t ? t.length > 24 ? t.slice(0, 24) + "…" : t : "引用";
   }
   const NATIVE_ACTION_SEL = {
     "copy-link": ".post-action-menu__copy-link",
@@ -9316,9 +9439,10 @@ html.im-theme {
         snippet = post.reply_to_quote || "点击跳转查看原帖";
       }
       quoteHtml = `
-      <div class="im-quote-reply" data-jump-post="${post.reply_to_post_number}" title="点击跳转到 #${post.reply_to_post_number} 楼">
+      <div class="im-quote-reply" data-jump-post="${post.reply_to_post_number}" title="点击展开引用内容">
         <div class="im-quote-name">${escapeHtml(targetName)}:</div>
         <div class="im-quote-text">${escapeHtml(snippet)}</div>
+        <button type="button" class="im-quote-jump" title="跳转到 #${post.reply_to_post_number} 楼">${ICONS.external}</button>
       </div>`;
     }
     let avatar;

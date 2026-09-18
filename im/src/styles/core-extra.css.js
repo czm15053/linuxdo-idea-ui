@@ -1053,6 +1053,79 @@ font-size: 12px;
       margin-top: 2px;
 }
 
+/* 引用条右上跳转按钮；点击条本体展开 .im-quote-full 全文 */
+.__ROOT_CLASS__ .im-quote-reply:has(> .im-quote-jump) {
+      position: relative;
+      padding-right: 24px;
+}
+
+.__ROOT_CLASS__ .im-quote-jump {
+position: absolute; top: 3px; right: 2px;
+      width: 18px; height: 18px;
+      border: 0; padding: 3px; border-radius: 4px;
+      background: transparent; color: var(--im-text-3);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+}
+
+.__ROOT_CLASS__ .im-quote-jump svg { width: 100%; height: 100%; }
+
+.__ROOT_CLASS__ .im-quote-jump:hover {
+background: rgba(0, 0, 0, 0.06);
+      color: var(--im-blue);
+}
+
+/* 引用头的原帖标题行：点击跳转被引帖子 */
+.__ROOT_CLASS__ .im-quote-topic-link {
+display: block;
+      margin-top: 3px;
+      font-size: 12px; line-height: 1.4; font-weight: 500;
+      color: var(--im-accent, #1A87FF);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      text-decoration: none;
+}
+
+.__ROOT_CLASS__ .im-quote-topic-link:hover { text-decoration: underline; }
+
+.__ROOT_CLASS__ .im-quote-full {
+display: none;
+      margin-top: 6px; padding-top: 6px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.12);
+      white-space: pre-wrap; word-break: break-word;
+      font-size: 12px; line-height: 1.55; color: var(--im-text-2);
+      max-height: 260px; overflow-y: auto;
+      user-select: text;
+}
+
+.__ROOT_CLASS__ .im-quote-reply.expanded .im-quote-full { display: block; }
+
+.__ROOT_CLASS__ .im-msg-me .im-quote-full { color: #4A6E9B; }
+
+/* 引用别的帖子（跨话题转载块）：橙色系，与回复楼层的蓝色引用条区分 */
+.__ROOT_CLASS__ .im-quote-external {
+border-left-color: rgba(230, 126, 34, 0.55);
+      border-left-style: dashed;
+}
+
+.__ROOT_CLASS__ .im-quote-external:hover { border-left-color: rgba(230, 126, 34, 0.9); }
+
+.__ROOT_CLASS__ .im-quote-external .im-quote-name { color: #B26A1B; }
+
+.__ROOT_CLASS__ .im-msg-me .im-quote-external .im-quote-name { color: #B26A1B; }
+
+.__ROOT_CLASS__ .im-msg-me .im-quote-external { border-left-color: rgba(230, 126, 34, 0.55); }
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-quote-external { border-left-color: rgba(230, 126, 34, 0.45); }
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-quote-external .im-quote-name { color: #E8A25A; }
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-quote-jump:hover { background: rgba(255, 255, 255, 0.08); }
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-quote-full {
+border-top-color: rgba(255, 255, 255, 0.14);
+      color: var(--im-text-2);
+}
+
 .__ROOT_CLASS__ .im-msg-me .im-quote-reply {
 border-left-color: rgba(26, 135, 255, 0.6);
 }

@@ -280,30 +280,39 @@ function bindChatPanelEvents(panel) {
       }
       return;
     }
-    // 点击钉钉式引用回复卡片
+    // 点击引用卡片：标题链接 → 跳原帖；跳转按钮 → 跳对应楼层；其余 → 展开/收起全文
     const quoteBtn = e.target.closest(".im-quote-reply");
     if (quoteBtn && panel.contains(quoteBtn)) {
       e.preventDefault();
       e.stopPropagation();
-      const jumpNum = quoteBtn.dataset.jumpPost;
-      if (jumpNum) {
-        const body = panel.querySelector(".im-chat-body");
-        const currentMsg = quoteBtn.closest(".im-msg");
-        const currentPostNum = currentMsg ? Number(currentMsg.dataset.postNumber) : null;
-        const currentScroll = body ? body.scrollTop : 0;
-        chatHooks.pushQuoteJump(currentPostNum, currentScroll);
-        if (scrollChatToPost(body, Number(jumpNum), true)) {
-          const targetMsg = panel.querySelector(`.im-msg[data-post-number="${jumpNum}"]`);
-          if (targetMsg) {
-            targetMsg.classList.remove("im-msg-highlight");
-            void targetMsg.offsetWidth;
-            targetMsg.classList.add("im-msg-highlight");
-          }
-        } else {
-          chatHooks.toast(`已记录原楼层，正在查找 #${jumpNum} 楼…`, quoteBtn);
-          jumpToFloorRemote(Number(jumpNum));
-        }
+      const topicLink = e.target.closest(".im-quote-topic-link");
+      if (topicLink) {
+        navigateInApp(topicLink.getAttribute("href") || "");
+        return;
       }
+      if (e.target.closest(".im-quote-jump")) {
+        const jumpNum = quoteBtn.dataset.jumpPost;
+        if (jumpNum) {
+          const body = panel.querySelector(".im-chat-body");
+          const currentMsg = quoteBtn.closest(".im-msg");
+          const currentPostNum = currentMsg ? Number(currentMsg.dataset.postNumber) : null;
+          const currentScroll = body ? body.scrollTop : 0;
+          chatHooks.pushQuoteJump(currentPostNum, currentScroll);
+          if (scrollChatToPost(body, Number(jumpNum), true)) {
+            const targetMsg = panel.querySelector(`.im-msg[data-post-number="${jumpNum}"]`);
+            if (targetMsg) {
+              targetMsg.classList.remove("im-msg-highlight");
+              void targetMsg.offsetWidth;
+              targetMsg.classList.add("im-msg-highlight");
+            }
+          } else {
+            chatHooks.toast(`已记录原楼层，正在查找 #${jumpNum} 楼…`, quoteBtn);
+            jumpToFloorRemote(Number(jumpNum));
+          }
+        }
+        return;
+      }
+      toggleQuoteExpand(quoteBtn);
       return;
     }
     // 点击点赞徽章
@@ -536,7 +545,9 @@ export function startRealtimeChatPolling() {
 /** Discourse 原生引用块（<aside class="quote" data-username data-post>）→ IM 引用条。
  *  「回复谁」的可靠信号在 cooked 里：点「回复」按钮的帖子服务端都会在正文内嵌
  *  aside.quote（带用户名与楼层号），不依赖 reply_to_post_number 字段。
- *  已由 reply_to_post_number 渲染过引用条的气泡，删除原生块去重；嵌套引用不动。 */
+ *  去重删除仅限「aside 指向的楼层 = reply_to_post_number 且该楼已加载」：
+ *  转载帖 / 跨话题引用 / 原楼未加载的 aside 一律转引用条，避免内容被整块删掉。
+ *  嵌套引用不动；跨话题引用不设楼层跳转（会跳错楼层）。 */
 function cookedWithQuoteBars(post) {
   const cooked = post.cooked || "";
   if (!/<aside[\s>][^>]*class="[^"]*\bquote\b/.test(cooked)) return cooked;
@@ -545,19 +556,41 @@ function cookedWithQuoteBars(post) {
     let changed = false;
     for (const aside of [...doc.body.querySelectorAll("aside.quote")]) {
       if (aside.closest("blockquote")) continue; // 嵌套在引用内的保留原样
-      if (post.reply_to_post_number) {
-        aside.remove(); // 气泡顶部已有引用条，内容重复
+      const postNo = Number(aside.dataset.post || 0);
+      const crossTopic = !!Number(aside.dataset.topic || 0) && !!chatState.topicId &&
+        Number(aside.dataset.topic) !== chatState.topicId;
+      if (post.reply_to_post_number && postNo &&
+          post.reply_to_post_number === postNo && topicPostsMap.get(postNo)) {
+        aside.remove(); // 气泡顶部引用条渲染的正是该楼层，去重
       } else {
         const bar = doc.createElement("div");
-        bar.className = "im-quote-reply";
-        const postNo = Number(aside.dataset.post || 0);
-        if (postNo) bar.dataset.jumpPost = String(postNo);
-        const name = String(aside.dataset.username ||
-          (aside.querySelector(".title")?.textContent || "").replace(/[:：]\s*$/, "").trim() || "引用");
-        const text = extractTextSnippet(aside.querySelector("blockquote")?.innerHTML || "", 60) || "点击查看引用内容";
-        bar.innerHTML = `<div class="im-quote-name"></div><div class="im-quote-text"></div>`;
-        bar.firstChild.textContent = `${name}:`;
-        bar.lastChild.textContent = text;
+        // 跨话题（引用别的帖子）用独立样式，与回复楼层的引用条区分
+        bar.className = crossTopic ? "im-quote-reply im-quote-external" : "im-quote-reply";
+        bar.title = crossTopic ? "引用自其他话题，点击展开内容" : "点击展开引用内容";
+        const jumpable = postNo && !crossTopic;
+        if (jumpable) bar.dataset.jumpPost = String(postNo);
+        const bodyHtml = aside.querySelector("blockquote")?.innerHTML || aside.innerHTML || "";
+        // 引用头里的标题链接（linux.do 新版 quote title 内嵌 <a>）：显示标题行，点击跳原帖
+        let titleLink = "";
+        const titleA = aside.querySelector(".title a[href]");
+        if (titleA) {
+          let href = titleA.getAttribute("href") || "";
+          try {
+            const u = new URL(href, location.origin);
+            href = u.origin === location.origin ? u.pathname + u.search : "";
+          } catch { href = ""; }
+          const label = (titleA.textContent || "").trim();
+          if (href && label) titleLink = `<a class="im-quote-topic-link" href="${escapeHtml(href)}">${escapeHtml(label)}</a>`;
+        }
+        bar.innerHTML =
+          `<div class="im-quote-name"></div>${titleLink}<div class="im-quote-text"></div><div class="im-quote-full"></div>` +
+          (jumpable ? `<button type="button" class="im-quote-jump" title="跳转到引用楼层">${ICONS.external}</button>` : "");
+        bar.querySelector(".im-quote-name").textContent = `${quoteAuthorName(aside)}:`;
+        bar.querySelector(".im-quote-text").textContent =
+          extractTextSnippet(bodyHtml, 60) || "点击查看引用内容";
+        bar.querySelector(".im-quote-full").textContent = extractTextSnippet(bodyHtml, Infinity);
+        // 原生引用已是展开态（data-expanded="true"）则默认展开
+        if (aside.dataset.expanded === "true") bar.classList.add("expanded");
         aside.replaceWith(bar);
       }
       changed = true;
@@ -566,6 +599,34 @@ function cookedWithQuoteBars(post) {
   } catch {
     return cooked;
   }
+}
+
+/** 引用条点击展开/收起全文：cooked 转换条已内嵌 .im-quote-full；
+ *  回复型条（bubbleHtml）无内嵌全文，从已加载的原楼 cooked 动态取 */
+function toggleQuoteExpand(bar) {
+  let full = bar.querySelector(".im-quote-full");
+  if (!full) {
+    const no = Number(bar.dataset.jumpPost || 0);
+    const html = (no && topicPostsMap.get(no)?.cooked) || "";
+    if (!html) return;
+    full = document.createElement("div");
+    full.className = "im-quote-full";
+    full.textContent = extractTextSnippet(html, Infinity);
+    bar.insertBefore(full, bar.querySelector(".im-quote-jump"));
+  }
+  bar.classList.toggle("expanded");
+}
+
+/** 引用块作者名：标准 data-username → linux.do 新版无该属性，从头像 URL 路径段
+ *  （/user_avatar/<site>/<username>/）提取 → title 文本截断兜底 */
+function quoteAuthorName(aside) {
+  const direct = String(aside.dataset.username || "").trim();
+  if (direct) return direct;
+  const src = aside.querySelector(".title img.avatar")?.getAttribute("src") || "";
+  const m = src.match(/\/user_avatar\/[^/]+\/([^/]+)\//);
+  if (m) return m[1];
+  const t = (aside.querySelector(".title")?.textContent || "").replace(/[:：]\s*$/, "").trim();
+  return t ? (t.length > 24 ? t.slice(0, 24) + "…" : t) : "引用";
 }
 /** 原生楼层操作按钮（复制链接/举报）→ #post_N 内的对应选择器；书签改走直连 API */
 const NATIVE_ACTION_SEL = {
@@ -611,9 +672,10 @@ function bubbleHtml(post, myName) {
       snippet = post.reply_to_quote || "点击跳转查看原帖";
     }
     quoteHtml = `
-      <div class="im-quote-reply" data-jump-post="${post.reply_to_post_number}" title="点击跳转到 #${post.reply_to_post_number} 楼">
+      <div class="im-quote-reply" data-jump-post="${post.reply_to_post_number}" title="点击展开引用内容">
         <div class="im-quote-name">${escapeHtml(targetName)}:</div>
         <div class="im-quote-text">${escapeHtml(snippet)}</div>
+        <button type="button" class="im-quote-jump" title="跳转到 #${post.reply_to_post_number} 楼">${ICONS.external}</button>
       </div>`;
   }
 
