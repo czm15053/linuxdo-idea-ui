@@ -7575,7 +7575,15 @@ html.im-theme {
       path = path.slice(0, qIdx);
     }
     const searchParams = new URLSearchParams(search);
-    if (path === "/" || path === "/latest") return "/latest.json";
+    if (path === "/" || path === "/latest") {
+      const params = new URLSearchParams();
+      for (const k of ["order", "ascending"]) {
+        const v = searchParams.get(k);
+        if (v) params.set(k, v);
+      }
+      const qs = params.toString();
+      return qs ? `/latest.json?${qs}` : "/latest.json";
+    }
     if (path === "/new") {
       const subset = searchParams.get("subset");
       if (subset === "topics" || subset === "replies") {
@@ -13118,6 +13126,12 @@ ${data.raw}
     }
     applyListNavDom();
   }
+  function withLatestCreated(items) {
+    const item = { href: "/?ascending=false&order=created", label: "最新话题" };
+    if (items.some((it) => it.href === item.href)) return items;
+    const active = location.pathname === "/" && /(?:^|&)order=created/.test(location.search);
+    return [...items, { ...item, active }];
+  }
   function collectListNavItems() {
     const native = document.querySelector("#navigation-bar");
     if (native) {
@@ -13132,13 +13146,13 @@ ${data.raw}
         seen.add(it.href);
         return true;
       });
-      if (deduped.length) return deduped;
+      if (deduped.length) return withLatestCreated(deduped);
     }
     const path = location.pathname.replace(/\/$/, "") || "/";
-    return DEFAULT_LIST_NAV.map((it) => ({
+    return withLatestCreated(DEFAULT_LIST_NAV.map((it) => ({
       ...it,
       active: path === it.href || it.href === "/latest" && path === "/"
-    }));
+    })));
   }
   const TOP_PERIODS = [
     { path: "", label: "默认" },

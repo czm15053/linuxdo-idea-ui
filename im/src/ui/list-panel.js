@@ -63,6 +63,15 @@ function setListNavOpen(open) {
   try { localStorage.setItem(LIST_NAV_KEY, listNavOpen ? "1" : "0"); } catch { /* ignore */ }
   applyListNavDom();
 }
+// linux.do 顶部「最新话题」（/?ascending=false&order=created）不在原生 topic-list
+// 导航（#navigation-bar）里，筛选面板固定补一项；原生已有同 href 时不重复
+function withLatestCreated(items) {
+  const item = { href: "/?ascending=false&order=created", label: "最新话题" };
+  if (items.some((it) => it.href === item.href)) return items;
+  const active = location.pathname === "/" && /(?:^|&)order=created/.test(location.search);
+  return [...items, { ...item, active }];
+}
+
 function collectListNavItems() {
   const native = document.querySelector("#navigation-bar");
   if (native) {
@@ -78,13 +87,13 @@ function collectListNavItems() {
       seen.add(it.href);
       return true;
     });
-    if (deduped.length) return deduped;
+    if (deduped.length) return withLatestCreated(deduped);
   }
   const path = location.pathname.replace(/\/$/, "") || "/";
-  return DEFAULT_LIST_NAV.map((it) => ({
+  return withLatestCreated(DEFAULT_LIST_NAV.map((it) => ({
     ...it,
     active: path === it.href || (it.href === "/latest" && path === "/")
-  }));
+  })));
 }
 // /top 周期筛选（p2-odds）：path 周期段 → top.json?period=
 const TOP_PERIODS = [

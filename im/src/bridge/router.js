@@ -33,7 +33,16 @@ export function listApiForPath(urlOrPath) {
   }
   const searchParams = new URLSearchParams(search);
 
-  if (path === "/" || path === "/latest") return "/latest.json";
+  if (path === "/" || path === "/latest") {
+    // 透传排序参数（如「最新话题」/?ascending=false&order=created），否则中栏仍按默认排序拉取
+    const params = new URLSearchParams();
+    for (const k of ["order", "ascending"]) {
+      const v = searchParams.get(k);
+      if (v) params.set(k, v);
+    }
+    const qs = params.toString();
+    return qs ? `/latest.json?${qs}` : "/latest.json";
+  }
   if (path === "/new") {
     const subset = searchParams.get("subset");
     if (subset === "topics" || subset === "replies") {
