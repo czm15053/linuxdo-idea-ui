@@ -148,6 +148,8 @@ export function run() {
     document.querySelector(".im-list-resizer")?.remove();
     document.querySelector(".im-strip")?.remove();
     document.querySelector(".im-titlebar")?.remove();
+    document.querySelector(".im-mode-fab")?.remove();
+    document.getElementById(STYLE_ID)?.remove();
   }
 
 

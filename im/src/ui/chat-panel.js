@@ -179,6 +179,14 @@ document.addEventListener("click", (e) => {
 
 function bindChatPanelEvents(panel) {
   panel.addEventListener("click", (e) => {
+    // 错误空态：前往验证按钮
+    const challengeBtn = e.target.closest(".im-chat-error .im-empty-btn");
+    if (challengeBtn && panel.contains(challengeBtn)) {
+      e.preventDefault();
+      e.stopPropagation();
+      location.href = "https://linux.do/challenge";
+      return;
+    }
     // 头部楼层数：点击弹出「选择楼层」
     if (e.target.closest(".im-chat-metrics")) {
       e.preventDefault();
@@ -444,7 +452,7 @@ function renderChatError(message) {
     <div class="im-chat-error">
       ${ICONS.chat}
       <div>${escapeHtml(message)}</div>
-      <button class="im-empty-btn" onclick="location.reload()">打开原生页面</button>
+      <a class="im-empty-btn" href="https://linux.do/challenge" target="_self">前往验证</a>
     </div>`;
 }
 

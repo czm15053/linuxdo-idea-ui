@@ -1000,6 +1000,8 @@
       background: var(--im-bg); color: var(--im-text-2);
       border-radius: 6px; height: 32px; padding: 0 14px;
       font-size: 13px; cursor: pointer; font-family: var(--im-font);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; box-sizing: border-box;
     }
     .im-empty-btn:hover { background: var(--im-hover); }
 
@@ -2642,6 +2644,8 @@
       background: var(--im-bg); color: var(--im-text-2);
       border-radius: 6px; height: 32px; padding: 0 14px;
       font-size: 13px; cursor: pointer; font-family: var(--im-font);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; box-sizing: border-box;
     }
     .im-empty-btn:hover { background: var(--im-hover); }
 
@@ -3103,6 +3107,8 @@ margin-top: 6px;
       background: var(--im-bg); color: var(--im-text-2);
       border-radius: 6px; height: 32px; padding: 0 14px;
       font-size: 13px; cursor: pointer; font-family: var(--im-font);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; box-sizing: border-box;
 }
 
 .im-empty-btn:hover {
@@ -6497,6 +6503,8 @@ color: #7AA3D6;
       background: var(--wc-bg); color: var(--wc-text-2);
       border-radius: 6px; height: 32px; padding: 0 14px;
       font-size: 13px; cursor: pointer; font-family: var(--wc-font);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; box-sizing: border-box;
     }
     .im-empty-btn:hover { background: var(--wc-hover); }
 
@@ -7059,6 +7067,10 @@ html.im-theme {
   const topicPostsMap = /* @__PURE__ */ new Map();
   function cfBlocked() {
     try {
+      const path = String(location.pathname || "");
+      if (path === "/challenge" || path.startsWith("/challenge/") || path.startsWith("/challenge")) {
+        return true;
+      }
       if (document.querySelector("#challenge-running, #cf-challenge-running, form#challenge-form")) {
         return true;
       }
@@ -9130,6 +9142,13 @@ html.im-theme {
   function bindChatPanelEvents(panel) {
     panel.addEventListener("click", (e) => {
       var _a2, _b2, _c, _d;
+      const challengeBtn = e.target.closest(".im-chat-error .im-empty-btn");
+      if (challengeBtn && panel.contains(challengeBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        location.href = "https://linux.do/challenge";
+        return;
+      }
       if (e.target.closest(".im-chat-metrics")) {
         e.preventDefault();
         e.stopPropagation();
@@ -9388,7 +9407,7 @@ html.im-theme {
     <div class="im-chat-error">
       ${ICONS.chat}
       <div>${escapeHtml(message)}</div>
-      <button class="im-empty-btn" onclick="location.reload()">打开原生页面</button>
+      <a class="im-empty-btn" href="https://linux.do/challenge" target="_self">前往验证</a>
     </div>`;
   }
   let inFlightNewPostsFetch = false;
@@ -17024,7 +17043,7 @@ ${data.raw}
       }
     }
     function removePanels() {
-      var _a2, _b2, _c, _d, _e, _f, _g;
+      var _a2, _b2, _c, _d, _e, _f, _g, _h, _i;
       (_a2 = document.querySelector(".im-list-panel")) == null ? void 0 : _a2.remove();
       (_b2 = document.querySelector(".im-chat-panel")) == null ? void 0 : _b2.remove();
       (_c = document.querySelector(".im-rail")) == null ? void 0 : _c.remove();
@@ -17032,6 +17051,8 @@ ${data.raw}
       (_e = document.querySelector(".im-list-resizer")) == null ? void 0 : _e.remove();
       (_f = document.querySelector(".im-strip")) == null ? void 0 : _f.remove();
       (_g = document.querySelector(".im-titlebar")) == null ? void 0 : _g.remove();
+      (_h = document.querySelector(".im-mode-fab")) == null ? void 0 : _h.remove();
+      (_i = document.getElementById(STYLE_ID)) == null ? void 0 : _i.remove();
     }
     let scheduled = false;
     let lastPath = null;

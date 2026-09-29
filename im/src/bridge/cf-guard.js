@@ -11,6 +11,10 @@
 //    不做孤立 widget 单判——linux.do 正常页可能残留孤立的 input#cf-chl-widget-*，会误伤。
 export function cfBlocked() {
   try {
+    const path = String(location.pathname || "");
+    if (path === "/challenge" || path.startsWith("/challenge/") || path.startsWith("/challenge")) {
+      return true;
+    }
     if (document.querySelector("#challenge-running, #cf-challenge-running, form#challenge-form")) {
       return true;
     }

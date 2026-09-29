@@ -924,6 +924,8 @@ export const CSS_WECOM = String.raw`
       background: var(--wc-bg); color: var(--wc-text-2);
       border-radius: 6px; height: 32px; padding: 0 14px;
       font-size: 13px; cursor: pointer; font-family: var(--wc-font);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; box-sizing: border-box;
     }
     .im-empty-btn:hover { background: var(--wc-hover); }
 
