@@ -8875,6 +8875,114 @@ html.im-theme {
       (_a2 = chatHooks.toast) == null ? void 0 : _a2.call(chatHooks, newConfig.enabled ? "水贴过滤配置已保存并生效" : "水贴过滤已关闭");
     });
   }
+  const TICK_MS = 1e3;
+  const PAUSE_UNLESS_SCROLLED = 3 * 60 * 1e3;
+  const MAX_TRACKING_TIME = 6 * 60 * 1e3;
+  const FLUSH_INTERVAL = 15 * 1e3;
+  const MAX_TICK_GAP = 60 * 1e3;
+  let activeTopicId = null;
+  let timings = /* @__PURE__ */ new Map();
+  let totalTimings = /* @__PURE__ */ new Map();
+  let topicTime = 0;
+  let lastTick = Date.now();
+  let lastScrolled = Date.now();
+  let sinceFlush = 0;
+  let currentFlushPromise = null;
+  function currentVisiblePosts() {
+    const panel = document.querySelector(".im-chat-panel");
+    if (!panel || panel.dataset.empty === "1") return [];
+    return visibleTopicPosts(panel.querySelector(".im-chat-body"));
+  }
+  async function flushReadTracking() {
+    if (currentFlushPromise) {
+      try {
+        await currentFlushPromise;
+      } catch {
+      }
+    }
+    if (!timings.size || !activeTopicId) return;
+    if (!getCurrentUsername()) return;
+    const id = activeTopicId;
+    const batch = [];
+    for (const [n, ms] of timings) {
+      const total = totalTimings.get(n) || 0;
+      if (ms > 0 && total < MAX_TRACKING_TIME) {
+        totalTimings.set(n, total + ms);
+        batch.push([n, ms]);
+      }
+    }
+    timings = /* @__PURE__ */ new Map();
+    const time = topicTime;
+    topicTime = 0;
+    sinceFlush = 0;
+    if (!batch.length) return;
+    const params = batch.map(([n, ms]) => `timings[${n}]=${Math.round(ms)}`).join("&");
+    const body = `${params}&topic_time=${Math.round(time)}&topic_id=${id}`;
+    const doFetch = async () => {
+      try {
+        await fetch("/topics/timings", {
+          method: "POST",
+          credentials: "same-origin",
+          keepalive: true,
+          // pagehide 时也尽量发出
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "X-CSRF-Token": csrfToken(),
+            "X-Requested-With": "XMLHttpRequest",
+            "X-SILENCE-LOGGER": "true",
+            "Discourse-Background": "true"
+          },
+          body
+        });
+      } catch {
+      }
+    };
+    currentFlushPromise = doFetch();
+    try {
+      await currentFlushPromise;
+    } finally {
+      currentFlushPromise = null;
+    }
+  }
+  function tick() {
+    const now = Date.now();
+    const diff = now - lastTick;
+    lastTick = now;
+    if (diff <= 0) return;
+    if (chatState.topicId !== activeTopicId) {
+      flushReadTracking();
+      activeTopicId = chatState.topicId;
+      timings = /* @__PURE__ */ new Map();
+      totalTimings = /* @__PURE__ */ new Map();
+      topicTime = 0;
+      sinceFlush = 0;
+      lastScrolled = Date.now();
+    }
+    if (!activeTopicId) return;
+    if (now - lastScrolled > PAUSE_UNLESS_SCROLLED) return;
+    if (document.visibilityState !== "visible") return;
+    if (diff > MAX_TICK_GAP) return;
+    sinceFlush += diff;
+    if (sinceFlush > FLUSH_INTERVAL) flushReadTracking();
+    const posts = currentVisiblePosts();
+    if (!posts.length) return;
+    topicTime += diff;
+    for (const n of posts) timings.set(n, (timings.get(n) || 0) + diff);
+  }
+  function startReadTracking() {
+    document.addEventListener("scroll", (e) => {
+      if (e.target instanceof Element && e.target.closest(".im-chat-body")) {
+        lastScrolled = Date.now();
+      }
+    }, true);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") flushReadTracking();
+      lastTick = Date.now();
+    });
+    window.addEventListener("pagehide", () => flushReadTracking());
+    setInterval(tick, TICK_MS);
+  }
+  startReadTracking();
   function afterChatPaint(body) {
     var _a2, _b2;
     (_a2 = chatHooks.enhancePolls) == null ? void 0 : _a2.call(chatHooks, body);
@@ -9049,7 +9157,9 @@ html.im-theme {
       }
       if (e.target.closest(".im-chat-native")) {
         setViewMode("native");
-        location.reload();
+        flushReadTracking().finally(() => {
+          location.reload();
+        });
         return;
       }
       if (e.target.closest(".im-chat-scrolltop")) {
@@ -9684,6 +9794,7 @@ html.im-theme {
       syncListActive();
       return;
     }
+    await flushReadTracking();
     clearExpandedPosts();
     chatState.loading = true;
     chatState.topicId = topicId;
@@ -13544,7 +13655,9 @@ ${data.raw}
         e.preventDefault();
         e.stopPropagation();
         setViewMode("native");
-        location.assign(link.getAttribute("href") || "/categories");
+        flushReadTracking().finally(() => {
+          location.assign(link.getAttribute("href") || "/categories");
+        });
         return;
       }
       const href = link.getAttribute("href");
@@ -15547,102 +15660,6 @@ ${data.raw}
     }
   }
   Object.assign(chatHooks, { pushQuoteJump, clearQuoteJumpHistory, popQuoteJump: popAndReturnQuoteJump });
-  const TICK_MS = 1e3;
-  const PAUSE_UNLESS_SCROLLED = 3 * 60 * 1e3;
-  const MAX_TRACKING_TIME = 6 * 60 * 1e3;
-  const FLUSH_INTERVAL = 60 * 1e3;
-  const MAX_TICK_GAP = 60 * 1e3;
-  let activeTopicId = null;
-  let timings = /* @__PURE__ */ new Map();
-  let totalTimings = /* @__PURE__ */ new Map();
-  let topicTime = 0;
-  let lastTick = Date.now();
-  let lastScrolled = Date.now();
-  let sinceFlush = 0;
-  let flushing = false;
-  function currentVisiblePosts() {
-    const panel = document.querySelector(".im-chat-panel");
-    if (!panel || panel.dataset.empty === "1") return [];
-    return visibleTopicPosts(panel.querySelector(".im-chat-body"));
-  }
-  async function flush() {
-    if (flushing || !timings.size || !activeTopicId) return;
-    if (!getCurrentUsername()) return;
-    const id = activeTopicId;
-    const batch = [];
-    for (const [n, ms] of timings) {
-      const total = totalTimings.get(n) || 0;
-      if (ms > 0 && total < MAX_TRACKING_TIME) {
-        totalTimings.set(n, total + ms);
-        batch.push([n, ms]);
-      }
-    }
-    timings = /* @__PURE__ */ new Map();
-    const time = topicTime;
-    topicTime = 0;
-    sinceFlush = 0;
-    if (!batch.length) return;
-    flushing = true;
-    const params = batch.map(([n, ms]) => `timings[${n}]=${Math.round(ms)}`).join("&");
-    const body = `${params}&topic_time=${Math.round(time)}&topic_id=${id}`;
-    try {
-      await fetch("/topics/timings", {
-        method: "POST",
-        credentials: "same-origin",
-        keepalive: true,
-        // pagehide 时也尽量发出
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-CSRF-Token": csrfToken(),
-          "X-Requested-With": "XMLHttpRequest",
-          "X-SILENCE-LOGGER": "true",
-          "Discourse-Background": "true"
-        },
-        body
-      });
-    } catch {
-    } finally {
-      flushing = false;
-    }
-  }
-  function tick() {
-    const now = Date.now();
-    const diff = now - lastTick;
-    lastTick = now;
-    if (diff <= 0) return;
-    if (chatState.topicId !== activeTopicId) {
-      flush();
-      activeTopicId = chatState.topicId;
-      timings = /* @__PURE__ */ new Map();
-      totalTimings = /* @__PURE__ */ new Map();
-      topicTime = 0;
-      sinceFlush = 0;
-    }
-    if (!activeTopicId) return;
-    if (now - lastScrolled > PAUSE_UNLESS_SCROLLED) return;
-    if (document.visibilityState !== "visible") return;
-    if (diff > MAX_TICK_GAP) return;
-    sinceFlush += diff;
-    if (sinceFlush > FLUSH_INTERVAL) flush();
-    const posts = currentVisiblePosts();
-    if (!posts.length) return;
-    topicTime += diff;
-    for (const n of posts) timings.set(n, (timings.get(n) || 0) + diff);
-  }
-  function startReadTracking() {
-    document.addEventListener("scroll", (e) => {
-      if (e.target instanceof Element && e.target.closest(".im-chat-body")) {
-        lastScrolled = Date.now();
-      }
-    }, true);
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden") flush();
-      lastTick = Date.now();
-    });
-    window.addEventListener("pagehide", () => flush());
-    setInterval(tick, TICK_MS);
-  }
-  startReadTracking();
   const CHANNEL_PREFIX = "/discourse-ai/summaries/topic/";
   const FIRST_CHUNK_MS = 45e3;
   const STALL_MS = 9e4;

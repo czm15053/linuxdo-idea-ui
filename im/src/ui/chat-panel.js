@@ -23,6 +23,7 @@ import {
   isSpamPost, isPostExpanded, expandPost, clearExpandedPosts, onSpamFilterChange
 } from "../features/spam-filter.js";
 import { openSpamConfigDialog } from "./spam-config-dialog.js";
+import { flushReadTracking } from "../features/read-track.js";
 
 function afterChatPaint(body) {
   chatHooks.enhancePolls?.(body);
@@ -206,7 +207,9 @@ function bindChatPanelEvents(panel) {
     }
     if (e.target.closest(".im-chat-native")) {
       setViewMode("native");
-      location.reload();
+      flushReadTracking().finally(() => {
+        location.reload();
+      });
       return;
     }
     if (e.target.closest(".im-chat-scrolltop")) {
@@ -890,6 +893,7 @@ export async function loadTopic(topicId) {
     syncListActive();
     return;
   }
+  await flushReadTracking();
   clearExpandedPosts();
   chatState.loading = true;
   chatState.topicId = topicId;
