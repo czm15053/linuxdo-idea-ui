@@ -895,6 +895,32 @@ function renderChatHeaderAvatar() {
   }
 }
 
+/** 标签链接：/tag/{slug}/{id}
+ *  非 ASCII 标签的 slug 形如 `2234-tag`，裸 /tag/2234-tag 会 404，必须补上标签 ID（同 search-popup / router） */
+function tagChipHref(tag) {
+  const t = typeof tag === "string" ? { name: tag } : (tag || {});
+  const slug = t.slug || t.name || t.id || "";
+  if (!slug) return "";
+  const id = t.id == null ? "" : String(t.id);
+  // 优先用接口给的数字 ID；slug 本身是 `{id}-tag` 时从中还原
+  const numId = /^\d+$/.test(id) ? id : (/^(\d+)-tag$/.exec(slug) || [])[1] || "";
+  return `/tag/${encodeURIComponent(slug)}${numId ? `/${numId}` : ""}`;
+}
+/** 聊天头 chips：帖子所属板块 + 帖子标签（标签点击进入该标签的帖子列表） */
+function renderChatChips(cat, tags) {
+  const catChip = cat
+    ? `<a class="im-chat-chip im-chat-chip-cat" href="/c/${escapeHtml(cat.slug)}/${cat.id}"><span class="im-nav2-cat-dot" style="background:#${escapeHtml(cat.color || "8F959E")}"></span>${escapeHtml(cat.name)}</a>`
+    : "";
+  const tagChips = (Array.isArray(tags) ? tags : []).map((tag) => {
+    const t = typeof tag === "string" ? { name: tag } : (tag || {});
+    const name = t.name || t.slug || t.id || "";
+    const href = tagChipHref(tag);
+    if (!name || !href) return "";
+    return `<a class="im-chat-chip im-chat-chip-tag" href="${escapeHtml(href)}" title="查看标签「${escapeHtml(name)}」的帖子列表">${escapeHtml(name)}</a>`;
+  }).join("");
+  return catChip + tagChips;
+}
+
 export async function loadTopic(topicId) {
   if (!topicId || chatState.loading) return;
   if (chatState.topicId === topicId) {
@@ -1012,11 +1038,7 @@ export async function loadTopic(topicId) {
       if (chatState.topicId !== topicId) return;
       const cat = data.category_id ? categoryById(data.category_id) : null;
       const chipsBox = document.querySelector(".im-chat-chips");
-      if (chipsBox) {
-        chipsBox.innerHTML = cat
-          ? `<a class="im-chat-chip" href="/c/${escapeHtml(cat.slug)}/${cat.id}"><span class="im-nav2-cat-dot" style="background:#${escapeHtml(cat.color || "8F959E")}"></span>${escapeHtml(cat.name)}</a>`
-          : "";
-      }
+      if (chipsBox) chipsBox.innerHTML = renderChatChips(cat, data.tags);
       if (cat && sub) sub.textContent = `归属于 ${cat.name} · ${replyTotal} 条回复`;
     });
 
