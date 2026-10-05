@@ -11,16 +11,27 @@ import { avatarColor, avatarLetter, fullAvatarUrl } from "./shared/avatars.js";
 import { refreshRail, getUnreadNotificationCount } from "./rail.js";
 import { activeRailKey, setActiveRailKey } from "./list-sources.js";
 
-// Discourse core notification_type 数字（实测锚定：2 回复 5 赞 12 徽章 25 回应 801 Boost）
+// Discourse core notification_type 数字（实测锚定：2 回复 5 赞 12 徽章 25 回应 800 关注 801 关注发帖 802 关注回复 803 Boost）
 const TYPE_GLYPHS = {
-  1: "@", 14: "@", // 提及 / 群组提及
+  1: "@", 14: "@", 15: "@", // 提及 / 群组提及
   2: "↩", // 回复
   3: "❝", // 引用
   4: "✎", // 编辑
-  5: "♥", 18: "♥", // 赞 / 合并赞
+  5: "♥", 19: "♥", // 赞 / 合并赞
   6: "✉", 7: "✉", // 私信 / 邀请进私信
+  8: "✓", // 邀请接受
+  9: "📝", // 发帖
+  11: "🔗", // 链接
   12: "🏅", // 徽章
-  801: "⚡" // Boost（站点定制）
+  13: "👥", // 邀请进话题
+  17: "🔔", // 关注分类新帖
+  18: "⏰", // 话题提醒
+  24: "★", // 书签提醒
+  25: "☻", // 回应
+  800: "👤", // 关注
+  801: "📑", // 关注人发布新话题
+  802: "↩", // 关注人回复
+  803: "🚀" // Boost（站点定制）
 };
 
 // chip 与原生 user-menu tab 同一套；filter_by_types 逐字抄自原生请求
@@ -70,42 +81,118 @@ function who(n) {
   return acting || n.data?.display_username || n.data?.original_username || n.data?.username || "系统";
 }
 
-// 概述文案：按实测 notification_type 给动词；未知类型兜底"互动"
-function summaryOf(n) {
-  const name = who(n);
-  const t = n.data?.topic_title || "";
+function nameOf(n) {
+  const base = who(n);
   const count = Number(n.data?.count || 0);
-  const consolidated = /^\d+ 个回复$/.test(String(n.data?.display_username || ""));
-  switch (n.notification_type) {
+  if (count > 1) {
+    return `${base} 和其他 ${count - 1} 人`;
+  }
+  return base;
+}
+
+// 概述文案：按实测 notification_type 给动词；消除与顶栏用户名的重复
+function summaryOf(n) {
+  const rawTitle = n.data?.topic_title || "";
+  const t = rawTitle ? `《${rawTitle}》` : "";
+  const type = n.notification_type;
+
+  // 1. 关注插件（800: 关注, 801: 关注发新帖, 802: 关注回复）或无话题/无徽章的关注
+  if (type === 800 || (!n.topic_id && !n.data?.badge_id && type !== 12 && !rawTitle)) {
+    return "已开始关注您。";
+  }
+  if (type === 801) {
+    return t ? `发布了新话题 ${t}` : "发布了新话题";
+  }
+  if (type === 802) {
+    return t ? `回复了话题 ${t}` : "回复了关注的话题";
+  }
+
+  // 2. 徽章类
+  if (type === 12 || n.data?.badge_id || n.data?.badge_name) {
+    return `获得了「${n.data?.badge_name || "新徽章"}」徽章`;
+  }
+
+  // 3. 核心 notification_type
+  switch (type) {
     case 1:
+      return t ? `在 ${t} 中提到了你` : "提到了你";
     case 14:
-      return `${name} 在《${t}》中提到了你`;
-    case 2:
-      if (consolidated) return `${n.data.display_username} · 《${t}》`;
-      return `${name} 回复了《${t}》`;
+    case 15:
+      return t ? `在 ${t} 中提及了你的群组` : "提及了你的群组";
+    case 2: {
+      const isConsolidated = /^\d+ 个回复$/.test(String(n.data?.display_username || ""));
+      if (isConsolidated) return t ? `${n.data.display_username} · ${t}` : n.data.display_username;
+      return t ? `回复了 ${t}` : "回复了你的帖子";
+    }
     case 3:
-      return `${name} 在《${t}》中引用了你`;
+      return t ? `在 ${t} 中引用了你的发言` : "引用了你的发言";
     case 4:
-      return `${name} 编辑了《${t}》`;
+      return t ? `编辑了 ${t}` : "编辑了帖子";
     case 5:
-      return count > 1 ? `${name} 等 ${count} 人赞了《${t}》` : `${name} 赞了《${t}》`;
+    case 19:
+      return t ? `赞了 ${t}` : "赞了你的帖子";
     case 6:
     case 7:
-      return `${name}：${t}`;
-    case 12:
-      return `获得徽章「${n.data?.badge_name || ""}」`;
+      return t ? `私信：${rawTitle}` : "发来了私信";
+    case 8:
+      return "接受了你的邀请";
+    case 9:
+      return t ? `在 ${t} 发表了新内容` : "发表了新内容";
+    case 10:
+      return t ? `移动了帖子 ${t}` : "移动了帖子";
+    case 11:
+      return t ? `在 ${t} 链接了你的帖子` : "链接了你的帖子";
+    case 13:
+      return t ? `邀请你加入讨论 ${t}` : "邀请你加入讨论";
+    case 17:
+      return t ? `在关注分类中发布了 ${t}` : "关注分类有新动态";
+    case 18:
+      return t ? `话题提醒：${t}` : "话题定时提醒";
+    case 24:
+      return t ? `书签提醒：${t}` : "书签提醒";
     case 25:
-      return `${name} 回应了《${t}》`;
-    case 801:
-      return `${name} 与《${t}》互动`;
-    default:
-      return name !== "系统" ? `${name} 与你互动：《${t}》` : `《${t}》有新动态`;
+      return t ? `回应了 ${t}` : "回应了你的帖子";
+    case 26:
+      return t ? `投票已结束：${t}` : "投票已结束";
+    default: {
+      if (t && (type === 803 || /boost/i.test(String(n.data?.type || "")))) {
+        return `Boost 了 ${t}`;
+      }
+      if (t) return `与 ${t} 产生互动`;
+      return "有新动态";
+    }
   }
 }
 
 function glyphOf(n) {
-  if (n.notification_type === 25) return n.data?.reaction_icon === "heart" ? "♥" : "☻";
-  return TYPE_GLYPHS[n.notification_type] || "•";
+  const type = n.notification_type;
+  if (type === 25) {
+    return n.data?.reaction_icon === "heart" ? "♥" : "☻";
+  }
+  if (type === 800 || (!n.topic_id && !n.data?.badge_id && type !== 12 && !n.data?.topic_title)) {
+    return "👤";
+  }
+  if (type === 801) return "📑";
+  if (type === 802) return "↩";
+  if (type === 803 || /boost/i.test(String(n.data?.type || ""))) return "🚀";
+  return TYPE_GLYPHS[type] || "•";
+}
+
+function hrefOf(n) {
+  if (n.topic_id) {
+    return `/t/${n.slug || "topic"}/${n.topic_id}${n.post_number ? `/${n.post_number}` : ""}`;
+  }
+  if (n.data?.badge_id || n.notification_type === 12) {
+    const me = encodeURIComponent(getCurrentUsername() || "");
+    const bid = n.data?.badge_id;
+    return bid ? `/badges/${bid}/-?username=${me}` : `/u/${me}/badges`;
+  }
+  const u = n.data?.username || n.data?.original_username || n.acting_user_name || n.data?.display_username;
+  if (u && u !== "系统") {
+    return `/u/${encodeURIComponent(u)}`;
+  }
+  if (n.data?.url) return normalizePath(n.data.url);
+  return "";
 }
 
 /** 三种响应形状（notifications / 私信 topics / 书签）→ 统一行
@@ -142,8 +229,8 @@ function normalizeResponse(f, data) {
   }
   const rows = (data.notifications || []).map((n) => ({
     id: n.id,
-    href: n.topic_id ? `/t/${n.slug || "topic"}/${n.topic_id}/${n.post_number || 1}` : "",
-    name: who(n),
+    href: hrefOf(n),
+    name: nameOf(n),
     avatar: n.acting_user_avatar_template || n.avatar_template,
     time: n.created_at,
     msg: summaryOf(n),

@@ -35,6 +35,7 @@ import {
   onHighlightConfigChange
 } from "../features/highlight-keywords.js";
 import { openHighlightConfigDialog } from "./highlight-config-dialog.js";
+import { flushReadTracking } from "../features/read-track.js";
 
 let listNavOpen = (() => {
   try { return localStorage.getItem(LIST_NAV_KEY) === "1"; } catch { return false; }
@@ -234,7 +235,9 @@ function bindListPanelClicks(panel) {
       e.preventDefault();
       e.stopPropagation();
       setViewMode("native");
-      location.assign(link.getAttribute("href") || "/categories");
+      flushReadTracking().finally(() => {
+        location.assign(link.getAttribute("href") || "/categories");
+      });
       return;
     }
     const href = link.getAttribute("href");

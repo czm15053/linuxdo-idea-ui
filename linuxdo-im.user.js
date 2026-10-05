@@ -1000,6 +1000,8 @@
       background: var(--im-bg); color: var(--im-text-2);
       border-radius: 6px; height: 32px; padding: 0 14px;
       font-size: 13px; cursor: pointer; font-family: var(--im-font);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; box-sizing: border-box;
     }
     .im-empty-btn:hover { background: var(--im-hover); }
 
@@ -2643,6 +2645,8 @@
       background: var(--im-bg); color: var(--im-text-2);
       border-radius: 6px; height: 32px; padding: 0 14px;
       font-size: 13px; cursor: pointer; font-family: var(--im-font);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; box-sizing: border-box;
     }
     .im-empty-btn:hover { background: var(--im-hover); }
 
@@ -3115,6 +3119,8 @@ margin-top: 6px;
       background: var(--im-bg); color: var(--im-text-2);
       border-radius: 6px; height: 32px; padding: 0 14px;
       font-size: 13px; cursor: pointer; font-family: var(--im-font);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; box-sizing: border-box;
 }
 
 .im-empty-btn:hover {
@@ -4421,7 +4427,8 @@ color: #7AA3D6;
       position: absolute; right: -2px; bottom: -2px;
       width: 15px; height: 15px; border-radius: 50%;
       background: var(--im-bg); border: 1px solid var(--im-border);
-      font-size: 9px; line-height: 13px; text-align: center; color: var(--im-text-2);
+      font-size: 9px; display: inline-flex; align-items: center; justify-content: center;
+      line-height: 1; text-align: center; color: var(--im-text-2);
     }
     .__ROOT_CLASS__ .im-notif-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
     .__ROOT_CLASS__ .im-notif-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
@@ -6509,6 +6516,8 @@ color: #7AA3D6;
       background: var(--wc-bg); color: var(--wc-text-2);
       border-radius: 6px; height: 32px; padding: 0 14px;
       font-size: 13px; cursor: pointer; font-family: var(--wc-font);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; box-sizing: border-box;
     }
     .im-empty-btn:hover { background: var(--wc-hover); }
 
@@ -7071,6 +7080,10 @@ html.im-theme {
   const topicPostsMap = /* @__PURE__ */ new Map();
   function cfBlocked() {
     try {
+      const path = String(location.pathname || "");
+      if (path === "/challenge" || path.startsWith("/challenge/") || path.startsWith("/challenge")) {
+        return true;
+      }
       if (document.querySelector("#challenge-running, #cf-challenge-running, form#challenge-form")) {
         return true;
       }
@@ -8887,6 +8900,114 @@ html.im-theme {
       (_a2 = chatHooks.toast) == null ? void 0 : _a2.call(chatHooks, newConfig.enabled ? "水贴过滤配置已保存并生效" : "水贴过滤已关闭");
     });
   }
+  const TICK_MS = 1e3;
+  const PAUSE_UNLESS_SCROLLED = 3 * 60 * 1e3;
+  const MAX_TRACKING_TIME = 6 * 60 * 1e3;
+  const FLUSH_INTERVAL = 15 * 1e3;
+  const MAX_TICK_GAP = 60 * 1e3;
+  let activeTopicId = null;
+  let timings = /* @__PURE__ */ new Map();
+  let totalTimings = /* @__PURE__ */ new Map();
+  let topicTime = 0;
+  let lastTick = Date.now();
+  let lastScrolled = Date.now();
+  let sinceFlush = 0;
+  let currentFlushPromise = null;
+  function currentVisiblePosts() {
+    const panel = document.querySelector(".im-chat-panel");
+    if (!panel || panel.dataset.empty === "1") return [];
+    return visibleTopicPosts(panel.querySelector(".im-chat-body"));
+  }
+  async function flushReadTracking() {
+    if (currentFlushPromise) {
+      try {
+        await currentFlushPromise;
+      } catch {
+      }
+    }
+    if (!timings.size || !activeTopicId) return;
+    if (!getCurrentUsername()) return;
+    const id = activeTopicId;
+    const batch = [];
+    for (const [n, ms] of timings) {
+      const total = totalTimings.get(n) || 0;
+      if (ms > 0 && total < MAX_TRACKING_TIME) {
+        totalTimings.set(n, total + ms);
+        batch.push([n, ms]);
+      }
+    }
+    timings = /* @__PURE__ */ new Map();
+    const time = topicTime;
+    topicTime = 0;
+    sinceFlush = 0;
+    if (!batch.length) return;
+    const params = batch.map(([n, ms]) => `timings[${n}]=${Math.round(ms)}`).join("&");
+    const body = `${params}&topic_time=${Math.round(time)}&topic_id=${id}`;
+    const doFetch = async () => {
+      try {
+        await fetch("/topics/timings", {
+          method: "POST",
+          credentials: "same-origin",
+          keepalive: true,
+          // pagehide 时也尽量发出
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "X-CSRF-Token": csrfToken(),
+            "X-Requested-With": "XMLHttpRequest",
+            "X-SILENCE-LOGGER": "true",
+            "Discourse-Background": "true"
+          },
+          body
+        });
+      } catch {
+      }
+    };
+    currentFlushPromise = doFetch();
+    try {
+      await currentFlushPromise;
+    } finally {
+      currentFlushPromise = null;
+    }
+  }
+  function tick() {
+    const now = Date.now();
+    const diff = now - lastTick;
+    lastTick = now;
+    if (diff <= 0) return;
+    if (chatState.topicId !== activeTopicId) {
+      flushReadTracking();
+      activeTopicId = chatState.topicId;
+      timings = /* @__PURE__ */ new Map();
+      totalTimings = /* @__PURE__ */ new Map();
+      topicTime = 0;
+      sinceFlush = 0;
+      lastScrolled = Date.now();
+    }
+    if (!activeTopicId) return;
+    if (now - lastScrolled > PAUSE_UNLESS_SCROLLED) return;
+    if (document.visibilityState !== "visible") return;
+    if (diff > MAX_TICK_GAP) return;
+    sinceFlush += diff;
+    if (sinceFlush > FLUSH_INTERVAL) flushReadTracking();
+    const posts = currentVisiblePosts();
+    if (!posts.length) return;
+    topicTime += diff;
+    for (const n of posts) timings.set(n, (timings.get(n) || 0) + diff);
+  }
+  function startReadTracking() {
+    document.addEventListener("scroll", (e) => {
+      if (e.target instanceof Element && e.target.closest(".im-chat-body")) {
+        lastScrolled = Date.now();
+      }
+    }, true);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") flushReadTracking();
+      lastTick = Date.now();
+    });
+    window.addEventListener("pagehide", () => flushReadTracking());
+    setInterval(tick, TICK_MS);
+  }
+  startReadTracking();
   function afterChatPaint(body) {
     var _a2, _b2;
     (_a2 = chatHooks.enhancePolls) == null ? void 0 : _a2.call(chatHooks, body);
@@ -9034,6 +9155,13 @@ html.im-theme {
   function bindChatPanelEvents(panel) {
     panel.addEventListener("click", (e) => {
       var _a2, _b2, _c, _d;
+      const challengeBtn = e.target.closest(".im-chat-error .im-empty-btn");
+      if (challengeBtn && panel.contains(challengeBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        location.href = "https://linux.do/challenge";
+        return;
+      }
       if (e.target.closest(".im-chat-metrics")) {
         e.preventDefault();
         e.stopPropagation();
@@ -9061,7 +9189,9 @@ html.im-theme {
       }
       if (e.target.closest(".im-chat-native")) {
         setViewMode("native");
-        location.reload();
+        flushReadTracking().finally(() => {
+          location.reload();
+        });
         return;
       }
       if (e.target.closest(".im-chat-scrolltop")) {
@@ -9290,7 +9420,7 @@ html.im-theme {
     <div class="im-chat-error">
       ${ICONS.chat}
       <div>${escapeHtml(message)}</div>
-      <button class="im-empty-btn" onclick="location.reload()">打开原生页面</button>
+      <a class="im-empty-btn" href="https://linux.do/challenge" target="_self">前往验证</a>
     </div>`;
   }
   let inFlightNewPostsFetch = false;
@@ -9715,6 +9845,7 @@ html.im-theme {
       syncListActive();
       return;
     }
+    await flushReadTracking();
     clearExpandedPosts();
     chatState.loading = true;
     chatState.topicId = topicId;
@@ -11502,6 +11633,7 @@ ${data.raw}
   const TYPE_GLYPHS = {
     1: "@",
     14: "@",
+    15: "@",
     // 提及 / 群组提及
     2: "↩",
     // 回复
@@ -11510,14 +11642,36 @@ ${data.raw}
     4: "✎",
     // 编辑
     5: "♥",
-    18: "♥",
+    19: "♥",
     // 赞 / 合并赞
     6: "✉",
     7: "✉",
     // 私信 / 邀请进私信
+    8: "✓",
+    // 邀请接受
+    9: "📝",
+    // 发帖
+    11: "🔗",
+    // 链接
     12: "🏅",
     // 徽章
-    801: "⚡"
+    13: "👥",
+    // 邀请进话题
+    17: "🔔",
+    // 关注分类新帖
+    18: "⏰",
+    // 话题提醒
+    24: "★",
+    // 书签提醒
+    25: "☻",
+    // 回应
+    800: "👤",
+    // 关注
+    801: "📑",
+    // 关注人发布新话题
+    802: "↩",
+    // 关注人回复
+    803: "🚀"
     // Boost（站点定制）
   };
   const FILTERS = [
@@ -11559,42 +11713,112 @@ ${data.raw}
     const acting = String(n.acting_user_name || "").replace(/\([^)]*\)|（[^）]*）/g, "").trim();
     return acting || ((_a2 = n.data) == null ? void 0 : _a2.display_username) || ((_b2 = n.data) == null ? void 0 : _b2.original_username) || ((_c = n.data) == null ? void 0 : _c.username) || "系统";
   }
+  function nameOf(n) {
+    var _a2;
+    const base = who(n);
+    const count = Number(((_a2 = n.data) == null ? void 0 : _a2.count) || 0);
+    if (count > 1) {
+      return `${base} 和其他 ${count - 1} 人`;
+    }
+    return base;
+  }
   function summaryOf(n) {
-    var _a2, _b2, _c, _d;
-    const name = who(n);
-    const t = ((_a2 = n.data) == null ? void 0 : _a2.topic_title) || "";
-    const count = Number(((_b2 = n.data) == null ? void 0 : _b2.count) || 0);
-    const consolidated = /^\d+ 个回复$/.test(String(((_c = n.data) == null ? void 0 : _c.display_username) || ""));
-    switch (n.notification_type) {
+    var _a2, _b2, _c, _d, _e, _f, _g;
+    const rawTitle = ((_a2 = n.data) == null ? void 0 : _a2.topic_title) || "";
+    const t = rawTitle ? `《${rawTitle}》` : "";
+    const type = n.notification_type;
+    if (type === 800 || !n.topic_id && !((_b2 = n.data) == null ? void 0 : _b2.badge_id) && type !== 12 && !rawTitle) {
+      return "已开始关注您。";
+    }
+    if (type === 801) {
+      return t ? `发布了新话题 ${t}` : "发布了新话题";
+    }
+    if (type === 802) {
+      return t ? `回复了话题 ${t}` : "回复了关注的话题";
+    }
+    if (type === 12 || ((_c = n.data) == null ? void 0 : _c.badge_id) || ((_d = n.data) == null ? void 0 : _d.badge_name)) {
+      return `获得了「${((_e = n.data) == null ? void 0 : _e.badge_name) || "新徽章"}」徽章`;
+    }
+    switch (type) {
       case 1:
+        return t ? `在 ${t} 中提到了你` : "提到了你";
       case 14:
-        return `${name} 在《${t}》中提到了你`;
-      case 2:
-        if (consolidated) return `${n.data.display_username} · 《${t}》`;
-        return `${name} 回复了《${t}》`;
+      case 15:
+        return t ? `在 ${t} 中提及了你的群组` : "提及了你的群组";
+      case 2: {
+        const isConsolidated = /^\d+ 个回复$/.test(String(((_f = n.data) == null ? void 0 : _f.display_username) || ""));
+        if (isConsolidated) return t ? `${n.data.display_username} · ${t}` : n.data.display_username;
+        return t ? `回复了 ${t}` : "回复了你的帖子";
+      }
       case 3:
-        return `${name} 在《${t}》中引用了你`;
+        return t ? `在 ${t} 中引用了你的发言` : "引用了你的发言";
       case 4:
-        return `${name} 编辑了《${t}》`;
+        return t ? `编辑了 ${t}` : "编辑了帖子";
       case 5:
-        return count > 1 ? `${name} 等 ${count} 人赞了《${t}》` : `${name} 赞了《${t}》`;
+      case 19:
+        return t ? `赞了 ${t}` : "赞了你的帖子";
       case 6:
       case 7:
-        return `${name}：${t}`;
-      case 12:
-        return `获得徽章「${((_d = n.data) == null ? void 0 : _d.badge_name) || ""}」`;
+        return t ? `私信：${rawTitle}` : "发来了私信";
+      case 8:
+        return "接受了你的邀请";
+      case 9:
+        return t ? `在 ${t} 发表了新内容` : "发表了新内容";
+      case 10:
+        return t ? `移动了帖子 ${t}` : "移动了帖子";
+      case 11:
+        return t ? `在 ${t} 链接了你的帖子` : "链接了你的帖子";
+      case 13:
+        return t ? `邀请你加入讨论 ${t}` : "邀请你加入讨论";
+      case 17:
+        return t ? `在关注分类中发布了 ${t}` : "关注分类有新动态";
+      case 18:
+        return t ? `话题提醒：${t}` : "话题定时提醒";
+      case 24:
+        return t ? `书签提醒：${t}` : "书签提醒";
       case 25:
-        return `${name} 回应了《${t}》`;
-      case 801:
-        return `${name} 与《${t}》互动`;
-      default:
-        return name !== "系统" ? `${name} 与你互动：《${t}》` : `《${t}》有新动态`;
+        return t ? `回应了 ${t}` : "回应了你的帖子";
+      case 26:
+        return t ? `投票已结束：${t}` : "投票已结束";
+      default: {
+        if (t && (type === 803 || /boost/i.test(String(((_g = n.data) == null ? void 0 : _g.type) || "")))) {
+          return `Boost 了 ${t}`;
+        }
+        if (t) return `与 ${t} 产生互动`;
+        return "有新动态";
+      }
     }
   }
   function glyphOf(n) {
-    var _a2;
-    if (n.notification_type === 25) return ((_a2 = n.data) == null ? void 0 : _a2.reaction_icon) === "heart" ? "♥" : "☻";
-    return TYPE_GLYPHS[n.notification_type] || "•";
+    var _a2, _b2, _c, _d;
+    const type = n.notification_type;
+    if (type === 25) {
+      return ((_a2 = n.data) == null ? void 0 : _a2.reaction_icon) === "heart" ? "♥" : "☻";
+    }
+    if (type === 800 || !n.topic_id && !((_b2 = n.data) == null ? void 0 : _b2.badge_id) && type !== 12 && !((_c = n.data) == null ? void 0 : _c.topic_title)) {
+      return "👤";
+    }
+    if (type === 801) return "📑";
+    if (type === 802) return "↩";
+    if (type === 803 || /boost/i.test(String(((_d = n.data) == null ? void 0 : _d.type) || ""))) return "🚀";
+    return TYPE_GLYPHS[type] || "•";
+  }
+  function hrefOf(n) {
+    var _a2, _b2, _c, _d, _e, _f;
+    if (n.topic_id) {
+      return `/t/${n.slug || "topic"}/${n.topic_id}${n.post_number ? `/${n.post_number}` : ""}`;
+    }
+    if (((_a2 = n.data) == null ? void 0 : _a2.badge_id) || n.notification_type === 12) {
+      const me = encodeURIComponent(getCurrentUsername() || "");
+      const bid = (_b2 = n.data) == null ? void 0 : _b2.badge_id;
+      return bid ? `/badges/${bid}/-?username=${me}` : `/u/${me}/badges`;
+    }
+    const u = ((_c = n.data) == null ? void 0 : _c.username) || ((_d = n.data) == null ? void 0 : _d.original_username) || n.acting_user_name || ((_e = n.data) == null ? void 0 : _e.display_username);
+    if (u && u !== "系统") {
+      return `/u/${encodeURIComponent(u)}`;
+    }
+    if ((_f = n.data) == null ? void 0 : _f.url) return normalizePath(n.data.url);
+    return "";
   }
   function normalizeResponse(f, data) {
     if (f.kind === "pm") {
@@ -11631,8 +11855,8 @@ ${data.raw}
     }
     const rows = (data.notifications || []).map((n) => ({
       id: n.id,
-      href: n.topic_id ? `/t/${n.slug || "topic"}/${n.topic_id}/${n.post_number || 1}` : "",
-      name: who(n),
+      href: hrefOf(n),
+      name: nameOf(n),
       avatar: n.acting_user_avatar_template || n.avatar_template,
       time: n.created_at,
       msg: summaryOf(n),
@@ -13573,7 +13797,9 @@ ${data.raw}
         e.preventDefault();
         e.stopPropagation();
         setViewMode("native");
-        location.assign(link.getAttribute("href") || "/categories");
+        flushReadTracking().finally(() => {
+          location.assign(link.getAttribute("href") || "/categories");
+        });
         return;
       }
       const href = link.getAttribute("href");
@@ -15576,102 +15802,6 @@ ${data.raw}
     }
   }
   Object.assign(chatHooks, { pushQuoteJump, clearQuoteJumpHistory, popQuoteJump: popAndReturnQuoteJump });
-  const TICK_MS = 1e3;
-  const PAUSE_UNLESS_SCROLLED = 3 * 60 * 1e3;
-  const MAX_TRACKING_TIME = 6 * 60 * 1e3;
-  const FLUSH_INTERVAL = 60 * 1e3;
-  const MAX_TICK_GAP = 60 * 1e3;
-  let activeTopicId = null;
-  let timings = /* @__PURE__ */ new Map();
-  let totalTimings = /* @__PURE__ */ new Map();
-  let topicTime = 0;
-  let lastTick = Date.now();
-  let lastScrolled = Date.now();
-  let sinceFlush = 0;
-  let flushing = false;
-  function currentVisiblePosts() {
-    const panel = document.querySelector(".im-chat-panel");
-    if (!panel || panel.dataset.empty === "1") return [];
-    return visibleTopicPosts(panel.querySelector(".im-chat-body"));
-  }
-  async function flush() {
-    if (flushing || !timings.size || !activeTopicId) return;
-    if (!getCurrentUsername()) return;
-    const id = activeTopicId;
-    const batch = [];
-    for (const [n, ms] of timings) {
-      const total = totalTimings.get(n) || 0;
-      if (ms > 0 && total < MAX_TRACKING_TIME) {
-        totalTimings.set(n, total + ms);
-        batch.push([n, ms]);
-      }
-    }
-    timings = /* @__PURE__ */ new Map();
-    const time = topicTime;
-    topicTime = 0;
-    sinceFlush = 0;
-    if (!batch.length) return;
-    flushing = true;
-    const params = batch.map(([n, ms]) => `timings[${n}]=${Math.round(ms)}`).join("&");
-    const body = `${params}&topic_time=${Math.round(time)}&topic_id=${id}`;
-    try {
-      await fetch("/topics/timings", {
-        method: "POST",
-        credentials: "same-origin",
-        keepalive: true,
-        // pagehide 时也尽量发出
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "X-CSRF-Token": csrfToken(),
-          "X-Requested-With": "XMLHttpRequest",
-          "X-SILENCE-LOGGER": "true",
-          "Discourse-Background": "true"
-        },
-        body
-      });
-    } catch {
-    } finally {
-      flushing = false;
-    }
-  }
-  function tick() {
-    const now = Date.now();
-    const diff = now - lastTick;
-    lastTick = now;
-    if (diff <= 0) return;
-    if (chatState.topicId !== activeTopicId) {
-      flush();
-      activeTopicId = chatState.topicId;
-      timings = /* @__PURE__ */ new Map();
-      totalTimings = /* @__PURE__ */ new Map();
-      topicTime = 0;
-      sinceFlush = 0;
-    }
-    if (!activeTopicId) return;
-    if (now - lastScrolled > PAUSE_UNLESS_SCROLLED) return;
-    if (document.visibilityState !== "visible") return;
-    if (diff > MAX_TICK_GAP) return;
-    sinceFlush += diff;
-    if (sinceFlush > FLUSH_INTERVAL) flush();
-    const posts = currentVisiblePosts();
-    if (!posts.length) return;
-    topicTime += diff;
-    for (const n of posts) timings.set(n, (timings.get(n) || 0) + diff);
-  }
-  function startReadTracking() {
-    document.addEventListener("scroll", (e) => {
-      if (e.target instanceof Element && e.target.closest(".im-chat-body")) {
-        lastScrolled = Date.now();
-      }
-    }, true);
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden") flush();
-      lastTick = Date.now();
-    });
-    window.addEventListener("pagehide", () => flush());
-    setInterval(tick, TICK_MS);
-  }
-  startReadTracking();
   const CHANNEL_PREFIX = "/discourse-ai/summaries/topic/";
   const FIRST_CHUNK_MS = 45e3;
   const STALL_MS = 9e4;
@@ -16269,22 +16399,61 @@ ${data.raw}
     if (!wrap) return;
     bindSearchTrigger(wrap, { placeholder: "搜索或提问 (⌘K)" });
   }
+  const FAB_ID = "im-mode-fab-btn";
   function ensureModeFab() {
-    let fab = document.querySelector(".im-mode-fab");
-    if (getViewMode() !== "native") {
+    let fab = document.getElementById(FAB_ID) || document.querySelector(".im-mode-fab");
+    if (getViewMode() !== "native" || cfBlocked()) {
       fab == null ? void 0 : fab.remove();
       return;
     }
-    if (fab) return;
-    fab = document.createElement("button");
-    fab.className = "im-mode-fab";
-    fab.title = "切回 IM 视图";
-    fab.innerHTML = ICONS.chat;
-    fab.addEventListener("click", () => {
-      setViewMode("im");
-      location.reload();
-    });
-    document.body.appendChild(fab);
+    if (fab && fab.isConnected) return;
+    const container = document.body || document.documentElement;
+    if (!container) return;
+    if (!fab) {
+      fab = document.createElement("button");
+      fab.id = FAB_ID;
+      fab.className = "im-mode-fab";
+      fab.type = "button";
+      fab.title = "切回 IM 视图";
+      fab.setAttribute("aria-label", "切回 IM 视图");
+      fab.style.cssText = `
+      position: fixed !important;
+      right: 24px !important;
+      bottom: 24px !important;
+      z-index: 999999 !important;
+      width: 46px !important;
+      height: 46px !important;
+      border-radius: 50% !important;
+      background: #3370ff !important;
+      color: #ffffff !important;
+      border: none !important;
+      outline: none !important;
+      cursor: pointer !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-shadow: 0 4px 16px rgba(51, 112, 255, 0.45) !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease !important;
+    `;
+      fab.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;pointer-events:none;">${ICONS.chat}</span>`;
+      fab.addEventListener("mouseenter", () => {
+        fab.style.transform = "scale(1.08)";
+        fab.style.boxShadow = "0 6px 20px rgba(51, 112, 255, 0.55)";
+      });
+      fab.addEventListener("mouseleave", () => {
+        fab.style.transform = "scale(1)";
+        fab.style.boxShadow = "0 4px 16px rgba(51, 112, 255, 0.45)";
+      });
+      fab.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setViewMode("im");
+        location.reload();
+      });
+    }
+    container.appendChild(fab);
   }
   function ensureStripDingtalk() {
     var _a2;
@@ -17036,7 +17205,7 @@ ${data.raw}
       }
     }
     function removePanels() {
-      var _a2, _b2, _c, _d, _e, _f, _g;
+      var _a2, _b2, _c, _d, _e, _f, _g, _h, _i;
       (_a2 = document.querySelector(".im-list-panel")) == null ? void 0 : _a2.remove();
       (_b2 = document.querySelector(".im-chat-panel")) == null ? void 0 : _b2.remove();
       (_c = document.querySelector(".im-rail")) == null ? void 0 : _c.remove();
@@ -17044,6 +17213,10 @@ ${data.raw}
       (_e = document.querySelector(".im-list-resizer")) == null ? void 0 : _e.remove();
       (_f = document.querySelector(".im-strip")) == null ? void 0 : _f.remove();
       (_g = document.querySelector(".im-titlebar")) == null ? void 0 : _g.remove();
+      if (getViewMode() !== "native") {
+        (_h = document.querySelector(".im-mode-fab, #im-mode-fab-btn")) == null ? void 0 : _h.remove();
+      }
+      (_i = document.getElementById(STYLE_ID)) == null ? void 0 : _i.remove();
     }
     let scheduled = false;
     let lastPath = null;
@@ -17194,6 +17367,8 @@ ${data.raw}
           applyColorMode();
           restyleSplash();
           makeFavicon();
+        } else if (getViewMode() === "native" && !otherThemeActive()) {
+          ensureModeFab();
         }
       }
       if (!window.__imFaviconVisibilityBound) {

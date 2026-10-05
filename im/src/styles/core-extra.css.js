@@ -209,6 +209,8 @@ margin-top: 6px;
       background: var(--im-bg); color: var(--im-text-2);
       border-radius: 6px; height: 32px; padding: 0 14px;
       font-size: 13px; cursor: pointer; font-family: var(--im-font);
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; box-sizing: border-box;
 }
 
 .im-empty-btn:hover {
@@ -1515,7 +1517,8 @@ color: #7AA3D6;
       position: absolute; right: -2px; bottom: -2px;
       width: 15px; height: 15px; border-radius: 50%;
       background: var(--im-bg); border: 1px solid var(--im-border);
-      font-size: 9px; line-height: 13px; text-align: center; color: var(--im-text-2);
+      font-size: 9px; display: inline-flex; align-items: center; justify-content: center;
+      line-height: 1; text-align: center; color: var(--im-text-2);
     }
     .__ROOT_CLASS__ .im-notif-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
     .__ROOT_CLASS__ .im-notif-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }

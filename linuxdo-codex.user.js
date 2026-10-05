@@ -174,6 +174,10 @@
   /** 整页被 Cloudflare challenge / 拦截时返回 true；命中后脚本停用回原皮，挑战通过后自动恢复 */
   function cfBlocked() {
     try {
+      const path = String(location.pathname || "");
+      if (path === "/challenge" || path.startsWith("/challenge/") || path.startsWith("/challenge")) {
+        return true;
+      }
       if (document.querySelector("#challenge-running, #cf-challenge-running, form#challenge-form")) {
         return true;
       }

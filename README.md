@@ -21,6 +21,9 @@
 ### 📕 小红书专区
 - [小红书专属：IM 三合一外观（`xhs-im.user.js`）](#小红书专属im-三合一外观xhs-imuserjs)
 
+### ✨ 通用工具
+- [文章一键伪装（`doc-select.user.js` · 全网站通用）](#文章一键伪装doc-selectuserjs--全网站通用)
+
 ### 📌 其他
 - [License](#license)
 - [友链](#友链)
@@ -87,6 +90,44 @@ https://github.com/czm15053/linuxdo-idea-ui/raw/main/xhs/xhs-im.user.js
 ```
 
 完整功能说明与开发构建详见 [`xhs/README.md`](./xhs/README.md)。
+
+## 文章一键伪装（`doc-select.user.js` · 全网站通用）
+
+**不限站点的整页文档化脚本**（视觉灵感来自 [linuxdo-lark-ui](https://github.com/starwingcc/linuxdo-lark-ui) 与 [discourse-word-ui](https://github.com/gbxhq/discourse-word-ui)）：按 **⌘+'（mac）/ Ctrl+'（windows）** 圈选页面正文元素，悬停高亮、点击选中，选择**飞书文档**或 **Word 文档**——整页立刻切换为对应文档视图：**选中元素成为居中的白色文档页**（文档排版全套：字体/标题/链接/代码/引用/表格），**其余元素全部隐藏**，飞书为浅灰工作区、Word 为灰色工作区。纯视觉、不改数据，**刷新即还原**。
+
+### 安装
+
+1. 安装 [Tampermonkey](https://www.tampermonkey.net/)（或 Violentmonkey）
+2. 打开 [`doc-select.user.js`](./doc-select.user.js)，点 **Raw** 后安装
+3. 在任意网页按 **⌘/Ctrl+'**，点击正文区域，再选飞书或 Word
+
+Raw 直链（仓库公开后可用）：
+
+```text
+https://github.com/czm15053/linuxdo-idea-ui/raw/main/doc-select.user.js
+```
+
+### 功能
+
+- **快捷键圈选正文**：⌘/Ctrl+' 进入/退出，进入后顶部显示操作提示，悬停显示蓝色高亮框与元素提示，点击从内联元素自动上溯到块级容器；Esc 取消
+- **整页文档视图**：选中元素化为居中白色文档页（max-width 900px），页内标题/段落/链接/代码/引用/列表/表格/图片全套文档排版
+- **飞书文档**（token 对齐 linuxdo-lark-ui）：#F5F6F7 工作区 + 8px 圆角文档卡片（980px）+ 飞书字体与 #3370FF 蓝色链接 + **64px 顶栏**（「飞书云文档」品牌 + 面包屑与真实字数 + 假图标组/头像组/分享按钮）+ **250px 左侧导航栏**（新建/我的文档/共享空间/知识库/收藏/回收站 + 最近浏览，内容编排）+ **右侧大纲面板**
+- **Word 文档**（token 对齐 discourse-word-ui）：#E5E5E5 画布 + 980px 直角纸张页（`0 1px 4px` 轻投影）+ Segoe UI/Calibri + **蓝色标题栏**（#185ABD，快速访问 ▣↶↷ + W 标 + 自动保存开关 + 居中"标题.docx - Word"）+ **功能区**（文件/开始/插入/绘图/设计/布局/引用/审阅/视图/帮助 tab，Georgia 蓝色字符图标命令组）+ **250px 导航窗格**（编号章节 + 真实大纲）
+- **正文大纲**（真实功能）：从圈选正文自动提取 h1-h4 生成大纲，两个主题下都可点击跳转到对应标题；链接色、纸张宽度、投影均与参考项目一致
+- **一键返回原网页**：飞书顶栏「←」、Word 标题栏/功能区「↺ 还原」随时整页还原（皮肤、隐藏、外框全部撤销）
+- **正文排版对齐**：Word 16px/1.72、飞书 16px/1.8（参考项目 .cooked 实测值），纸张内边距 Word 48/66/74、飞书 40/48；飞书为白画布全通栏文档页、一级标题飞书蓝、bullet 蓝点、灰底 callout 引用块（按真实飞书云文档截图校准）
+- **Word 暗色模式**（对齐 dw-dark-mode）：标题栏 ◐ 或功能区「暗黑」按钮切换，画布 #1E2023、纸张 #25272B、全套 token 同步，偏好记忆
+
+### 截图
+
+| | |
+| --- | --- |
+| 圈选模式（⌘/Ctrl+'） | ![圈选模式](./snapshot/doc-select-pick.png) |
+| 主题选择 | ![主题选择](./snapshot/doc-select-picker.png) |
+| 飞书云文档视图 | ![飞书云文档视图](./snapshot/doc-select-feishu.png) |
+| Word 文档视图 | ![Word 文档视图](./snapshot/doc-select-word.png) |
+- **其余元素全部隐藏**（头部/侧边栏/页脚/悬浮层）；主题卡片保持打开，点另一个主题即时切换，点当前主题**整页还原**
+- 输入框、编辑器内按快捷键不触发；严格 CSP 站点（GitHub 等）照常生效
 
 ## 脚本二：JetBrains / Darcula 外观（`linuxdo-idea.user.js`）
 

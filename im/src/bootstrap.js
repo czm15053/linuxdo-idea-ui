@@ -148,6 +148,10 @@ export function run() {
     document.querySelector(".im-list-resizer")?.remove();
     document.querySelector(".im-strip")?.remove();
     document.querySelector(".im-titlebar")?.remove();
+    if (getViewMode() !== "native") {
+      document.querySelector(".im-mode-fab, #im-mode-fab-btn")?.remove();
+    }
+    document.getElementById(STYLE_ID)?.remove();
   }
 
 
@@ -338,6 +342,8 @@ export function run() {
         applyColorMode();
         restyleSplash();
         makeFavicon(); // document-start 尽早换标，减少未聚焦标签仍显示原 icon
+      } else if (getViewMode() === "native" && !otherThemeActive()) {
+        ensureModeFab();
       }
     }
 
