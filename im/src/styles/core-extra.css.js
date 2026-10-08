@@ -151,6 +151,11 @@ margin: 0 0 8px; padding: 4px 10px;
 font-size: 11px; color: var(--im-text-3);
       margin-top: 4px; display: flex; gap: 8px; align-items: center;
 }
+.im-msg-device {
+      display: inline-flex; align-items: center; gap: 3px;
+      color: var(--im-text-3); opacity: 0.8;
+}
+.im-msg-device svg { width: 12px; height: 12px; }
 
 .im-msg-tools {
 position: absolute; top: -14px; right: 0; z-index: 5;

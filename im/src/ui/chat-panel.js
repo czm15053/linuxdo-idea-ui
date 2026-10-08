@@ -8,6 +8,7 @@ import { api, trackViewHeaders } from "../bridge/api.js";
 import { pg } from "../bridge/page.js";
 import { getCurrentUsername, isMyPost, normalizeUsername } from "../bridge/user.js";
 import { topicIdFromPath, postNumberFromPath, navigateInApp } from "../bridge/router.js";
+import { getEmberOwner, getTopicModel, findLoadedPost } from "../bridge/discourse.js";
 import { setViewMode } from "../state/view-state.js";
 import { loadCategories, categoryById } from "../bridge/categories.js";
 import { skinHooks } from "../skins/hooks.js";
@@ -724,6 +725,9 @@ function bubbleHtml(post, myName) {
     </span>`;
 
   const boostBar = chatHooks.renderBoosts?.(post) || "";
+  const deviceHtml = post.via_device
+    ? `<span class="im-msg-device" title="${escapeHtml(post.via_device)}">${ICONS.phone}<span>${escapeHtml(post.via_device)}</span></span>`
+    : "";
   return `
     <div class="im-msg im-msg-${side}" data-post-number="${post.post_number}"${post.id ? ` data-post-id="${post.id}"` : ""}${me ? ' data-mine="1"' : ""} data-username="${escapeHtml(post.username || "")}" data-bookmarked="${post.bookmarked ? "1" : "0"}">
       <span class="im-msg-avatar" style="background:${avatarBg}">${avatar}</span>
@@ -737,6 +741,7 @@ function bubbleHtml(post, myName) {
         <span class="im-msg-meta">
           <span>#${post.post_number}</span>
           <span>${escapeHtml(formatTime(post.created_at))}</span>
+          ${deviceHtml}
           ${badgeHtml}
         </span>
         <div class="im-msg-tools">
@@ -1024,6 +1029,7 @@ export async function loadTopic(topicId) {
       body.innerHTML = renderBubbles(posts, getCurrentUsername()) ||
         `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
       afterChatPaint(body);
+      patchDevicesFromEmber(body);
       if (scrollToPost) {
         requestAnimationFrame(() => scrollChatToPost(body, scrollToPost, true));
       } else {
@@ -1062,6 +1068,7 @@ async function loadOlderPosts() {
       body.insertAdjacentHTML("afterbegin", renderBubbles(posts, getCurrentUsername()));
       body.scrollTop += body.scrollHeight - prevHeight;
       afterChatPaint(body);
+      patchDevicesFromEmber(body);
     }
   } catch { /* 保留现状 */ } finally {
     chatState.loading = false;
@@ -1101,6 +1108,7 @@ async function loadNewerPosts() {
       // 去掉可能的底部状态占位后追加
       body.insertAdjacentHTML("beforeend", renderBubbles(posts, getCurrentUsername()));
       chatHooks.enhancePolls?.(body);
+      patchDevicesFromEmber(body);
     }
   } catch { /* 保留现状 */ } finally {
     chatState.loading = false;
@@ -1138,6 +1146,7 @@ export async function jumpToFloorRemote(postNumber, highlight = true) {
       body.innerHTML = renderBubbles(posts, getCurrentUsername()) ||
         `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
       afterChatPaint(body);
+      patchDevicesFromEmber(body);
       requestAnimationFrame(() => scrollChatToPost(body, landed, highlight));
       rememberTopicPost(topicId, landed);
     }
@@ -1225,6 +1234,44 @@ function submitFloorPicker() {
   });
 }
 
+/** 从 Ember Store 提取设备信息，回填到 topicPostsMap 和已渲染气泡
+ *  iOS 客户端字段：via_ios_app (bool) / ios_device_name (string)
+ */
+function patchDevicesFromEmber(body) {
+  if (!body || !chatState.topicId) return;
+  const owner = getEmberOwner();
+  if (!owner) return;
+  const topic = getTopicModel(owner);
+  if (!topic) return;
+  try {
+    const stream = topic.get?.("postStream") || topic.postStream;
+    const posts = stream?.get?.("posts") || stream?.posts || [];
+    if (!posts.length) return;
+    for (const p of posts) {
+      const postNumber = Number(p?.get?.("post_number") ?? p?.post_number);
+      if (!postNumber) continue;
+      const viaIos = p?.get?.("via_ios_app") ?? p?.via_ios_app;
+      const deviceName = p?.get?.("ios_device_name") ?? p?.ios_device_name;
+      if (!viaIos || !deviceName) continue;
+      // 回填 topicPostsMap
+      const cached = topicPostsMap.get(postNumber);
+      if (cached) cached.via_device = deviceName;
+      // 给已渲染气泡补 DOM
+      const msg = body.querySelector(`.im-msg[data-post-number="${postNumber}"]`);
+      if (!msg) continue;
+      const meta = msg.querySelector(".im-msg-meta");
+      if (!meta || meta.querySelector(".im-msg-device")) continue;
+      const badge = meta.querySelector(".im-like-badge");
+      const span = document.createElement("span");
+      span.className = "im-msg-device";
+      span.title = deviceName;
+      span.innerHTML = `${ICONS.phone}<span>${escapeHtml(deviceName)}</span>`;
+      if (badge) meta.insertBefore(span, badge);
+      else meta.appendChild(span);
+    }
+  } catch { /* ignore */ }
+}
+
 /** 发帖后：原生隐藏流里出现的新帖 → 追加为气泡 */
 export function syncNewPostsFromDom() {
   if (!chatState.topicId) return;
@@ -1256,6 +1303,22 @@ export function syncNewPostsFromDom() {
       article.classList.contains("current-user-post") ||
       !!article.querySelector(".current-user-post") ||
       normalizeUsername(username) === normalizeUsername(myName);
+    // 从 Ember Store 取设备信息（iOS 客户端：via_ios_app + ios_device_name）
+    let viaDevice = "";
+    try {
+      const owner = getEmberOwner();
+      if (owner) {
+        const topic = getTopicModel(owner);
+        if (topic) {
+          const ep = findLoadedPost(topic, number);
+          if (ep) {
+            const viaIos = ep.get?.("via_ios_app") ?? ep.via_ios_app;
+            const devName = ep.get?.("ios_device_name") ?? ep.ios_device_name;
+            if (viaIos && devName) viaDevice = devName;
+          }
+        }
+      }
+    } catch { /* ignore */ }
     const post = {
       post_number: number,
       username,
@@ -1263,7 +1326,8 @@ export function syncNewPostsFromDom() {
       avatar_template: avatarImg ? avatarImg.src.replace(/\/\d+\//, "/{size}/") : "",
       cooked: cooked.innerHTML,
       created_at: (timeEl && (timeEl.getAttribute("title") || timeEl.dataset.time)) || new Date().toISOString(),
-      yours: mine
+      yours: mine,
+      via_device: viaDevice
     };
     topicPostsMap.set(post.post_number, post);
     body.insertAdjacentHTML("beforeend", renderPostOrSpam(post, myName));

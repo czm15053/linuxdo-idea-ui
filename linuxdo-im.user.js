@@ -3060,6 +3060,11 @@ margin: 0 0 8px; padding: 4px 10px;
 font-size: 11px; color: var(--im-text-3);
       margin-top: 4px; display: flex; gap: 8px; align-items: center;
 }
+.im-msg-device {
+      display: inline-flex; align-items: center; gap: 3px;
+      color: var(--im-text-3); opacity: 0.8;
+}
+.im-msg-device svg { width: 12px; height: 12px; }
 
 .im-msg-tools {
 position: absolute; top: -14px; right: 0; z-index: 5;
@@ -9649,6 +9654,7 @@ html.im-theme {
       <span class="im-like-count">${likeCount > 0 ? likeCount : ""}</span>
     </span>`;
     const boostBar = ((_b2 = chatHooks.renderBoosts) == null ? void 0 : _b2.call(chatHooks, post)) || "";
+    const deviceHtml = post.via_device ? `<span class="im-msg-device" title="${escapeHtml(post.via_device)}">${ICONS.phone}<span>${escapeHtml(post.via_device)}</span></span>` : "";
     return `
     <div class="im-msg im-msg-${side}" data-post-number="${post.post_number}"${post.id ? ` data-post-id="${post.id}"` : ""}${me ? ' data-mine="1"' : ""} data-username="${escapeHtml(post.username || "")}" data-bookmarked="${post.bookmarked ? "1" : "0"}">
       <span class="im-msg-avatar" style="background:${avatarBg}">${avatar}</span>
@@ -9662,6 +9668,7 @@ html.im-theme {
         <span class="im-msg-meta">
           <span>#${post.post_number}</span>
           <span>${escapeHtml(formatTime(post.created_at))}</span>
+          ${deviceHtml}
           ${badgeHtml}
         </span>
         <div class="im-msg-tools">
@@ -9918,6 +9925,7 @@ html.im-theme {
       if (body) {
         body.innerHTML = renderBubbles(posts, getCurrentUsername()) || `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
         afterChatPaint(body);
+        patchDevicesFromEmber(body);
         if (scrollToPost) {
           requestAnimationFrame(() => scrollChatToPost(body, scrollToPost, true));
         } else {
@@ -9955,6 +9963,7 @@ html.im-theme {
         body.insertAdjacentHTML("afterbegin", renderBubbles(posts, getCurrentUsername()));
         body.scrollTop += body.scrollHeight - prevHeight;
         afterChatPaint(body);
+        patchDevicesFromEmber(body);
       }
     } catch {
     } finally {
@@ -9994,6 +10003,7 @@ html.im-theme {
       if (body && posts.length) {
         body.insertAdjacentHTML("beforeend", renderBubbles(posts, getCurrentUsername()));
         (_a2 = chatHooks.enhancePolls) == null ? void 0 : _a2.call(chatHooks, body);
+        patchDevicesFromEmber(body);
       }
     } catch {
     } finally {
@@ -10028,6 +10038,7 @@ html.im-theme {
         const landed = posts.some((p) => p.post_number === n) ? n : posts[posts.length - 1].post_number;
         body.innerHTML = renderBubbles(posts, getCurrentUsername()) || `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
         afterChatPaint(body);
+        patchDevicesFromEmber(body);
         requestAnimationFrame(() => scrollChatToPost(body, landed, highlight));
         rememberTopicPost(topicId, landed);
       }
@@ -10117,8 +10128,42 @@ html.im-theme {
       if (!ok) (_a2 = chatHooks.toast) == null ? void 0 : _a2.call(chatHooks, `没有找到 #${n} 楼`);
     });
   }
+  function patchDevicesFromEmber(body) {
+    var _a2, _b2, _c, _d, _e;
+    if (!body || !chatState.topicId) return;
+    const owner = getEmberOwner();
+    if (!owner) return;
+    const topic = getTopicModel(owner);
+    if (!topic) return;
+    try {
+      const stream = ((_a2 = topic.get) == null ? void 0 : _a2.call(topic, "postStream")) || topic.postStream;
+      const posts = ((_b2 = stream == null ? void 0 : stream.get) == null ? void 0 : _b2.call(stream, "posts")) || (stream == null ? void 0 : stream.posts) || [];
+      if (!posts.length) return;
+      for (const p of posts) {
+        const postNumber = Number(((_c = p == null ? void 0 : p.get) == null ? void 0 : _c.call(p, "post_number")) ?? (p == null ? void 0 : p.post_number));
+        if (!postNumber) continue;
+        const viaIos = ((_d = p == null ? void 0 : p.get) == null ? void 0 : _d.call(p, "via_ios_app")) ?? (p == null ? void 0 : p.via_ios_app);
+        const deviceName = ((_e = p == null ? void 0 : p.get) == null ? void 0 : _e.call(p, "ios_device_name")) ?? (p == null ? void 0 : p.ios_device_name);
+        if (!viaIos || !deviceName) continue;
+        const cached = topicPostsMap.get(postNumber);
+        if (cached) cached.via_device = deviceName;
+        const msg = body.querySelector(`.im-msg[data-post-number="${postNumber}"]`);
+        if (!msg) continue;
+        const meta = msg.querySelector(".im-msg-meta");
+        if (!meta || meta.querySelector(".im-msg-device")) continue;
+        const badge = meta.querySelector(".im-like-badge");
+        const span = document.createElement("span");
+        span.className = "im-msg-device";
+        span.title = deviceName;
+        span.innerHTML = `${ICONS.phone}<span>${escapeHtml(deviceName)}</span>`;
+        if (badge) meta.insertBefore(span, badge);
+        else meta.appendChild(span);
+      }
+    } catch {
+    }
+  }
   function syncNewPostsFromDom() {
-    var _a2, _b2, _c;
+    var _a2, _b2, _c, _d, _e;
     if (!chatState.topicId) return;
     const articles = document.querySelectorAll(".post-stream article.topic-post");
     if (!articles.length) return;
@@ -10142,6 +10187,22 @@ html.im-theme {
       const avatarImg = article.querySelector(".topic-avatar img, .post-avatar img");
       const timeEl = article.querySelector(".post-info .relative-date, .relative-date");
       const mine = article.classList.contains("current-user-post") || !!article.querySelector(".current-user-post") || normalizeUsername(username) === normalizeUsername(myName);
+      let viaDevice = "";
+      try {
+        const owner = getEmberOwner();
+        if (owner) {
+          const topic = getTopicModel(owner);
+          if (topic) {
+            const ep = findLoadedPost(topic, number);
+            if (ep) {
+              const viaIos = ((_c = ep.get) == null ? void 0 : _c.call(ep, "via_ios_app")) ?? ep.via_ios_app;
+              const devName = ((_d = ep.get) == null ? void 0 : _d.call(ep, "ios_device_name")) ?? ep.ios_device_name;
+              if (viaIos && devName) viaDevice = devName;
+            }
+          }
+        }
+      } catch {
+      }
       const post = {
         post_number: number,
         username,
@@ -10149,7 +10210,8 @@ html.im-theme {
         avatar_template: avatarImg ? avatarImg.src.replace(/\/\d+\//, "/{size}/") : "",
         cooked: cooked.innerHTML,
         created_at: timeEl && (timeEl.getAttribute("title") || timeEl.dataset.time) || (/* @__PURE__ */ new Date()).toISOString(),
-        yours: mine
+        yours: mine,
+        via_device: viaDevice
       };
       topicPostsMap.set(post.post_number, post);
       body.insertAdjacentHTML("beforeend", renderPostOrSpam(post, myName));
@@ -10157,7 +10219,7 @@ html.im-theme {
       appended = true;
     }
     if (appended) {
-      (_c = chatHooks.enhancePolls) == null ? void 0 : _c.call(chatHooks, body);
+      (_e = chatHooks.enhancePolls) == null ? void 0 : _e.call(chatHooks, body);
       body.scrollTop = body.scrollHeight;
     }
   }
