@@ -4048,6 +4048,76 @@ display: inline-flex; align-items: center; gap: 3px;
 width: 8px; height: 8px; border-radius: 2px; margin: 0;
 }
 
+/* 列表顶部搜索框：三皮肤通用，独占一行置于 chips 之上 */
+.__ROOT_CLASS__ .im-list-header {
+flex-wrap: wrap;
+      height: auto;
+      min-height: 44px;
+}
+
+.im-list-search {
+order: -1;
+      flex: 1 0 100%;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      margin: 8px 0 2px;
+      padding: 0 10px;
+      background: #E7EAF1;
+      border-radius: 15px;
+      color: var(--im-text-2);
+}
+
+.im-list-search svg {
+width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+}
+
+.im-list-search input {
+flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      font-size: 13px;
+      color: var(--im-text);
+      font-family: var(--im-font);
+}
+
+/* 宽 rail（飞书/企微）「发现」上方的搜索框 */
+.im-rail-search {
+display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      margin: 4px 10px 8px;
+      padding: 0 10px;
+      background: #E7EAF1;
+      border-radius: 15px;
+      color: var(--im-text-2);
+      flex-shrink: 0;
+}
+
+.im-rail-search svg {
+width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+}
+
+.im-rail-search input {
+flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      font-size: 13px;
+      color: var(--im-text);
+      font-family: var(--im-font);
+}
+
 .im-list-chips {
 display: inline-flex; align-items: center; gap: 2px;
       background: #E7EAF1; border-radius: 14px; padding: 2px;
@@ -4404,6 +4474,14 @@ background: #252B38;
 }
 
 .__ROOT_CLASS__.__DARK_CLASS__ .im-list-chips {
+background: #1E222A;
+}
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-list-search {
+background: #1E222A;
+}
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-rail-search {
 background: #1E222A;
 }
 
@@ -6730,6 +6808,7 @@ html.im-theme .im-me-btn { cursor: pointer; }
     if (/\/user\/profile\/[^/]+\/[a-f0-9]{24}/i.test(p)) return "note";
     if (p.startsWith("/user/profile")) return "profile";
     if (p === "/following" || p.startsWith("/following")) return "following";
+    if (/\/(?:search_result|discovery\/item)\/[a-f0-9]{24}/i.test(p)) return "note";
     if (p === "/search_result" || p.startsWith("/search_result")) return "search";
     if (p.startsWith("/channel")) return "channel";
     return "explore";
@@ -8729,121 +8808,6 @@ ${pin.text || "无"}
     bar.innerHTML = html;
     return bar;
   }
-  function railIcon(key) {
-    return getSkinIcon(key);
-  }
-  function itemHtml(it, active) {
-    const icon = railIcon(it.icon);
-    return `<div class="im-rail-item${active ? " active" : ""}" data-key="${it.key}" data-path="${it.path || ""}" role="button" tabindex="0">
-    ${icon}<span>${it.label}</span>
-    ${it.dot ? '<i class="im-rail-dot"></i>' : ""}
-    <span class="im-rail-badge" hidden></span>
-  </div>`;
-  }
-  function activeKey() {
-    return "explore";
-  }
-  function ensureRail() {
-    var _a, _b, _c, _d;
-    const skin = SKINS[currentSkinId()];
-    let rail = document.querySelector(".im-rail");
-    if (!rail) {
-      rail = document.createElement("nav");
-      rail.className = "im-rail";
-      rail.setAttribute("aria-label", "IM 导航");
-      (document.body || document.documentElement).appendChild(rail);
-    }
-    rail.classList.toggle("im-rail-compact", !!skin.compact);
-    const src = nativeAvatarSrc();
-    const uname = nativeDisplayName();
-    const org = getOrgName();
-    const on = activeKey();
-    const meHeadAva = personAvatarHtml("im-rail-me-ava", uname, src, "me", true);
-    const head = skin.groups ? `<div class="im-rail-head">
-        <span class="im-rail-me">${meHeadAva}<span class="im-rail-avatar-badge" hidden></span></span>
-        <span class="im-rail-user-name">${escapeHtml(uname)}</span>
-      </div>` : currentSkinId() === "feishu" ? `<div class="im-rail-head">
-        <div class="im-rail-avatar-wrap">
-          <div class="im-rail-avatar">${meHeadAva}</div>
-          <span class="im-rail-avatar-badge" hidden></span>
-        </div>
-      </div>` : `<div class="im-rail-head">
-        <div class="im-rail-org-chip" title="点击修改团队名称">
-          <span class="im-rail-org-logo">${escapeHtml(skin.letter)}</span>
-          <span class="im-rail-org-name">${escapeHtml(org)}</span>
-        </div>
-      </div>`;
-    const real = skin.real.map((it) => itemHtml(it, it.key === on)).join("");
-    const deco = skin.deco.map((it) => itemHtml(it, false)).join("");
-    const groups = skin.groups ? `<div class="im-rail-groups"><div class="im-rail-group-title"><span>分组</span></div>
-        ${[["unread", "未读", "mail"], ["at", "@我", "at"], ["single", "单聊", "user"], ["group", "群聊", "msg"], ["marked", "标记", "bookmark"]].map(
-      ([k, l, i]) => `<div class="im-rail-item" data-group="${k}" role="button">${ICONS[i] || ICONS.msg}<span>${l}</span></div>`
-    ).join("")}
-      </div>` : "";
-    const bottomActions = skin.actions === "rail-bottom" ? `<div class="im-rail-item im-dark-toggle" role="button">${isDarkEffective() ? ICONS.sun : ICONS.moon}<span>${isDarkEffective() ? "浅色" : "深色"}</span></div>
-       <div class="im-rail-item xim-skin-btn" role="button">${ICONS.swap}<span>切换外观</span></div>` : "";
-    rail.innerHTML = `${head}<div class="im-rail-items">${real}${deco}${groups}</div>
-    <div class="im-rail-bottom">${bottomActions}<div class="im-rail-item" data-key="more" role="button">${ICONS.more}<span>更多</span></div></div>`;
-    (_a = rail.querySelector(".im-rail-org-chip")) == null ? void 0 : _a.addEventListener("click", () => {
-      const v = window.prompt("团队名称", getOrgName());
-      if (v == null) return;
-      setOrgName(v.trim() || skin.orgName);
-      ensureRail();
-    });
-    (_b = rail.querySelector(".im-rail-me")) == null ? void 0 : _b.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const p = nativeProfilePath();
-      navigateX(p);
-    });
-    (_c = rail.querySelector(".im-rail-avatar")) == null ? void 0 : _c.addEventListener("click", () => {
-      const p = nativeProfilePath();
-      navigateX(p);
-    });
-    (_d = rail.querySelector(".im-dark-toggle")) == null ? void 0 : _d.addEventListener("click", () => toggleColorTheme());
-    if (rail.dataset.bound !== "1") {
-      rail.dataset.bound = "1";
-      rail.addEventListener("click", (e) => {
-        const btn = e.target.closest(".im-rail-item");
-        if (!btn || !rail.contains(btn)) return;
-        if (btn.classList.contains("im-dark-toggle") || btn.classList.contains("xim-skin-btn")) return;
-        const path = btn.dataset.path;
-        if (path) {
-          navigateX(path);
-          return;
-        }
-        toast("装饰按钮");
-      });
-    }
-    refreshMe(rail);
-    return rail;
-  }
-  function highlightRail() {
-    const on = activeKey();
-    document.querySelectorAll(".im-rail-item[data-key]").forEach((b) => {
-      b.classList.toggle("active", b.dataset.key === on);
-    });
-  }
-  function refreshMe(rail) {
-    rail = rail || document.querySelector(".im-rail");
-    if (!rail) return;
-    const uname = nativeDisplayName();
-    const src = nativeAvatarSrc();
-    const headWrap = rail.querySelector(".im-rail-avatar, .im-rail-me");
-    if (headWrap) {
-      const next = personAvatarHtml("im-rail-me-ava", uname, src, "me", true);
-      if (headWrap.dataset.ximMeSig !== next) {
-        headWrap.dataset.ximMeSig = next;
-        const old = headWrap.querySelector(".im-rail-me-ava");
-        if (old) {
-          const temp = document.createElement("div");
-          temp.innerHTML = next;
-          if (temp.firstElementChild) old.replaceWith(temp.firstElementChild);
-        } else {
-          headWrap.insertAdjacentHTML("afterbegin", next);
-        }
-      }
-    }
-  }
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
@@ -9400,7 +9364,7 @@ ${pin.text || "无"}
     return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   }
   function statusInfo() {
-    const m = location.pathname.match(/(?:explore|status)\/([a-f0-9]+)/i);
+    const m = location.pathname.match(/(?:explore|status|search_result|discovery\/item)\/([a-f0-9]+)/i);
     return m ? { id: m[1] } : null;
   }
   function profileCardHtml(prof) {
@@ -9690,7 +9654,7 @@ ${pin.text || "无"}
     (_b = panel.querySelector(".im-channel-bar")) == null ? void 0 : _b.remove();
     syncComposerPlaceholder(panel);
     if (routeKind() === "search") {
-      const q = new URLSearchParams(location.search).get("q") || "";
+      const q = new URLSearchParams(location.search).get("keyword") || new URLSearchParams(location.search).get("q") || "";
       const name2 = `搜索: “${q}”`;
       if (ava) {
         ava.style.display = "";
@@ -10800,7 +10764,7 @@ ${pin.text || "无"}
   const searchSeen = /* @__PURE__ */ new Set();
   async function syncSearchFeed(body) {
     var _a;
-    const query = new URLSearchParams(location.search).get("q") || "";
+    const query = new URLSearchParams(location.search).get("keyword") || new URLSearchParams(location.search).get("q") || "";
     const f = new URLSearchParams(location.search).get("f") || "";
     if (!query) {
       body.innerHTML = `<div class="im-chat-empty"><p>请输入关键词进行搜索</p></div>`;
@@ -10924,7 +10888,7 @@ ${pin.text || "无"}
     syncComposerPlaceholder();
   }
   function closeDetailTo() {
-    const onNoteUrl = /\/explore\/[a-f0-9]+/.test(location.pathname);
+    const onNoteUrl = /\/(?:explore|search_result|discovery\/item)\/[a-f0-9]+/.test(location.pathname);
     closeDetailDrawer();
     if (onNoteUrl) {
       if (detailPrevUrl) {
@@ -11102,6 +11066,134 @@ ${pin.text || "无"}
     if (feed) feed.innerHTML = "";
     syncChatMessages();
   }
+  function railIcon(key) {
+    return getSkinIcon(key);
+  }
+  function itemHtml(it, active) {
+    const icon = railIcon(it.icon);
+    return `<div class="im-rail-item${active ? " active" : ""}" data-key="${it.key}" data-path="${it.path || ""}" role="button" tabindex="0">
+    ${icon}<span>${it.label}</span>
+    ${it.dot ? '<i class="im-rail-dot"></i>' : ""}
+    <span class="im-rail-badge" hidden></span>
+  </div>`;
+  }
+  function activeKey() {
+    return "explore";
+  }
+  function ensureRail() {
+    var _a, _b, _c, _d;
+    const skin = SKINS[currentSkinId()];
+    let rail = document.querySelector(".im-rail");
+    if (!rail) {
+      rail = document.createElement("nav");
+      rail.className = "im-rail";
+      rail.setAttribute("aria-label", "IM 导航");
+      (document.body || document.documentElement).appendChild(rail);
+    }
+    rail.classList.toggle("im-rail-compact", !!skin.compact);
+    const src = nativeAvatarSrc();
+    const uname = nativeDisplayName();
+    const org = getOrgName();
+    const on = activeKey();
+    const meHeadAva = personAvatarHtml("im-rail-me-ava", uname, src, "me", true);
+    const head = skin.groups ? `<div class="im-rail-head">
+        <span class="im-rail-me">${meHeadAva}<span class="im-rail-avatar-badge" hidden></span></span>
+        <span class="im-rail-user-name">${escapeHtml(uname)}</span>
+      </div>` : currentSkinId() === "feishu" ? `<div class="im-rail-head">
+        <div class="im-rail-avatar-wrap">
+          <div class="im-rail-avatar">${meHeadAva}</div>
+          <span class="im-rail-avatar-badge" hidden></span>
+        </div>
+      </div>` : `<div class="im-rail-head">
+        <div class="im-rail-org-chip" title="点击修改团队名称">
+          <span class="im-rail-org-logo">${escapeHtml(skin.letter)}</span>
+          <span class="im-rail-org-name">${escapeHtml(org)}</span>
+        </div>
+      </div>`;
+    const real = skin.real.map((it) => itemHtml(it, it.key === on)).join("");
+    const deco = skin.deco.map((it) => itemHtml(it, false)).join("");
+    const kw = routeKind() === "search" ? new URLSearchParams(location.search).get("keyword") || new URLSearchParams(location.search).get("q") || "" : "";
+    const search = skin.compact ? "" : `<div class="im-rail-search">${ICONS.search}<input class="im-rail-search-input" type="text" placeholder="搜索笔记" value="${escapeHtml(kw)}" /></div>`;
+    const groups = skin.groups ? `<div class="im-rail-groups"><div class="im-rail-group-title"><span>分组</span></div>
+        ${[["unread", "未读", "mail"], ["at", "@我", "at"], ["single", "单聊", "user"], ["group", "群聊", "msg"], ["marked", "标记", "bookmark"]].map(
+      ([k, l, i]) => `<div class="im-rail-item" data-group="${k}" role="button">${ICONS[i] || ICONS.msg}<span>${l}</span></div>`
+    ).join("")}
+      </div>` : "";
+    const bottomActions = skin.actions === "rail-bottom" ? `<div class="im-rail-item im-dark-toggle" role="button">${isDarkEffective() ? ICONS.sun : ICONS.moon}<span>${isDarkEffective() ? "浅色" : "深色"}</span></div>
+       <div class="im-rail-item xim-skin-btn" role="button">${ICONS.swap}<span>切换外观</span></div>` : "";
+    rail.innerHTML = `${head}${search}<div class="im-rail-items">${real}${deco}${groups}</div>
+    <div class="im-rail-bottom">${bottomActions}<div class="im-rail-item" data-key="more" role="button">${ICONS.more}<span>更多</span></div></div>`;
+    (_a = rail.querySelector(".im-rail-org-chip")) == null ? void 0 : _a.addEventListener("click", () => {
+      const v = window.prompt("团队名称", getOrgName());
+      if (v == null) return;
+      setOrgName(v.trim() || skin.orgName);
+      ensureRail();
+    });
+    (_b = rail.querySelector(".im-rail-me")) == null ? void 0 : _b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const p = nativeProfilePath();
+      navigateX(p);
+    });
+    (_c = rail.querySelector(".im-rail-avatar")) == null ? void 0 : _c.addEventListener("click", () => {
+      const p = nativeProfilePath();
+      navigateX(p);
+    });
+    (_d = rail.querySelector(".im-dark-toggle")) == null ? void 0 : _d.addEventListener("click", () => toggleColorTheme());
+    if (rail.dataset.bound !== "1") {
+      rail.dataset.bound = "1";
+      rail.addEventListener("keydown", (e) => {
+        const input = e.target.closest(".im-rail-search-input");
+        if (!input || e.key !== "Enter") return;
+        const v = input.value.trim();
+        if (!v) return;
+        e.preventDefault();
+        input.blur();
+        setChatId("search");
+        navigateX(`/search_result?keyword=${encodeURIComponent(v)}`);
+        resetChatMessages();
+      });
+      rail.addEventListener("click", (e) => {
+        const btn = e.target.closest(".im-rail-item");
+        if (!btn || !rail.contains(btn)) return;
+        if (btn.classList.contains("im-dark-toggle") || btn.classList.contains("xim-skin-btn")) return;
+        const path = btn.dataset.path;
+        if (path) {
+          navigateX(path);
+          return;
+        }
+        toast("装饰按钮");
+      });
+    }
+    refreshMe(rail);
+    return rail;
+  }
+  function highlightRail() {
+    const on = activeKey();
+    document.querySelectorAll(".im-rail-item[data-key]").forEach((b) => {
+      b.classList.toggle("active", b.dataset.key === on);
+    });
+  }
+  function refreshMe(rail) {
+    rail = rail || document.querySelector(".im-rail");
+    if (!rail) return;
+    const uname = nativeDisplayName();
+    const src = nativeAvatarSrc();
+    const headWrap = rail.querySelector(".im-rail-avatar, .im-rail-me");
+    if (headWrap) {
+      const next = personAvatarHtml("im-rail-me-ava", uname, src, "me", true);
+      if (headWrap.dataset.ximMeSig !== next) {
+        headWrap.dataset.ximMeSig = next;
+        const old = headWrap.querySelector(".im-rail-me-ava");
+        if (old) {
+          const temp = document.createElement("div");
+          temp.innerHTML = next;
+          if (temp.firstElementChild) old.replaceWith(temp.firstElementChild);
+        } else {
+          headWrap.insertAdjacentHTML("afterbegin", next);
+        }
+      }
+    }
+  }
   let filterUnread = false;
   function ensureListPanel() {
     let panel = document.querySelector(".im-list-panel");
@@ -11110,24 +11202,28 @@ ${pin.text || "无"}
       panel.className = "im-list-panel";
       (document.body || document.documentElement).appendChild(panel);
       panel.addEventListener("click", onListClick);
+      panel.addEventListener("keydown", onListKeydown);
     }
     renderListHeader(panel);
     renderListBody(panel);
     return panel;
   }
   function renderListHeader(panel) {
-    SKINS[currentSkinId()];
+    const skin = SKINS[currentSkinId()];
     let head = panel.querySelector(".im-list-header");
     if (!head) {
       head = document.createElement("div");
       head.className = "im-list-header";
       panel.appendChild(head);
     }
+    const kw = skin.compact && routeKind() === "search" ? new URLSearchParams(location.search).get("keyword") || new URLSearchParams(location.search).get("q") || "" : "";
+    const searchHtml = skin.compact ? `<div class="im-list-search">${ICONS.search}<input class="im-list-search-input" type="text" placeholder="搜索笔记" value="${escapeHtml(kw)}" /></div>` : "";
     const titleOrChips = `<div class="im-list-chips">
       <button type="button" class="im-chip${filterUnread ? "" : " active"}" data-chip="all">消息</button>
       <button type="button" class="im-chip${filterUnread ? " active" : ""}" data-chip="unread">未读</button>
     </div>`;
     const html = `
+    ${searchHtml}
     ${titleOrChips}
     <div class="im-list-actions">
       <button type="button" class="im-icon-btn im-mask-anon-toggle${isMaskAvatar() && isMaskTitle() ? " is-on" : ""}" data-act="mask-anon" title="匿名模式：一键开关头像与标题伪装">${ICONS.disguise}</button>
@@ -11225,6 +11321,17 @@ ${pin.text || "无"}
       </span>
     </span>
   </a>`;
+  }
+  function onListKeydown(e) {
+    const input = e.target.closest(".im-list-search-input");
+    if (!input || e.key !== "Enter") return;
+    const kw = input.value.trim();
+    if (!kw) return;
+    e.preventDefault();
+    input.blur();
+    setChatId("search");
+    navigateX(`/search_result?keyword=${encodeURIComponent(kw)}`);
+    resetChatMessages();
   }
   function onListClick(e) {
     var _a;

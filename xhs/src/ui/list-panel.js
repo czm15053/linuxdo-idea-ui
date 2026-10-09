@@ -20,6 +20,7 @@ export function ensureListPanel() {
     panel.className = "im-list-panel";
     (document.body || document.documentElement).appendChild(panel);
     panel.addEventListener("click", onListClick);
+    panel.addEventListener("keydown", onListKeydown);
   }
   renderListHeader(panel);
   renderListBody(panel);
@@ -34,11 +35,19 @@ function renderListHeader(panel) {
     head.className = "im-list-header";
     panel.appendChild(head);
   }
+  // 窄 rail（钉钉 56px）放不下搜索框，留在列表头部；宽 rail 的搜索框在 rail「发现」上方
+  const kw = skin.compact && routeKind() === "search"
+    ? (new URLSearchParams(location.search).get("keyword") || new URLSearchParams(location.search).get("q") || "")
+    : "";
+  const searchHtml = skin.compact
+    ? `<div class="im-list-search">${ICONS.search}<input class="im-list-search-input" type="text" placeholder="搜索笔记" value="${escapeHtml(kw)}" /></div>`
+    : "";
   const titleOrChips = `<div class="im-list-chips">
       <button type="button" class="im-chip${filterUnread ? "" : " active"}" data-chip="all">消息</button>
       <button type="button" class="im-chip${filterUnread ? " active" : ""}" data-chip="unread">未读</button>
     </div>`;
   const html = `
+    ${searchHtml}
     ${titleOrChips}
     <div class="im-list-actions">
       <button type="button" class="im-icon-btn im-mask-anon-toggle${isMaskAvatar() && isMaskTitle() ? " is-on" : ""}" data-act="mask-anon" title="匿名模式：一键开关头像与标题伪装">${ICONS.disguise}</button>
@@ -47,7 +56,6 @@ function renderListHeader(panel) {
       <button type="button" class="im-icon-btn im-hide-media-toggle${isHideMedia() ? " is-on" : ""}" data-act="hide-media" title="${isHideMedia() ? "显示媒体（图片/视频）" : "隐藏媒体：纯文本摸鱼模式"}">${isHideMedia() ? ICONS.imageOff : ICONS.image}</button>
       <button type="button" class="im-icon-btn xim-skin-btn" title="切换外观">${ICONS.swap}</button>
     </div>`;
-  void skin;
   if (head.dataset.sig === html) return;
   head.dataset.sig = html;
   head.innerHTML = html;
@@ -147,6 +155,19 @@ function convRow(it) {
       </span>
     </span>
   </a>`;
+}
+
+/** 搜索框回车：跳原生 /search_result（Vue Router 真实加载搜索页，被动捕获接口结果接管中栏渲染） */
+function onListKeydown(e) {
+  const input = e.target.closest(".im-list-search-input");
+  if (!input || e.key !== "Enter") return;
+  const kw = input.value.trim();
+  if (!kw) return;
+  e.preventDefault();
+  input.blur();
+  setChatId("search");
+  navigateX(`/search_result?keyword=${encodeURIComponent(kw)}`);
+  resetChatMessages();
 }
 
 function onListClick(e) {

@@ -1,10 +1,13 @@
 import { ICONS, getSkinIcon } from "../config/icons.js";
 import { currentSkinId, SKINS, getOrgName, setOrgName } from "../config/skins.js";
 import { nativeAvatarSrc, nativeProfilePath, nativeDisplayName, navigateX } from "../bridge/x-dom.js";
+import { routeKind } from "../bridge/router.js";
 import { isDarkEffective, toggleColorTheme } from "../theme/color-mode.js";
+import { setChatId } from "../state/prefs.js";
 import { escapeHtml } from "../utils/html.js";
 import { toast } from "./toast.js";
 import { personAvatarHtml } from "./avatars.js";
+import { resetChatMessages } from "./chat-panel.js";
 
 function railIcon(key) {
   return getSkinIcon(key);
@@ -60,6 +63,13 @@ export function ensureRail() {
 
   const real = skin.real.map((it) => itemHtml(it, it.key === on)).join("");
   const deco = skin.deco.map((it) => itemHtml(it, false)).join("");
+  // 宽 rail（飞书/企微）：搜索框放在「发现」上方；窄 rail（钉钉 56px）放不下，留在列表头部
+  const kw = routeKind() === "search"
+    ? (new URLSearchParams(location.search).get("keyword") || new URLSearchParams(location.search).get("q") || "")
+    : "";
+  const search = skin.compact
+    ? ""
+    : `<div class="im-rail-search">${ICONS.search}<input class="im-rail-search-input" type="text" placeholder="搜索笔记" value="${escapeHtml(kw)}" /></div>`;
   const groups = skin.groups
     ? `<div class="im-rail-groups"><div class="im-rail-group-title"><span>分组</span></div>
         ${[["unread","未读","mail"],["at","@我","at"],["single","单聊","user"],["group","群聊","msg"],["marked","标记","bookmark"]].map(([k,l,i]) =>
@@ -73,7 +83,7 @@ export function ensureRail() {
        <div class="im-rail-item xim-skin-btn" role="button">${ICONS.swap}<span>切换外观</span></div>`
     : "";
 
-  rail.innerHTML = `${head}<div class="im-rail-items">${real}${deco}${groups}</div>
+  rail.innerHTML = `${head}${search}<div class="im-rail-items">${real}${deco}${groups}</div>
     <div class="im-rail-bottom">${bottomActions}<div class="im-rail-item" data-key="more" role="button">${ICONS.more}<span>更多</span></div></div>`;
 
   rail.querySelector(".im-rail-org-chip")?.addEventListener("click", () => {
@@ -95,6 +105,17 @@ export function ensureRail() {
   rail.querySelector(".im-dark-toggle")?.addEventListener("click", () => toggleColorTheme());
   if (rail.dataset.bound !== "1") {
     rail.dataset.bound = "1";
+    rail.addEventListener("keydown", (e) => {
+      const input = e.target.closest(".im-rail-search-input");
+      if (!input || e.key !== "Enter") return;
+      const v = input.value.trim();
+      if (!v) return;
+      e.preventDefault();
+      input.blur();
+      setChatId("search");
+      navigateX(`/search_result?keyword=${encodeURIComponent(v)}`);
+      resetChatMessages();
+    });
     rail.addEventListener("click", (e) => {
       const btn = e.target.closest(".im-rail-item");
       if (!btn || !rail.contains(btn)) return;

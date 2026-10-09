@@ -52,6 +52,76 @@ display: inline-flex; align-items: center; gap: 3px;
 width: 8px; height: 8px; border-radius: 2px; margin: 0;
 }
 
+/* 列表顶部搜索框：三皮肤通用，独占一行置于 chips 之上 */
+.__ROOT_CLASS__ .im-list-header {
+flex-wrap: wrap;
+      height: auto;
+      min-height: 44px;
+}
+
+.im-list-search {
+order: -1;
+      flex: 1 0 100%;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      margin: 8px 0 2px;
+      padding: 0 10px;
+      background: #E7EAF1;
+      border-radius: 15px;
+      color: var(--im-text-2);
+}
+
+.im-list-search svg {
+width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+}
+
+.im-list-search input {
+flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      font-size: 13px;
+      color: var(--im-text);
+      font-family: var(--im-font);
+}
+
+/* 宽 rail（飞书/企微）「发现」上方的搜索框 */
+.im-rail-search {
+display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      margin: 4px 10px 8px;
+      padding: 0 10px;
+      background: #E7EAF1;
+      border-radius: 15px;
+      color: var(--im-text-2);
+      flex-shrink: 0;
+}
+
+.im-rail-search svg {
+width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+}
+
+.im-rail-search input {
+flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      font-size: 13px;
+      color: var(--im-text);
+      font-family: var(--im-font);
+}
+
 .im-list-chips {
 display: inline-flex; align-items: center; gap: 2px;
       background: #E7EAF1; border-radius: 14px; padding: 2px;
@@ -408,6 +478,14 @@ background: #252B38;
 }
 
 .__ROOT_CLASS__.__DARK_CLASS__ .im-list-chips {
+background: #1E222A;
+}
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-list-search {
+background: #1E222A;
+}
+
+.__ROOT_CLASS__.__DARK_CLASS__ .im-rail-search {
 background: #1E222A;
 }
 

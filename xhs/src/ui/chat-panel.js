@@ -46,7 +46,7 @@ function fmtXTime(dt, fallback) {
 }
 
 function statusInfo() {
-  const m = location.pathname.match(/(?:explore|status)\/([a-f0-9]+)/i);
+  const m = location.pathname.match(/(?:explore|status|search_result|discovery\/item)\/([a-f0-9]+)/i);
   return m ? { id: m[1] } : null;
 }
 
@@ -357,7 +357,7 @@ function syncChatHeader(panel) {
   syncComposerPlaceholder(panel);
 
   if (routeKind() === "search") {
-    const q = new URLSearchParams(location.search).get("q") || "";
+    const q = new URLSearchParams(location.search).get("keyword") || new URLSearchParams(location.search).get("q") || "";
     const name = `搜索: “${q}”`;
     if (ava) {
       ava.style.display = "";
@@ -1571,7 +1571,7 @@ let searchRenderedKey = "";
 const searchSeen = new Set();
 
 async function syncSearchFeed(body) {
-  const query = new URLSearchParams(location.search).get("q") || "";
+  const query = new URLSearchParams(location.search).get("keyword") || new URLSearchParams(location.search).get("q") || "";
   const f = new URLSearchParams(location.search).get("f") || "";
   if (!query) {
     body.innerHTML = `<div class="im-chat-empty"><p>请输入关键词进行搜索</p></div>`;
@@ -1715,7 +1715,7 @@ function setDetailOpen(open) {
 
 /** 关闭详情面板：收起抽屉；若原生 overlay 被静默唤起（评论 DOM），用 popstate 关掉并还原 URL */
 function closeDetailTo() {
-  const onNoteUrl = /\/explore\/[a-f0-9]+/.test(location.pathname);
+  const onNoteUrl = /\/(?:explore|search_result|discovery\/item)\/[a-f0-9]+/.test(location.pathname);
   closeDetailDrawer();
   if (onNoteUrl) {
     // 用 router.push 进的详情页没有 overlay：同步把 URL 还原回列表页，

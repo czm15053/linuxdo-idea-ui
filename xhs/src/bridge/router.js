@@ -10,6 +10,8 @@ export function routeKind(pathname = location.pathname) {
   if (/\/user\/profile\/[^/]+\/[a-f0-9]{24}/i.test(p)) return "note";
   if (p.startsWith("/user/profile")) return "profile";
   if (p === "/following" || p.startsWith("/following")) return "following";
+  // 搜索结果页点进笔记：/search_result/<noteId> 也是详情路由
+  if (/\/(?:search_result|discovery\/item)\/[a-f0-9]{24}/i.test(p)) return "note";
   if (p === "/search_result" || p.startsWith("/search_result")) return "search";
   if (p.startsWith("/channel")) return "channel";
   return "explore";
