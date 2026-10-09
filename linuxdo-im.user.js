@@ -2,7 +2,7 @@
 // @name         Linux DO · IM 外观（钉钉 / 飞书 / 企业微信）
 // @namespace    https://linux.do/
 // @author       czm15053
-// @version      1.2.0
+// @version      1.2.1
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，列表按钮一键切换。公共内核：投票、小火箭、图片灯箱、引用跳转、实时刷新、三态深色、伪装模式。
 // @match        https://linux.do/*
 // @noframes     资料页等原生页走 iframe 嵌入，脚本只在顶层 frame 运行
@@ -1703,8 +1703,9 @@
     }
 
     /* ============================== 分类标签隐藏 ============================== */
+    /* 只隐藏板块（列表行分类标签 + 详情头板块 chip），帖子标签 chip 照常显示 */
     .__ROOT_CLASS__.im-hide-cat-tags .im-conv-tag,
-    .__ROOT_CLASS__.im-hide-cat-tags .im-chat-chips {
+    .__ROOT_CLASS__.im-hide-cat-tags .im-chat-chip-cat {
       display: none !important;
     }
 
@@ -2959,6 +2960,17 @@ display: inline-flex; align-items: center; gap: 3px;
 
 .im-chat-chip .im-nav2-cat-dot {
 width: 8px; height: 8px; border-radius: 2px; margin: 0;
+}
+
+/* 头部帖子标签 chip：中性配色，与板块 chip（蓝底 + 色点）区分 */
+.im-chat-chip.im-chat-chip-tag {
+color: var(--im-text-2) !important;
+      background: var(--im-hover);
+      border-color: var(--im-border) !important;
+}
+.im-chat-chip.im-chat-chip-tag:hover {
+color: var(--im-text) !important;
+      background: var(--im-active);
 }
 
 .im-list-chips {
@@ -6131,9 +6143,9 @@ color: #7AA3D6;
     .im-list-title { display: none !important; }
     /* 官方 5.x 隐藏 chips 行（未读入口在 rail 分组；chips 节点保留供 rail 点击联动） */
     .im-list-chips { display: none !important; }
-    /* 企业微信没有分类标识：列表行分类 chip、详情头部分类 chips 一律隐藏 */
+    /* 企业微信没有分类标识：列表行分类 chip、详情头板块 chip 一律隐藏（帖子标签 chip 保留） */
     .im-conv-tag { display: none !important; }
-    .im-chat-chips { display: none !important; }
+    .im-chat-chip-cat { display: none !important; }
     /* 右上角只保留有用的功能钮：隐藏装饰假工具排（cam/mute/folder/menu/dots/gear） */
     .im-chat-tools { display: none !important; }
     /* 搜索行：官方 5.x 顶部搜索框（chips 隐藏，筛选/伪装钮保留在右）；默认透明描边 */
@@ -9814,6 +9826,25 @@ html.im-theme {
       }
     }
   }
+  function tagChipHref(tag) {
+    const t = typeof tag === "string" ? { name: tag } : tag || {};
+    const slug = t.slug || t.name || t.id || "";
+    if (!slug) return "";
+    const id = t.id == null ? "" : String(t.id);
+    const numId = /^\d+$/.test(id) ? id : (/^(\d+)-tag$/.exec(slug) || [])[1] || "";
+    return `/tag/${encodeURIComponent(slug)}${numId ? `/${numId}` : ""}`;
+  }
+  function renderChatChips(cat, tags) {
+    const catChip = cat ? `<a class="im-chat-chip im-chat-chip-cat" href="/c/${escapeHtml(cat.slug)}/${cat.id}"><span class="im-nav2-cat-dot" style="background:#${escapeHtml(cat.color || "8F959E")}"></span>${escapeHtml(cat.name)}</a>` : "";
+    const tagChips = (Array.isArray(tags) ? tags : []).map((tag) => {
+      const t = typeof tag === "string" ? { name: tag } : tag || {};
+      const name = t.name || t.slug || t.id || "";
+      const href = tagChipHref(tag);
+      if (!name || !href) return "";
+      return `<a class="im-chat-chip im-chat-chip-tag" href="${escapeHtml(href)}" title="查看标签「${escapeHtml(name)}」的帖子列表">${escapeHtml(name)}</a>`;
+    }).join("");
+    return catChip + tagChips;
+  }
   async function loadTopic(topicId) {
     var _a2, _b2, _c;
     if (!topicId || chatState.loading) return;
@@ -9917,9 +9948,7 @@ html.im-theme {
         if (chatState.topicId !== topicId) return;
         const cat = data.category_id ? categoryById(data.category_id) : null;
         const chipsBox = document.querySelector(".im-chat-chips");
-        if (chipsBox) {
-          chipsBox.innerHTML = cat ? `<a class="im-chat-chip" href="/c/${escapeHtml(cat.slug)}/${cat.id}"><span class="im-nav2-cat-dot" style="background:#${escapeHtml(cat.color || "8F959E")}"></span>${escapeHtml(cat.name)}</a>` : "";
-        }
+        if (chipsBox) chipsBox.innerHTML = renderChatChips(cat, data.tags);
         if (cat && sub) sub.textContent = `归属于 ${cat.name} · ${replyTotal} 条回复`;
       });
       if (body) {

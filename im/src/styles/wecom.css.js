@@ -546,9 +546,9 @@ export const CSS_WECOM = String.raw`
     .im-list-title { display: none !important; }
     /* 官方 5.x 隐藏 chips 行（未读入口在 rail 分组；chips 节点保留供 rail 点击联动） */
     .im-list-chips { display: none !important; }
-    /* 企业微信没有分类标识：列表行分类 chip、详情头部分类 chips 一律隐藏 */
+    /* 企业微信没有分类标识：列表行分类 chip、详情头板块 chip 一律隐藏（帖子标签 chip 保留） */
     .im-conv-tag { display: none !important; }
-    .im-chat-chips { display: none !important; }
+    .im-chat-chip-cat { display: none !important; }
     /* 右上角只保留有用的功能钮：隐藏装饰假工具排（cam/mute/folder/menu/dots/gear） */
     .im-chat-tools { display: none !important; }
     /* 搜索行：官方 5.x 顶部搜索框（chips 隐藏，筛选/伪装钮保留在右）；默认透明描边 */
