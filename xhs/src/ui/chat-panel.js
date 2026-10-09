@@ -1569,6 +1569,8 @@ function onMsgClick(e) {
 const searchCache = new Map();
 let searchRenderedKey = "";
 const searchSeen = new Set();
+let searchKeyChangedAt = 0;
+const searchInflight = new Set();
 
 async function syncSearchFeed(body) {
   const query = new URLSearchParams(location.search).get("keyword") || new URLSearchParams(location.search).get("q") || "";
@@ -1583,10 +1585,15 @@ async function syncSearchFeed(body) {
     searchRenderedKey = key;
     searchSeen.clear();
     body.innerHTML = "";
+    searchKeyChangedAt = Date.now();
   }
 
+  // 换词后的短暂窗口内原生主栏还是上一次搜索的卡片，直接刮会得到旧结果并短路后续更新：
+  // 等官方搜索接口响应（被动捕获到当前词的响应即说明 DOM 已刷新）或 3s 超时后再刮
+  const domFresh = getCapturedSearch(query).length > 0 || Date.now() - searchKeyChangedAt > 3000;
+
   // 优先增量提取当前原生主栏中的卡片（增量追加，不重绘整个列表）
-  {
+  if (domFresh) {
 
     const nativeArticles = allTweetArticles();
     if (nativeArticles.length > 0) {
@@ -1609,25 +1616,34 @@ async function syncSearchFeed(body) {
   }
 
   // 3. 原生主栏无数据时：优先读被动捕获的官方搜索接口响应（POST /api/sns/web/v2/search/notes），
-  //    官方页自己带签名请求、我们只监听；短轮询等待其返回，超时再退状态树。
+  //    官方页自己带签名请求、我们只监听；轮询等待其返回，超时再退状态树。
+  //    空结果不入缓存、8s 内不宣判「未找到」：首次搜索接口可能慢，留给后续 sync 重试
   let list = searchCache.get(key);
   if (!list) {
     if (!searchSeen.size) body.innerHTML = `<div class="im-detail-loading">正在搜索 “${escapeHtml(query)}”…</div>`;
-    for (let i = 0; i < 12; i++) {
-      await new Promise((r) => setTimeout(r, 250));
-      if (routeKind() !== "search") return;
-      const captured = getCapturedSearch(query);
-      if (captured.length) {
-        list = captured.map((t) => ({ type: "tweet", tweet: t }));
-        break;
+    if (searchInflight.has(key)) return; // 上一次的轮询还在跑，避免并发叠加
+    searchInflight.add(key);
+    try {
+      for (let i = 0; i < 24; i++) {
+        await new Promise((r) => setTimeout(r, 250));
+        if (routeKind() !== "search" || searchRenderedKey !== key) return;
+        const captured = getCapturedSearch(query);
+        if (captured.length) {
+          list = captured.map((t) => ({ type: "tweet", tweet: t }));
+          break;
+        }
       }
+      if (!list) list = await fetchSearchTimeline(query, f);
+      if (list?.length) searchCache.set(key, list);
+    } finally {
+      searchInflight.delete(key);
     }
-    if (!list) list = await fetchSearchTimeline(query, f);
-    searchCache.set(key, list || []);
   }
   body.querySelector(".im-detail-loading")?.remove();
-  if (!list.length && !searchSeen.size) {
-    body.innerHTML = `<div class="im-chat-empty"><p>未找到与 “${escapeHtml(query)}” 相关的结果</p></div>`;
+  if (!list?.length && !searchSeen.size) {
+    if (Date.now() - searchKeyChangedAt > 8000) {
+      body.innerHTML = `<div class="im-chat-empty"><p>未找到与 “${escapeHtml(query)}” 相关的结果</p></div>`;
+    }
     return;
   }
   for (const item of list) {

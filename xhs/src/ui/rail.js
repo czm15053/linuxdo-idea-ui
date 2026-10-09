@@ -1,6 +1,6 @@
 import { ICONS, getSkinIcon } from "../config/icons.js";
 import { currentSkinId, SKINS, getOrgName, setOrgName } from "../config/skins.js";
-import { nativeAvatarSrc, nativeProfilePath, nativeDisplayName, navigateX } from "../bridge/x-dom.js";
+import { nativeAvatarSrc, nativeProfilePath, nativeDisplayName, navigateX, navigateSearch } from "../bridge/x-dom.js";
 import { routeKind } from "../bridge/router.js";
 import { isDarkEffective, toggleColorTheme } from "../theme/color-mode.js";
 import { setChatId } from "../state/prefs.js";
@@ -113,7 +113,7 @@ export function ensureRail() {
       e.preventDefault();
       input.blur();
       setChatId("search");
-      navigateX(`/search_result?keyword=${encodeURIComponent(v)}`);
+      navigateSearch(v);
       resetChatMessages();
     });
     rail.addEventListener("click", (e) => {

@@ -353,6 +353,23 @@ export function openUserProfile(href, userId) {
   return true;
 }
 
+/** 跳搜索页。小红书 SPA 不监听 query 变化：已在 /search_result 时单改 keyword 不会重新搜索，
+ *  先 replace 离开再 push 回来，强制搜索组件重挂载发起新请求（replace 不污染历史）。 */
+export function navigateSearch(keyword) {
+  const dest = `/search_result?keyword=${encodeURIComponent(keyword)}`;
+  if (location.pathname === "/search_result" && location.pathname + location.search !== dest) {
+    const router = findVueRouter();
+    if (router && typeof router.replace === "function" && typeof router.push === "function") {
+      try {
+        router.replace("/explore");
+        setTimeout(() => { try { router.push(dest); } catch { /* ignore */ } }, 60);
+        return;
+      } catch { /* fall through */ }
+    }
+  }
+  navigateX(dest);
+}
+
 export function navigateX(path) {
   const dest = path.startsWith("/") ? path : `/${path}`;
   if (document.documentElement.classList.contains("im-theme")) {

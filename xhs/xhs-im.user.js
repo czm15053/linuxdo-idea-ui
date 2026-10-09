@@ -7157,6 +7157,26 @@ html.im-theme .im-me-btn { cursor: pointer; }
     location.href = dest;
     return true;
   }
+  function navigateSearch(keyword) {
+    const dest = `/search_result?keyword=${encodeURIComponent(keyword)}`;
+    if (location.pathname === "/search_result" && location.pathname + location.search !== dest) {
+      const router = findVueRouter();
+      if (router && typeof router.replace === "function" && typeof router.push === "function") {
+        try {
+          router.replace("/explore");
+          setTimeout(() => {
+            try {
+              router.push(dest);
+            } catch {
+            }
+          }, 60);
+          return;
+        } catch {
+        }
+      }
+    }
+    navigateX(dest);
+  }
   function navigateX(path) {
     const dest = path.startsWith("/") ? path : `/${path}`;
     if (document.documentElement.classList.contains("im-theme")) {
@@ -8301,6 +8321,14 @@ ${pin.text || "无"}
       const win = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
       if (win.__ximSearchHooked) return;
       win.__ximSearchHooked = installSearchCapture;
+      const isSearchUrl = (url) => String(url || "").includes("/api/sns/web/v2/search/notes") || String(url || "").includes("/api/sns/web/v1/search/notes");
+      const kwFromBody = (body) => {
+        try {
+          return String(JSON.parse(body || "{}").keyword || "");
+        } catch {
+          return "";
+        }
+      };
       const proto = win.XMLHttpRequest.prototype;
       const origOpen = proto.open;
       const origSend = proto.send;
@@ -8310,12 +8338,8 @@ ${pin.text || "无"}
       };
       proto.send = function(body) {
         const url = this.__ximUrl || "";
-        if (url.includes("/api/sns/web/v2/search/notes") || url.includes("/api/sns/web/v1/search/notes")) {
-          let kw = "";
-          try {
-            kw = String(JSON.parse(body || "{}").keyword || "");
-          } catch {
-          }
+        if (isSearchUrl(url)) {
+          const kw = kwFromBody(body);
           this.addEventListener("load", () => {
             try {
               const data = typeof this.response === "string" ? JSON.parse(this.response) : this.response;
@@ -8327,6 +8351,28 @@ ${pin.text || "无"}
         }
         return origSend.apply(this, arguments);
       };
+      const origFetch = win.fetch;
+      if (typeof origFetch === "function") {
+        win.fetch = function(input, init) {
+          const url = typeof input === "string" ? input : (input == null ? void 0 : input.url) || "";
+          const kw = kwFromBody(init == null ? void 0 : init.body);
+          const p = origFetch.apply(this, arguments);
+          if (isSearchUrl(url) && p && typeof p.then === "function") {
+            p.then((res) => {
+              try {
+                res.clone().json().then((data) => {
+                  const items = searchItemsFromPayload(data);
+                  if (items.length) capturedSearch = { keyword: kw, items, _t: Date.now() };
+                }).catch(() => {
+                });
+              } catch {
+              }
+            }).catch(() => {
+            });
+          }
+          return p;
+        };
+      }
     } catch {
     }
   }
@@ -10762,6 +10808,8 @@ ${pin.text || "无"}
   const searchCache = /* @__PURE__ */ new Map();
   let searchRenderedKey = "";
   const searchSeen = /* @__PURE__ */ new Set();
+  let searchKeyChangedAt = 0;
+  const searchInflight = /* @__PURE__ */ new Set();
   async function syncSearchFeed(body) {
     var _a;
     const query = new URLSearchParams(location.search).get("keyword") || new URLSearchParams(location.search).get("q") || "";
@@ -10775,8 +10823,10 @@ ${pin.text || "无"}
       searchRenderedKey = key;
       searchSeen.clear();
       body.innerHTML = "";
+      searchKeyChangedAt = Date.now();
     }
-    {
+    const domFresh = getCapturedSearch(query).length > 0 || Date.now() - searchKeyChangedAt > 3e3;
+    if (domFresh) {
       const nativeArticles = allTweetArticles();
       if (nativeArticles.length > 0) {
         for (const art of nativeArticles) {
@@ -10799,21 +10849,29 @@ ${pin.text || "无"}
     let list = searchCache.get(key);
     if (!list) {
       if (!searchSeen.size) body.innerHTML = `<div class="im-detail-loading">正在搜索 “${escapeHtml(query)}”…</div>`;
-      for (let i = 0; i < 12; i++) {
-        await new Promise((r) => setTimeout(r, 250));
-        if (routeKind() !== "search") return;
-        const captured = getCapturedSearch(query);
-        if (captured.length) {
-          list = captured.map((t) => ({ type: "tweet", tweet: t }));
-          break;
+      if (searchInflight.has(key)) return;
+      searchInflight.add(key);
+      try {
+        for (let i = 0; i < 24; i++) {
+          await new Promise((r) => setTimeout(r, 250));
+          if (routeKind() !== "search" || searchRenderedKey !== key) return;
+          const captured = getCapturedSearch(query);
+          if (captured.length) {
+            list = captured.map((t) => ({ type: "tweet", tweet: t }));
+            break;
+          }
         }
+        if (!list) list = await fetchSearchTimeline(query, f);
+        if (list == null ? void 0 : list.length) searchCache.set(key, list);
+      } finally {
+        searchInflight.delete(key);
       }
-      if (!list) list = await fetchSearchTimeline();
-      searchCache.set(key, list || []);
     }
     (_a = body.querySelector(".im-detail-loading")) == null ? void 0 : _a.remove();
-    if (!list.length && !searchSeen.size) {
-      body.innerHTML = `<div class="im-chat-empty"><p>未找到与 “${escapeHtml(query)}” 相关的结果</p></div>`;
+    if (!(list == null ? void 0 : list.length) && !searchSeen.size) {
+      if (Date.now() - searchKeyChangedAt > 8e3) {
+        body.innerHTML = `<div class="im-chat-empty"><p>未找到与 “${escapeHtml(query)}” 相关的结果</p></div>`;
+      }
       return;
     }
     for (const item of list) {
@@ -11149,7 +11207,7 @@ ${pin.text || "无"}
         e.preventDefault();
         input.blur();
         setChatId("search");
-        navigateX(`/search_result?keyword=${encodeURIComponent(v)}`);
+        navigateSearch(v);
         resetChatMessages();
       });
       rail.addEventListener("click", (e) => {
@@ -11330,7 +11388,7 @@ ${pin.text || "无"}
     e.preventDefault();
     input.blur();
     setChatId("search");
-    navigateX(`/search_result?keyword=${encodeURIComponent(kw)}`);
+    navigateSearch(kw);
     resetChatMessages();
   }
   function onListClick(e) {

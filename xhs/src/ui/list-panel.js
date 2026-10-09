@@ -4,7 +4,7 @@ import { currentSkinId, SKINS } from "../config/skins.js";
 import { isMaskAvatar, isMaskTitle, setMaskAvatar, setMaskTitle, getChatId, setChatId, isHideMedia, setHideMedia } from "../state/prefs.js";
 import { escapeHtml, stripText } from "../utils/html.js";
 import { convAvatarHtml, displayTitle, disguiseTitle } from "./avatars.js";
-import { clickHomeTab, navigateX, nativeProfilePath, refreshHomeFeed } from "../bridge/x-dom.js";
+import { clickHomeTab, navigateX, navigateSearch, nativeProfilePath, refreshHomeFeed } from "../bridge/x-dom.js";
 import { chatIdFromRoute, routeKind } from "../bridge/router.js";
 import { resetChatMessages } from "./chat-panel.js";
 import { ensureRail } from "./rail.js";
@@ -166,7 +166,7 @@ function onListKeydown(e) {
   e.preventDefault();
   input.blur();
   setChatId("search");
-  navigateX(`/search_result?keyword=${encodeURIComponent(kw)}`);
+  navigateSearch(kw);
   resetChatMessages();
 }
 

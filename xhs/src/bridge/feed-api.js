@@ -818,6 +818,10 @@ export function installSearchCapture() {
     const win = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
     if (win.__ximSearchHooked) return;
     win.__ximSearchHooked = installSearchCapture; // 标记位
+    const isSearchUrl = (url) => String(url || "").includes("/api/sns/web/v2/search/notes") || String(url || "").includes("/api/sns/web/v1/search/notes");
+    const kwFromBody = (body) => {
+      try { return String(JSON.parse(body || "{}").keyword || ""); } catch { return ""; }
+    };
     const proto = win.XMLHttpRequest.prototype;
     const origOpen = proto.open;
     const origSend = proto.send;
@@ -827,9 +831,8 @@ export function installSearchCapture() {
     };
     proto.send = function (body) {
       const url = this.__ximUrl || "";
-      if (url.includes("/api/sns/web/v2/search/notes") || url.includes("/api/sns/web/v1/search/notes")) {
-        let kw = "";
-        try { kw = String(JSON.parse(body || "{}").keyword || ""); } catch { /* ignore */ }
+      if (isSearchUrl(url)) {
+        const kw = kwFromBody(body);
         this.addEventListener("load", () => {
           try {
             const data = typeof this.response === "string" ? JSON.parse(this.response) : this.response;
@@ -840,6 +843,26 @@ export function installSearchCapture() {
       }
       return origSend.apply(this, arguments);
     };
+    // 搜索接口也可能走 fetch：同样被动监听响应
+    const origFetch = win.fetch;
+    if (typeof origFetch === "function") {
+      win.fetch = function (input, init) {
+        const url = typeof input === "string" ? input : input?.url || "";
+        const kw = kwFromBody(init?.body);
+        const p = origFetch.apply(this, arguments);
+        if (isSearchUrl(url) && p && typeof p.then === "function") {
+          p.then((res) => {
+            try {
+              res.clone().json().then((data) => {
+                const items = searchItemsFromPayload(data);
+                if (items.length) capturedSearch = { keyword: kw, items, _t: Date.now() };
+              }).catch(() => {});
+            } catch { /* ignore */ }
+          }).catch(() => {});
+        }
+        return p;
+      };
+    }
   } catch { /* ignore */ }
 }
 
