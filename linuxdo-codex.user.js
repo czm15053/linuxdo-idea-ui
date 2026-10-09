@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linux DO · Codex 外观
 // @namespace    https://linux.do/
-// @version      0.2.0
+// @version      0.3.0
 // @description  将 Linux DO 换成 Codex 桌面 app 风格（配色实测自原版，明暗双模式）。仅改变外观，保留站点原有内容与交互。
 // @author       czm15053
 // @match        https://linux.do/*
@@ -66,7 +66,12 @@
     dotsV: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>`,
     sun: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2.5 12h2M19.5 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`,
     moon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a7.5 7.5 0 1 0 11 11Z"/></svg>`,
-    filter: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v5.5L10 21v-8Z"/></svg>`
+    filter: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v5.5L10 21v-8Z"/></svg>`,
+    home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>`,
+    at: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3.5 7.1"/></svg>`,
+    grid: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"/></svg>`,
+    noentry: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></svg>`,
+    refresh: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3 21 9 15 9"/></svg>`
   };
 
   /* ============================== favicon（ChatGPT 风：圆角深底 + OpenAI 花） ============================== */
@@ -518,8 +523,18 @@
     const seq = ["bold", "italic", "heading", "strike", "link", "quote", "code", "listUl", "listOl", "folder", "emoji", "plus", "preview"];
     return seq.map((k) =>
       `<button type="button" class="cx-tool-btn" data-tool="${k}" title="${CX_TOOL_TITLES[k]}"${k === "folder" ? ` data-upload="1"` : ""}>${CX_EDITOR_ICONS[k]}</button>`
-    ).join("") + `<span class="cx-composer-status"></span>` +
-      `<button type="button" class="codex-composer-send" title="发送（Enter）" disabled>${ICONS.send}</button>`;
+    ).join("") + `<span class="cx-composer-status"></span>`;
+  }
+
+  /* ---- composer 底栏（对齐新版 Codex：+ / 权限 chip 居左，模型 chip + 圆形发送键居右） ---- */
+  function cxComposerBarHtml() {
+    return (
+      `<button type="button" class="cx-tool-btn cx-bar-plus" data-tool="folder" title="上传图片">${CX_EDITOR_ICONS.plus}</button>` +
+      `<span class="cx-chip" title="装饰：对齐新版 Codex 权限 chip">${ICONS.noentry}完全访问</span>` +
+      `<span class="cx-spacer"></span>` +
+      `<span class="cx-chip" title="装饰：对齐新版 Codex 模型 chip">${ICONS.refresh}5.6 Terra 中</span>` +
+      `<button type="button" class="codex-composer-send" title="发送（Enter）" disabled>${ICONS.send}</button>`
+    );
   }
 
   /* ---- 块级编辑器核心（聚焦块显示原文，其余块实时渲染） ---- */
@@ -1427,21 +1442,22 @@
   const RAW_CSS = String.raw`
     /* ---------- Token：深色（默认） ---------- */
     .${ROOT_CLASS} {
-      /* 左栏深青灰蓝（用户提供截图实测 #27353b），hover/active 为同色系亮阶 */
-      --cx-rail-bg: #27353b;
-      --cx-rail-bg-hover: #2e3d44;
-      --cx-rail-bg-active: #35454d;
+      /* 左侧栏：窄图标条（更深一档）+ 侧栏；新版为中性深灰（旧版青灰 #27353b 已淘汰） */
+      --cx-strip-bg: #1a1b1c;
+      --cx-rail-bg: #242526;
+      --cx-rail-bg-hover: #2e2f31;
+      --cx-rail-bg-active: #38393b;
       --cx-rail-text: #dedede;
-      --cx-rail-text-dim: #96a0a4;
-      --cx-rail-text-faint: #6c787d;
+      --cx-rail-text-dim: #9a9d9f;
+      --cx-rail-text-faint: #6d7173;
       --cx-rail-border: rgba(255, 255, 255, 0.06);
 
-      --cx-bg: #181818;
-      --cx-bg-raised: #242424;
-      --cx-bg-inset: #1c1c1c;
-      --cx-bg-deep: #161616;       /* 代码面板 tab 条 */
-      --cx-panel-bg: #181818;
-      --cx-composer-bg: #2a2a2a;
+      --cx-bg: #1e1f20;
+      --cx-bg-raised: #262728;
+      --cx-bg-inset: #212223;
+      --cx-bg-deep: #171819;       /* 代码面板 tab 条 */
+      --cx-panel-bg: #1e1f20;
+      --cx-composer-bg: #2d2e2f;
 
       --cx-border: rgba(255, 255, 255, 0.08);
       --cx-border-soft: rgba(255, 255, 255, 0.05);
@@ -1453,13 +1469,13 @@
 
       --cx-blue: #83c3fe;
       --cx-blue-soft: rgba(131, 195, 254, 0.15);
-      --cx-chip-bg: #2e2e2e;
+      --cx-chip-bg: #313234;
       --cx-chip-text: #ececec;
-      --cx-btn-hover: #333333;
+      --cx-btn-hover: #343536;
       --cx-wash: rgba(255, 255, 255, 0.03);
       --cx-scroll-thumb: rgba(255, 255, 255, 0.12);
-      --cx-send-bg: #8a8a8a;
-      --cx-send-icon: #1f1f1f;
+      --cx-send-bg: #f2f2f2;
+      --cx-send-icon: #1a1b1c;
 
       --cx-code-text: #cfcfcf;
       --cx-code-gutter: #565656;
@@ -1482,21 +1498,23 @@
       --cx-font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
         "Liberation Mono", monospace;
 
+      --cx-strip-w: 52px;
       --cx-rail-w: ${RAIL_WIDTH}px;
       --cx-radius: 10px;
     }
 
     /* ---------- Token：浅色 ---------- */
     .${ROOT_CLASS}.codex-light {
-      --cx-rail-bg: #e7edee;
-      --cx-rail-bg-hover: #dde4e6;
-      --cx-rail-bg-active: #d2dbdd;
-      --cx-rail-text: #2c3438;
+      --cx-strip-bg: #e2e3e5;
+      --cx-rail-bg: #eff0f1;
+      --cx-rail-bg-hover: #e4e5e7;
+      --cx-rail-bg-active: #dadbdd;
+      --cx-rail-text: #2c2e30;
       --cx-rail-text-dim: #6e6f72;
       --cx-rail-text-faint: #97989a;
       --cx-rail-border: rgba(0, 0, 0, 0.07);
 
-      --cx-bg: #f4f4f4;
+      --cx-bg: #f7f7f8;
       --cx-bg-raised: #ffffff;
       --cx-bg-inset: #fafafa;
       --cx-bg-deep: #ebebeb;
@@ -1518,7 +1536,7 @@
       --cx-btn-hover: #e6e6e6;
       --cx-wash: rgba(0, 0, 0, 0.04);
       --cx-scroll-thumb: rgba(0, 0, 0, 0.18);
-      --cx-send-bg: #3c3c3c;
+      --cx-send-bg: #1b1c1e;
       --cx-send-icon: #ffffff;
 
       --cx-code-text: #26282b;
@@ -1536,15 +1554,6 @@
       --cx-diff-del-ln: #b3403c;
       --cx-diff-hunk-bg: rgba(42, 152, 255, 0.08);
       --cx-diff-hunk-tx: #46769e;
-    }
-
-      --cx-font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      --cx-font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
-        "Liberation Mono", monospace;
-
-      --cx-rail-w: ${RAIL_WIDTH}px;
-      --cx-radius: 10px;
     }
 
     /* ---------- 自绘 UI 统一盒模型 ---------- */
@@ -1577,7 +1586,7 @@
 
     /* ---------- 非锁定路由：rail 常驻，原生主内容右移 ---------- */
     .${ROOT_CLASS}:not(.${LOCK_CLASS}) #main-outlet-wrapper {
-      margin-left: var(--cx-rail-w) !important;
+      margin-left: calc(var(--cx-strip-w) + var(--cx-rail-w)) !important;
       padding-top: 0 !important;
     }
 
@@ -1615,7 +1624,7 @@
     .${ROOT_CLASS}.${LOCK_CLASS} #reply-control.edit-title,
     .${ROOT_CLASS}.${LOCK_CLASS} #reply-control.fullscreen {
       display: block !important;
-      left: calc(var(--cx-rail-w) + 12px) !important;
+      left: calc(var(--cx-strip-w) + var(--cx-rail-w) + 12px) !important;
       right: 12px !important;
       width: auto !important;
       max-width: none !important;
@@ -1660,7 +1669,7 @@
     .${ROOT_CLASS}.codex-notif-open .user-menu.menu-panel.codex-user-menu-float {
       display: block !important;
       position: fixed !important;
-      left: 12px !important;
+      left: calc(var(--cx-strip-w) + 12px) !important;
       bottom: 60px !important;
       top: auto !important;
       right: auto !important;
@@ -1695,10 +1704,39 @@
     .${ROOT_CLASS} #d-splash { background: var(--cx-bg) !important; }
     .${ROOT_CLASS} #d-splash .dots { background-color: var(--cx-blue) !important; filter: none !important; }
 
+    /* ================= 窄图标条（新版双层左侧栏的最左层） ================= */
+    .codex-strip {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: var(--cx-strip-w);
+      background: var(--cx-strip-bg);
+      border-right: 1px solid var(--cx-rail-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 46px 0 10px;   /* 顶部让位给窗口控制行（与 rail-traffic 同高） */
+      gap: 4px;
+      z-index: 801;
+      user-select: none;
+      font-family: var(--cx-font-ui);
+    }
+    .codex-strip-item {
+      width: 34px; height: 34px;
+      display: grid; place-items: center;
+      border-radius: 9px;
+      color: var(--cx-rail-text-dim);
+      cursor: pointer;
+      flex: none;
+    }
+    .codex-strip-item:hover { background: var(--cx-rail-bg-hover); color: var(--cx-rail-text); }
+    .codex-strip-item.active { background: var(--cx-rail-bg-active); color: var(--cx-rail-text); }
+    .codex-strip-item svg { width: 19px; height: 19px; }
+    .codex-strip-spacer { flex: 1; }
+
     /* ================= 左 rail ================= */
     .codex-rail {
       position: fixed;
-      left: 0; top: 0; bottom: 0;
+      left: var(--cx-strip-w); top: 0; bottom: 0;
       width: var(--cx-rail-w);
       background: var(--cx-rail-bg);
       color: var(--cx-rail-text);
@@ -1855,7 +1893,7 @@
     /* ================= 右侧主区 ================= */
     .codex-main {
       position: fixed;
-      left: var(--cx-rail-w); right: 0; top: 0; bottom: 0;
+      left: calc(var(--cx-strip-w) + var(--cx-rail-w)); right: 0; top: 0; bottom: 0;
       background: var(--cx-bg);
       color: var(--cx-text);
       display: flex;
@@ -2463,7 +2501,7 @@
       margin-top: 6px;
       border-top: 1px solid var(--cx-border-soft);
     }
-    .cx-composer-toolbar .cx-tool-btn {
+    .codex-composer .cx-tool-btn {
       width: 28px; height: 28px;
       border-radius: 6px;
       display: grid; place-items: center;
@@ -2473,9 +2511,9 @@
       font-family: var(--cx-font-ui);
       flex: none;
     }
-    .cx-composer-toolbar .cx-tool-btn:hover { background: var(--cx-btn-hover); color: var(--cx-text); }
-    .cx-composer-toolbar .cx-tool-btn svg { width: 16px; height: 16px; }
-    .cx-composer-toolbar .cx-tool-btn.active { color: var(--cx-blue); }
+    .codex-composer .cx-tool-btn:hover { background: var(--cx-btn-hover); color: var(--cx-text); }
+    .codex-composer .cx-tool-btn svg { width: 16px; height: 16px; }
+    .codex-composer .cx-tool-btn.active { color: var(--cx-blue); }
     .cx-composer-status {
       flex: 1;
       min-height: 16px;
@@ -2503,6 +2541,29 @@
     }
     .codex-composer-send svg { width: 15px; height: 15px; }
     .codex-composer-send:disabled { opacity: 0.45; cursor: default; }
+
+    /* 底栏：+ / 权限 chip / 模型 chip / 发送键（对齐新版 Codex composer） */
+    .cx-composer-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-top: 8px;
+    }
+    .cx-composer-bar .cx-spacer { flex: 1; }
+    .cx-composer-bar .cx-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border: 1px solid var(--cx-border);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--cx-text-secondary);
+      white-space: nowrap;
+      user-select: none;
+    }
+    .cx-composer-bar .cx-chip svg { width: 13px; height: 13px; flex: none; }
+    .cx-composer-bar .cx-bar-plus { border-radius: 50%; }
 
     /* 表情 / 更多弹层 */
     .cx-md-pop {
@@ -2794,9 +2855,22 @@
       }
     }
 
+    /* ---------- 顶栏收起侧栏（桌面态，会话内有效） ---------- */
+    .${ROOT_CLASS}.codex-rail-hidden .codex-strip,
+    .${ROOT_CLASS}.codex-rail-hidden .codex-rail { display: none !important; }
+    .${ROOT_CLASS}.codex-rail-hidden .codex-main { left: 0; }
+    .${ROOT_CLASS}.codex-rail-hidden:not(.${LOCK_CLASS}) #main-outlet-wrapper { margin-left: 0 !important; }
+    .${ROOT_CLASS}.codex-rail-hidden.${LOCK_CLASS} #reply-control.open,
+    .${ROOT_CLASS}.codex-rail-hidden.${LOCK_CLASS} #reply-control.edit-title,
+    .${ROOT_CLASS}.codex-rail-hidden.${LOCK_CLASS} #reply-control.fullscreen {
+      left: 12px !important;
+    }
+
     /* ---------- 窄屏降级：rail 收起为抽屉 ---------- */
     @media (max-width: 900px) {
+      .codex-strip { display: none !important; }
       .codex-rail {
+        left: 0;
         transform: translateX(-105%);
         transition: transform 0.18s ease;
       }
@@ -2815,6 +2889,7 @@
       }
       .codex-thread { padding: 20px 16px 32px; }
       .codex-composer-wrap { padding: 8px 12px 14px; }
+      .codex-topbar .cx-rail-toggle { display: none; }
       /* 太窄时代码面板直接不可用（纯装饰，不占小屏空间） */
       .cx-code-panel { display: none !important; }
       .cx-resizer { display: none !important; }
@@ -3811,7 +3886,29 @@
     return (topic.unread > 0 ? topic.unread : 0) + (topic.new_posts > 0 ? topic.new_posts : 0);
   }
 
+  /** 窄图标条：新版 Codex 双层左侧栏的最左层（首页/活动/提及/版块 + 底部设置） */
+  function ensureStrip() {
+    let strip = document.querySelector(".codex-strip");
+    if (strip) return strip;
+    strip = document.createElement("div");
+    strip.className = "codex-strip";
+    strip.innerHTML = `
+      <div class="codex-strip-item active" data-strip="/latest" title="首页">${ICONS.home}</div>
+      <div class="codex-strip-item" data-strip="/my/activity" title="近期活动">${ICONS.clock}</div>
+      <div class="codex-strip-item" data-strip="/my/notifications/mentions" title="提及">${ICONS.at}</div>
+      <div class="codex-strip-item" data-strip="/categories" title="全部版块">${ICONS.grid}</div>
+      <div class="codex-strip-spacer"></div>
+      <div class="codex-strip-item" data-strip="/my/preferences" title="设置">${ICONS.gear}</div>`;
+    strip.addEventListener("click", (e) => {
+      const it = e.target.closest("[data-strip]");
+      if (it && strip.contains(it)) navigateInApp(it.getAttribute("data-strip"));
+    });
+    document.body.appendChild(strip);
+    return strip;
+  }
+
   function ensureRail() {
+    ensureStrip();
     let rail = document.querySelector(".codex-rail");
     if (rail) {
       syncRail();
@@ -3852,6 +3949,7 @@
     scroll.className = "codex-rail-scroll";
     scroll.innerHTML = `
       <nav class="codex-rail-nav">
+        <div class="codex-rail-item" data-nav="newchat">${ICONS.pencil}<span class="cx-label">新聊天</span></div>
         <div class="codex-rail-item" data-nav="topics">${ICONS.layers}<span class="cx-label">话题</span></div>
         <div class="codex-rail-item" data-nav="drafts" title="草稿保存在原生编辑器中">${ICONS.user}<span class="cx-label">我的草稿</span></div>
         <div class="codex-rail-item" data-nav="messages">${ICONS.inbox}<span class="cx-label">我的消息</span></div>
@@ -3888,6 +3986,10 @@
     document.body.appendChild(rail);
 
     // 导航项行为
+    scroll.querySelector('[data-nav="newchat"]').addEventListener("click", () => {
+      closeRailDrawer();
+      openNewTopicComposer();
+    });
     scroll.querySelector('[data-nav="topics"]').addEventListener("click", () => {
       closeRailDrawer();
       navigateInApp("/latest");
@@ -3928,7 +4030,7 @@
     document.documentElement.classList.remove("codex-rail-open");
   }
 
-  /** rail 动态分组：置顶 / 分类 / 最近 */
+  /** rail 动态分组：置顶 / 项目 / 最近 */
   function renderRailDynamic() {
     const box = document.querySelector(".codex-rail-dynamic");
     if (!box) return;
@@ -3949,7 +4051,7 @@
       parts.push(`</div>`);
     }
 
-    // 分类
+    // 项目（论坛分类映射为 Codex 的「项目」）
     const cats = categoriesCache || [];
     if (cats.length) {
       // 首次渲染默认展开第一个分类（用户手动收起后不再重置）
@@ -3958,7 +4060,7 @@
         expandedCats.add(cats[0].id);
       }
       const shown = categoriesExpanded ? cats : cats.slice(0, 5);
-      parts.push(`<div class="codex-rail-section">分类</div><div class="codex-rail-section-items">`);
+      parts.push(`<div class="codex-rail-section">项目</div><div class="codex-rail-section-items">`);
       const curPath = location.pathname;
       for (const [idx, c] of shown.entries()) {
         const href = `/c/${c.slug}/${c.id}`;
@@ -4119,6 +4221,7 @@
       <div class="codex-body">
         <div class="codex-thread-col">
           <header class="codex-topbar">
+            <span class="cx-icon-btn cx-rail-toggle" title="显示 / 隐藏侧栏">${ICONS.sidebar}</span>
             <button class="cx-icon-btn cx-menu-btn" title="打开侧栏">${ICONS.menu}</button>
             <span class="cx-icon-btn cx-back-btn" title="返回列表">${ICONS.folder}</span>
             <div class="cx-crumb">
@@ -4159,8 +4262,9 @@
             <div class="codex-composer">
               <div class="cx-compose-target"><span></span><button type="button" title="取消回复">×</button></div>
               <div class="cx-compose-preview" aria-live="polite"></div>
-              <div class="cx-md-edit" data-cx-compose="1" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="发送消息…"></div>
+              <div class="cx-md-edit" data-cx-compose="1" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="与 Codex 协作"></div>
               <div class="cx-composer-toolbar">${cxComposerToolbarHtml()}</div>
+              <div class="cx-composer-bar">${cxComposerBarHtml()}</div>
               <input type="file" class="cx-composer-file" accept="image/*" multiple hidden>
             </div>
           </div>
@@ -4211,6 +4315,11 @@
     main.dataset.eventsBound = "1";
 
     main.addEventListener("click", (e) => {
+      // 顶栏面板图标：桌面态收起/展开左侧栏（会话内有效）
+      if (e.target.closest(".cx-rail-toggle")) {
+        document.documentElement.classList.toggle("codex-rail-hidden");
+        return;
+      }
       // 窄屏抽屉开关
       if (e.target.closest(".cx-menu-btn")) {
         document.documentElement.classList.toggle("codex-rail-open");
@@ -6139,6 +6248,7 @@ const THINK_CLOSERS = [
     closeNotifMenu();
     document.querySelector(".codex-main")?.remove();
     document.querySelector(".codex-rail")?.remove();
+    document.querySelector(".codex-strip")?.remove();
   }
 
   /** 低频率轮询 CF 盾状态：命中回退原皮，通过恢复套皮（与 applyTheme 的即时判断互补） */
@@ -6148,7 +6258,7 @@ const THINK_CLOSERS = [
       const blocked = cfBlocked();
       const active = document.documentElement.classList.contains(ROOT_CLASS);
       if (blocked && active) {
-        document.documentElement.classList.remove(ROOT_CLASS, LOCK_CLASS, "codex-topic-open", "codex-rail-open");
+        document.documentElement.classList.remove(ROOT_CLASS, LOCK_CLASS, "codex-topic-open", "codex-rail-open", "codex-rail-hidden");
         removeApp();
       } else if (!blocked && !active && !otherThemeActive()) {
         applyTheme();
@@ -6159,13 +6269,13 @@ const THINK_CLOSERS = [
   function applyTheme() {
     if (cfBlocked()) {
       // 整页被 CF 挑战拦截：停用回原皮（不注入 UI），挑战通过后 watcher 复检自动恢复
-      document.documentElement.classList.remove(ROOT_CLASS, LOCK_CLASS, "codex-topic-open", "codex-rail-open");
+      document.documentElement.classList.remove(ROOT_CLASS, LOCK_CLASS, "codex-topic-open", "codex-rail-open", "codex-rail-hidden");
       removeApp();
       return;
     }
     if (otherThemeActive()) {
       // 飞书 / IDEA 主题在跑：全程避让，恢复原样
-      document.documentElement.classList.remove(ROOT_CLASS, LOCK_CLASS, "codex-topic-open", "codex-rail-open");
+      document.documentElement.classList.remove(ROOT_CLASS, LOCK_CLASS, "codex-topic-open", "codex-rail-open", "codex-rail-hidden");
       removeApp();
       return;
     }
