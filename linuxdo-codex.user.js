@@ -1584,10 +1584,38 @@
       pointer-events: auto !important;
     }
 
-    /* ---------- 非锁定路由：rail 常驻，原生主内容右移 ---------- */
+    /* ---------- 非锁定路由：rail 常驻，原生主内容右移并套 codex 调色板 ---------- */
     .${ROOT_CLASS}:not(.${LOCK_CLASS}) #main-outlet-wrapper {
       margin-left: calc(var(--cx-strip-w) + var(--cx-rail-w)) !important;
       padding-top: 0 !important;
+    }
+    .${ROOT_CLASS}:not(.${LOCK_CLASS}) body {
+      background: var(--cx-bg) !important;
+      color: var(--cx-text) !important;
+    }
+    .${ROOT_CLASS}:not(.${LOCK_CLASS}) #main-outlet {
+      background: var(--cx-bg);
+      color: var(--cx-text);
+      /* 站点自带配色方案与 codex 无关：按 Discourse 调色板位覆盖，明暗共用 */
+      --primary: var(--cx-text);
+      --primary-medium: var(--cx-text-secondary);
+      --primary-low-mid: var(--cx-text-dim);
+      --primary-low: var(--cx-text-dim);
+      --primary-very-low: var(--cx-bg-inset);
+      --primary-50: var(--cx-bg-inset);
+      --primary-100: var(--cx-bg-raised);
+      --primary-200: var(--cx-btn-hover);
+      --primary-300: var(--cx-border-strong);
+      --secondary: var(--cx-bg);
+      --tertiary: var(--cx-blue);
+      --quaternary: var(--cx-blue);
+      --d-hover: var(--cx-wash);
+      --header_background: var(--cx-bg-raised);
+      --header_primary: var(--cx-text);
+    }
+    .${ROOT_CLASS}:not(.${LOCK_CLASS}) .sidebar-wrapper,
+    .${ROOT_CLASS}:not(.${LOCK_CLASS}) .sidebar-container {
+      display: none !important;
     }
 
     /* ---------- 锁定路由：隐藏原生主内容 ---------- */
@@ -1614,15 +1642,15 @@
       display: none !important;
     }
 
-    /* ---------- 原生 composer：关闭态隐藏，打开态铺到主区 ---------- */
-    .${ROOT_CLASS}.${LOCK_CLASS} #reply-control:not(.open):not(.fullscreen):not(.edit-title) {
+    /* ---------- 原生 composer：关闭态隐藏，打开态铺到主区（含搜索/消息等原生路由） ---------- */
+    .${ROOT_CLASS} #reply-control:not(.open):not(.fullscreen):not(.edit-title) {
       display: none !important;
       pointer-events: none !important;
       z-index: 0 !important;
     }
-    .${ROOT_CLASS}.${LOCK_CLASS} #reply-control.open,
-    .${ROOT_CLASS}.${LOCK_CLASS} #reply-control.edit-title,
-    .${ROOT_CLASS}.${LOCK_CLASS} #reply-control.fullscreen {
+    .${ROOT_CLASS} #reply-control.open,
+    .${ROOT_CLASS} #reply-control.edit-title,
+    .${ROOT_CLASS} #reply-control.fullscreen {
       display: block !important;
       left: calc(var(--cx-strip-w) + var(--cx-rail-w) + 12px) !important;
       right: 12px !important;
@@ -1649,60 +1677,324 @@
       --quaternary: var(--cx-blue);
       --d-hover: var(--cx-wash);
     }
-    .${ROOT_CLASS}.${LOCK_CLASS} #reply-control .reply-area {
+    .${ROOT_CLASS} #reply-control .reply-area {
       max-width: none !important;
       padding-left: 20px !important;
       padding-right: 20px !important;
     }
 
-    /* ---------- 收养的原生用户菜单：仅 html.codex-notif-open 时可见 ---------- */
-    .${ROOT_CLASS} .user-menu.codex-user-menu-float,
-    .${ROOT_CLASS} .user-menu.revamped.menu-panel.codex-user-menu-float,
-    .${ROOT_CLASS} .user-menu.menu-panel.codex-user-menu-float {
-      display: none !important;
-      opacity: 0 !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
+    /* ---------- 自绘通知面板 ---------- */
+    .codex-notif-panel {
+      position: fixed;
+      left: calc(var(--cx-strip-w) + 12px);
+      bottom: 60px;
+      width: 340px;
+      max-width: min(340px, calc(100vw - 24px));
+      max-height: min(72vh, 640px);
+      display: flex;
+      flex-direction: column;
+      background: var(--cx-bg-raised);
+      color: var(--cx-text);
+      border: 1px solid var(--cx-border);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+      z-index: 900;
+      overflow: hidden;
+      font-family: var(--cx-font-ui);
+      font-size: 13px;
     }
-    .${ROOT_CLASS}.codex-notif-open .user-menu.codex-user-menu-float,
-    .${ROOT_CLASS}.codex-notif-open .user-menu.revamped.menu-panel.codex-user-menu-float,
-    .${ROOT_CLASS}.codex-notif-open .user-menu.menu-panel.codex-user-menu-float {
-      display: block !important;
-      position: fixed !important;
-      left: calc(var(--cx-strip-w) + 12px) !important;
-      bottom: 60px !important;
-      top: auto !important;
-      right: auto !important;
-      width: 340px !important;
-      max-width: min(340px, calc(100vw - 24px)) !important;
-      max-height: min(72vh, 640px) !important;
-      margin: 0 !important;
-      z-index: 900 !important;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55) !important;
-      border-radius: 12px !important;
-      overflow: auto !important;
-      pointer-events: auto !important;
-      opacity: 1 !important;
-      visibility: visible !important;
-      background: var(--cx-bg-raised) !important;
-      color: var(--cx-text) !important;
-      clip: auto !important;
-      /* 深色调色板 */
-      --primary: var(--cx-text);
-      --primary-medium: var(--cx-text-secondary);
-      --primary-low: var(--cx-text-dim);
-      --primary-very-low: var(--cx-chip-bg);
-      --primary-50: var(--cx-bg-inset);
-      --primary-100: var(--cx-bg-raised);
-      --primary-200: var(--cx-btn-hover);
-      --secondary: var(--cx-bg-raised);
-      --tertiary: var(--cx-blue);
-      --d-hover: var(--cx-wash);
+    .codex-notif-panel .cx-np-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px 8px;
+      flex: none;
     }
+    .cx-np-title { font-weight: 600; font-size: 14px; }
+    .cx-np-markall {
+      border: none;
+      background: none;
+      color: var(--cx-text-dim);
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+    .cx-np-markall:hover { background: var(--cx-rail-bg-hover); color: var(--cx-text); }
+    .cx-np-chips {
+      display: flex;
+      gap: 6px;
+      padding: 0 12px 8px;
+      overflow-x: auto;
+      flex: none;
+      border-bottom: 1px solid var(--cx-border-soft);
+      scrollbar-width: none;
+    }
+    .cx-np-chips::-webkit-scrollbar { display: none; }
+    .cx-np-chip {
+      flex: none;
+      border: none;
+      background: var(--cx-chip-bg);
+      color: var(--cx-text-secondary);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .cx-np-chip.active { background: var(--cx-blue); color: #fff; }
+    .cx-np-body { flex: 1; overflow-y: auto; padding: 4px 0; }
+    .cx-np-row {
+      display: flex;
+      gap: 10px;
+      padding: 8px 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .cx-np-row:hover { background: var(--cx-wash); }
+    .cx-np-row.dead { pointer-events: none; }
+    .cx-np-ava { position: relative; flex: none; width: 32px; height: 32px; }
+    .cx-np-ava img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+    .cx-np-tava {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .cx-np-glyph {
+      position: absolute;
+      right: -3px;
+      bottom: -3px;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--cx-bg-raised);
+      border: 1px solid var(--cx-border);
+      color: var(--cx-text-secondary);
+      font-size: 9px;
+      line-height: 13px;
+      text-align: center;
+    }
+    .cx-np-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .cx-np-top { display: flex; justify-content: space-between; gap: 8px; }
+    .cx-np-name {
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cx-np-time { flex: none; color: var(--cx-text-faint); font-size: 11px; }
+    .cx-np-msg {
+      color: var(--cx-text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .cx-np-row.unread .cx-np-name::after {
+      content: "";
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cx-blue);
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .cx-np-status { text-align: center; color: var(--cx-text-faint); padding: 10px 0 12px; font-size: 12px; }
 
     /* ---------- splash ---------- */
     .${ROOT_CLASS} #d-splash { background: var(--cx-bg) !important; }
-    .${ROOT_CLASS} #d-splash .dots { background-color: var(--cx-blue) !important; filter: none !important; }
+    .${ROOT_CLASS} #d-splash .dots { background: var(--cx-blue) !important; filter: none !important; }
+
+    /* ---------- 自绘搜索弹层（rail 搜索图标 / ⌘K） ---------- */
+    .cx-sp-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 950;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .cx-sp-overlay.open { display: flex; }
+    .cx-sp-pop {
+      width: min(680px, 92vw);
+      max-height: 72vh;
+      margin-top: 10vh;
+      background: var(--cx-bg-raised);
+      border: 1px solid var(--cx-border);
+      border-radius: 14px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-family: var(--cx-font-ui);
+      font-size: 13px;
+      color: var(--cx-text);
+    }
+    .cx-sp-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 10px 10px 14px;
+      border-bottom: 1px solid var(--cx-border-soft);
+    }
+    .cx-sp-field {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--cx-bg-inset);
+      border: 1px solid var(--cx-border);
+      border-radius: 10px;
+      padding: 7px 10px;
+      color: var(--cx-text-faint);
+    }
+    .cx-sp-field svg { width: 16px; height: 16px; flex: none; }
+    .cx-sp-input {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--cx-text);
+      font-size: 15px;
+      font-family: inherit;
+    }
+    .cx-sp-clear {
+      border: none;
+      background: none;
+      color: var(--cx-text-faint);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      flex: none;
+    }
+    .cx-sp-clear:hover { background: var(--cx-rail-bg-hover); color: var(--cx-text); }
+    .cx-sp-close {
+      flex: none;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border: none;
+      background: none;
+      color: var(--cx-text-dim);
+      cursor: pointer;
+      border-radius: 8px;
+    }
+    .cx-sp-close:hover { background: var(--cx-rail-bg-hover); color: var(--cx-text); }
+    .cx-sp-close svg { width: 18px; height: 18px; }
+    .cx-sp-chips {
+      display: flex;
+      gap: 6px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--cx-border-soft);
+      overflow-x: auto;
+    }
+    .cx-sp-chip {
+      flex: none;
+      border: none;
+      background: var(--cx-chip-bg);
+      color: var(--cx-text-secondary);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .cx-sp-chip.active { background: var(--cx-blue); color: #fff; }
+    .cx-sp-body { flex: 1; overflow-y: auto; padding: 4px 0; }
+    .cx-sp-group { font-size: 11px; color: var(--cx-text-faint); padding: 8px 14px 4px; }
+    .cx-sp-item {
+      display: flex;
+      gap: 10px;
+      padding: 8px 14px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .cx-sp-item:hover, .cx-sp-item.active { background: var(--cx-wash); }
+    .cx-sp-ava { flex: none; width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+    .cx-sp-ava.cx-sp-letter {
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .cx-sp-ava.cx-sp-dot { width: 10px; height: 10px; border-radius: 50%; margin: 9px 0; }
+    .cx-sp-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .cx-sp-item .tt { font-size: 14px; font-weight: 500; }
+    .cx-sp-item .meta { font-size: 12px; color: var(--cx-text-faint); }
+    .cx-sp-item .sb {
+      font-size: 12px;
+      color: var(--cx-text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .cx-sp-hl { color: var(--cx-blue); background: transparent; font-weight: 600; }
+    .cx-sp-copy {
+      flex: none;
+      align-self: center;
+      color: var(--cx-text-faint);
+      opacity: 0;
+      padding: 4px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .cx-sp-copy:hover { color: var(--cx-text); background: var(--cx-wash); }
+    .cx-sp-item:hover .cx-sp-copy { opacity: 1; }
+    .cx-sp-copy.done { color: var(--cx-blue); opacity: 1; }
+    .cx-sp-copy svg { width: 14px; height: 14px; display: block; }
+    .cx-sp-adv {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 12px;
+      border-top: 1px solid var(--cx-border-soft);
+    }
+    .cx-sp-adv-select {
+      background: var(--cx-bg-inset);
+      color: var(--cx-text-secondary);
+      border: 1px solid var(--cx-border);
+      border-radius: 8px;
+      font-size: 12px;
+      padding: 3px 6px;
+      font-family: inherit;
+    }
+    .cx-sp-adv-hint { font-size: 12px; color: var(--cx-text-faint); margin-left: auto; }
+    .cx-sp-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-top: 1px solid var(--cx-border-soft);
+    }
+    .cx-sp-more { color: var(--cx-blue); font-size: 13px; text-decoration: none; }
+    .cx-sp-more:hover { text-decoration: underline; }
+    .cx-sp-tips { display: flex; gap: 12px; font-size: 12px; color: var(--cx-text-dim); }
+    .cx-sp-tips kbd {
+      border: 1px solid var(--cx-border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 11px;
+      color: var(--cx-text-dim);
+      font-family: var(--cx-font-ui);
+      background: var(--cx-bg-inset);
+    }
+    .cx-sp-status { text-align: center; color: var(--cx-text-faint); padding: 20px; font-size: 13px; }
 
     /* ================= 窄图标条（新版双层左侧栏的最左层） ================= */
     .codex-strip {
@@ -1786,7 +2078,7 @@
       content: "";
       position: absolute;
       top: 1px; right: 1px;
-      width: 7px; height: 7px;
+      width: 8px; height: 8px;
       border-radius: 50%;
       background: var(--cx-blue);
       border: 1.5px solid var(--cx-rail-bg);
@@ -1850,45 +2142,24 @@
       min-width: 0;
     }
 
-    .codex-rail-foot {
-      border-top: 1px solid var(--cx-rail-border);
-      padding: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: none;
-    }
-    .codex-rail-foot-user {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 10px;
-      border-radius: var(--cx-radius);
-      cursor: pointer;
-      font-size: 14px;
-      min-width: 0;
-    }
-    .codex-rail-foot-user:hover { background: var(--cx-rail-bg-hover); }
-    .codex-rail-foot-user svg { width: 17px; height: 17px; color: var(--cx-rail-text-dim); flex: none; }
-    .codex-rail-foot-user .cx-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    /* 左下角明暗切换按钮：置于最高层，保证任何浮层之下都可点 */
+    .cx-traffic-spacer { flex: 1; }
+    /* 明暗切换按钮（左上角工具行行尾）：置于最高层，保证任何浮层之下都可点 */
     .codex-rail .cx-mode-btn {
       position: relative;
       z-index: 2147483000;
       flex: none;
-      width: 36px; height: 36px;
+      width: 24px; height: 24px;
       padding: 0;
       border: none;
       background: none;
-      border-radius: 9px;
+      border-radius: 6px;
       color: var(--cx-rail-text-dim);
       display: grid;
       place-items: center;
       cursor: pointer;
     }
     .codex-rail .cx-mode-btn:hover { background: var(--cx-rail-bg-hover); color: var(--cx-rail-text); }
-    .codex-rail .cx-mode-btn svg { width: 18px; height: 18px; pointer-events: none; }
+    .codex-rail .cx-mode-btn svg { width: 16px; height: 16px; pointer-events: none; }
 
     /* ================= 右侧主区 ================= */
     .codex-main {
@@ -1932,6 +2203,81 @@
     }
     .codex-topbar .cx-icon-btn:hover { background: var(--cx-bg-raised); color: var(--cx-text); }
     .codex-topbar .cx-menu-btn { display: none; }
+    /* 顶栏楼层指示：N/M 胶囊（点击弹层跳楼） */
+    .codex-topbar .cx-floor-ind {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: var(--cx-text-dim);
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex: none;
+    }
+    .codex-topbar .cx-floor-ind:hover { background: var(--cx-rail-bg-hover); color: var(--cx-text); }
+    .codex-topbar .cx-floor-sep { opacity: 0.5; }
+    /* 列表视图隐藏楼层指示（html 根类 codex-topic-open 仅在话题路由加上） */
+    .codex-theme:not(.codex-topic-open) .cx-floor-ind { display: none; }
+
+    /* 选择楼层弹层 */
+    .cx-floor-pop {
+      position: fixed;
+      inset: 0;
+      z-index: 920;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.4);
+    }
+    .cx-floor-pop.open { display: flex; }
+    .cx-floor-pop-card {
+      width: 280px;
+      padding: 16px;
+      background: var(--cx-bg-raised);
+      color: var(--cx-text);
+      border: 1px solid var(--cx-border);
+      border-radius: 12px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+      font-family: var(--cx-font-ui);
+    }
+    .cx-floor-pop-title { font-size: 14px; font-weight: 600; color: var(--cx-text); margin-bottom: 12px; }
+    .cx-floor-pop-row { display: flex; align-items: center; gap: 8px; }
+    .cx-floor-pop-input {
+      flex: 1;
+      min-width: 0;
+      padding: 6px 10px;
+      font-size: 14px;
+      color: var(--cx-text);
+      background: var(--cx-bg-inset);
+      border: 1px solid var(--cx-border);
+      border-radius: 8px;
+      outline: none;
+    }
+    .cx-floor-pop-input:focus { border-color: var(--cx-blue); }
+    .cx-floor-pop-input.error { border-color: #e5544c; }
+    .cx-floor-pop-input::-webkit-outer-spin-button,
+    .cx-floor-pop-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .cx-floor-pop-total { font-size: 12px; color: var(--cx-text-dim); white-space: nowrap; }
+    .cx-floor-pop-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+    .cx-floor-pop-actions button {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--cx-border);
+      background: transparent;
+      color: var(--cx-text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--cx-font-ui);
+    }
+    .cx-floor-pop-actions button:hover { background: var(--cx-rail-bg-hover); }
+    .cx-floor-pop-actions .cx-floor-pop-go {
+      background: var(--cx-blue);
+      border-color: var(--cx-blue);
+      color: #fff;
+    }
+    .cx-floor-pop-actions .cx-floor-pop-go:hover { background: var(--cx-blue); filter: brightness(1.06); }
 
     .codex-thread {
       flex: 1;
@@ -3456,12 +3802,7 @@
     return false;
   }
 
-  /* ============================== 通知 / 用户菜单收养（移植自 feishu 脚本） ============================== */
-
-  let notifOpenInFlight = false;
-  let notifMenuObserver = null;
-  let notifPinned = false;   // 点击钉住；再点触发器 / 点外面取消
-  let notifWantOpen = false; // 意向开关：避免收起后被 observer 再次捞起
+  /* ============================== 通知（自绘面板；数据层移植自 im/src/ui/notifications.js） ============================== */
 
   /** 读取 Discourse 未读通知数（与顶栏用户菜单角标同源） */
   function getUnreadNotificationCount() {
@@ -3509,243 +3850,472 @@
     return 0;
   }
 
-  function findUserMenu() {
-    return document.querySelector(".user-menu.revamped.menu-panel, .user-menu.menu-panel, .user-menu");
+  /** 铃铛蓝点计数：服务端未读数与通知面板缓存未读行数取大，避免原生计数口径与自绘面板不一致导致蓝点不亮 */
+  function getUnreadIndicatorCount() {
+    const server = getUnreadNotificationCount();
+    let cached = 0;
+    const rows = notifState.byFilter.get("all")?.rows;
+    if (rows) {
+      for (const r of rows) if (r.unread) cached++;
+    }
+    return Math.max(server, cached);
   }
 
-  function findUserMenuToggle() {
-    return document.querySelector(
-      "#toggle-current-user, #current-user button, .header-dropdown-toggle.current-user button, .current-user button.icon, #current-user .icon, #current-user summary, button[aria-controls*='user'], .header-dropdown-toggle.current-user"
-    );
+  // Discourse core notification_type 数字（实测锚定：2 回复 5 赞 12 徽章 25 回应 800 关注 801 关注发帖 802 关注回复 803 Boost）
+  const NOTIF_GLYPHS = {
+    1: "@", 14: "@", 15: "@", // 提及 / 群组提及
+    2: "↩", // 回复
+    3: "❝", // 引用
+    4: "✎", // 编辑
+    5: "♥", 19: "♥", // 赞 / 合并赞
+    6: "✉", 7: "✉", // 私信 / 邀请进私信
+    8: "✓", // 邀请接受
+    9: "📝", // 发帖
+    11: "🔗", // 链接
+    12: "🏅", // 徽章
+    13: "👥", // 邀请进话题
+    17: "🔔", // 关注分类新帖
+    18: "⏰", // 话题提醒
+    24: "★", // 书签提醒
+    25: "☻", // 回应
+    800: "👤", // 关注
+    801: "📑", // 关注人发布新话题
+    802: "↩", // 关注人回复
+    803: "🚀" // Boost（站点定制）
+  };
+
+  // chip 与原生 user-menu tab 同一套；filter_by_types 逐字抄自原生请求
+  const NOTIF_FILTERS = [
+    { key: "all", label: "全部" },
+    { key: "replied", label: "回复", types: "mentioned,group_mentioned,posted,quoted,replied" },
+    { key: "liked", label: "赞", types: "liked,liked_consolidated,reaction" },
+    { key: "private", label: "私信", kind: "pm" },
+    { key: "bookmarks", label: "书签", kind: "bookmarks" },
+    { key: "assigned", label: "分配", types: "assigned" },
+    { key: "chat", label: "聊天", types: "chat_invitation,chat_mention,chat_message,chat_quoted,chat_watched_thread" },
+    {
+      key: "other", label: "其他",
+      types: "edited,invited_to_private_message,invitee_accepted,moved_post,linked,granted_badge,invited_to_topic,custom,watching_first_post,topic_reminder,post_approved,code_review_commit_approved,membership_request_accepted,membership_request_consolidated,votes_released,event_reminder,event_invitation,chat_group_mention,question_answer_user_commented,watching_category_or_tag,new_features,admin_problems,linked_consolidated,upcoming_change_available,upcoming_change_automatically_promoted,boost,suggested_edit_created,suggested_edit_accepted,following,following_created_topic,following_replied,circles_activity,resenha_invitation"
+    }
+  ];
+
+  const NOTIF_TTL = 30_000;
+  const NOTIF_AVATAR_COLORS = ["#3370FF", "#14B8A6", "#FF6F39", "#7B61FF", "#22C55E", "#00B4D8", "#F59E0B", "#EF4444"];
+  const NOTIF_MARK_ALL_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 13l4 4L15 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 13l4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/></svg>`;
+
+  const notifState = {
+    byFilter: new Map(), // filter -> { rows, moreUrl, loadedAt, error }
+    filter: "all",
+    loading: false
+  };
+
+  function notifWho(n) {
+    const acting = String(n.acting_user_name || "").replace(/\([^)]*\)|（[^）]*）/g, "").trim();
+    return acting || n.data?.display_username || n.data?.original_username || n.data?.username || "系统";
   }
 
-  function getHeaderService() {
-    return safeLookup(getEmberOwner(), "service:header");
+  function notifNameOf(n) {
+    const base = notifWho(n);
+    const count = Number(n.data?.count || 0);
+    if (count > 1) {
+      return `${base} 和其他 ${count - 1} 人`;
+    }
+    return base;
   }
 
-  /** 打开/关闭 Discourse 原生 user-menu（优先 Ember header.userVisible） */
-  function setUserMenuVisible(visible) {
-    const header = getHeaderService();
-    if (header) {
-      try {
-        if ("userVisible" in header) {
-          header.userVisible = !!visible;
-          return true;
+  // 概述文案：按实测 notification_type 给动词；消除与顶栏用户名的重复
+  function notifSummaryOf(n) {
+    const rawTitle = n.data?.topic_title || "";
+    const t = rawTitle ? `《${rawTitle}》` : "";
+    const type = n.notification_type;
+
+    // 1. 关注插件（800: 关注, 801: 关注发新帖, 802: 关注回复）或无话题/无徽章的关注
+    if (type === 800 || (!n.topic_id && !n.data?.badge_id && type !== 12 && !rawTitle)) {
+      return "已开始关注您。";
+    }
+    if (type === 801) {
+      return t ? `发布了新话题 ${t}` : "发布了新话题";
+    }
+    if (type === 802) {
+      return t ? `回复了话题 ${t}` : "回复了关注的话题";
+    }
+
+    // 2. 徽章类
+    if (type === 12 || n.data?.badge_id || n.data?.badge_name) {
+      return `获得了「${n.data?.badge_name || "新徽章"}」徽章`;
+    }
+
+    // 3. 核心 notification_type
+    switch (type) {
+      case 1:
+        return t ? `在 ${t} 中提到了你` : "提到了你";
+      case 14:
+      case 15:
+        return t ? `在 ${t} 中提及了你的群组` : "提及了你的群组";
+      case 2: {
+        const isConsolidated = /^\d+ 个回复$/.test(String(n.data?.display_username || ""));
+        if (isConsolidated) return t ? `${n.data.display_username} · ${t}` : n.data.display_username;
+        return t ? `回复了 ${t}` : "回复了你的帖子";
+      }
+      case 3:
+        return t ? `在 ${t} 中引用了你的发言` : "引用了你的发言";
+      case 4:
+        return t ? `编辑了 ${t}` : "编辑了帖子";
+      case 5:
+      case 19:
+        return t ? `赞了 ${t}` : "赞了你的帖子";
+      case 6:
+      case 7:
+        return t ? `私信：${rawTitle}` : "发来了私信";
+      case 8:
+        return "接受了你的邀请";
+      case 9:
+        return t ? `在 ${t} 发表了新内容` : "发表了新内容";
+      case 10:
+        return t ? `移动了帖子 ${t}` : "移动了帖子";
+      case 11:
+        return t ? `在 ${t} 链接了你的帖子` : "链接了你的帖子";
+      case 13:
+        return t ? `邀请你加入讨论 ${t}` : "邀请你加入讨论";
+      case 17:
+        return t ? `在关注分类中发布了 ${t}` : "关注分类有新动态";
+      case 18:
+        return t ? `话题提醒：${t}` : "话题定时提醒";
+      case 24:
+        return t ? `书签提醒：${t}` : "书签提醒";
+      case 25:
+        return t ? `回应了 ${t}` : "回应了你的帖子";
+      case 26:
+        return t ? `投票已结束：${t}` : "投票已结束";
+      default: {
+        if (t && (type === 803 || /boost/i.test(String(n.data?.type || "")))) {
+          return `Boost 了 ${t}`;
         }
-        if (typeof header.set === "function") {
-          header.set("userVisible", !!visible);
-          return true;
-        }
-      } catch (err) {
-        console.warn("[linuxdo-codex] header.userVisible failed", err);
+        if (t) return `与 ${t} 产生互动`;
+        return "有新动态";
       }
     }
+  }
 
-    const events = safeLookup(getEmberOwner(), "service:app-events");
-    if (events && typeof events.trigger === "function") {
-      try {
-        const isOpen = !!findUserMenu();
-        // keyboard-trigger 是 toggle：仅在状态需要变化时触发
-        if (!!visible !== isOpen) {
-          events.trigger("header:keyboard-trigger", { type: "user" });
-        }
-        return true;
-      } catch (err) {
-        console.warn("[linuxdo-codex] app-events user menu failed", err);
+  function notifGlyphOf(n) {
+    const type = n.notification_type;
+    if (type === 25) {
+      return n.data?.reaction_icon === "heart" ? "♥" : "☻";
+    }
+    if (type === 800 || (!n.topic_id && !n.data?.badge_id && type !== 12 && !n.data?.topic_title)) {
+      return "👤";
+    }
+    if (type === 801) return "📑";
+    if (type === 802) return "↩";
+    if (type === 803 || /boost/i.test(String(n.data?.type || ""))) return "🚀";
+    return NOTIF_GLYPHS[type] || "•";
+  }
+
+  function notifHrefOf(n) {
+    if (n.topic_id) {
+      return `/t/${n.slug || "topic"}/${n.topic_id}${n.post_number ? `/${n.post_number}` : ""}`;
+    }
+    if (n.data?.badge_id || n.notification_type === 12) {
+      const me = encodeURIComponent(getCurrentUsername() || "");
+      const bid = n.data?.badge_id;
+      return bid ? `/badges/${bid}/-?username=${me}` : `/u/${me}/badges`;
+    }
+    const u = n.data?.username || n.data?.original_username || n.acting_user_name || n.data?.display_username;
+    if (u && u !== "系统") {
+      return `/u/${encodeURIComponent(u)}`;
+    }
+    if (n.data?.url) return notifNormalizePath(n.data.url);
+    return "";
+  }
+
+  /** 三种响应形状（notifications / 私信 topics / 书签）→ 统一行
+   *  { id?, href, name, avatar, time, msg, unread, icon } */
+  function notifNormalize(f, data) {
+    if (f.kind === "pm") {
+      const users = new Map((data.users || []).map((u) => [u.username, u]));
+      const rows = (data.topics || []).map((t) => {
+        const name = t.last_poster_username || "system";
+        const u = users.get(name);
+        return {
+          href: `/t/${t.slug || "topic"}/${t.id}`,
+          name,
+          avatar: u?.avatar_template,
+          time: t.last_posted_at || t.created_at,
+          msg: t.title || "",
+          unread: (t.unread_posts || 0) > 0 || !!t.unseen,
+          icon: "✉"
+        };
+      });
+      return { rows, moreUrl: null };
+    }
+    if (f.kind === "bookmarks") {
+      const rows = (data.bookmarks || []).map((b) => ({
+        href: notifNormalizePath(b.bookmarkable_url || `/t/${b.slug || "topic"}/${b.topic_id}/${b.linked_post_number || 1}`),
+        name: b.user?.username || "?",
+        avatar: b.user?.avatar_template,
+        time: b.created_at,
+        msg: notifStripTags(b.fancy_title || b.title || ""),
+        unread: false,
+        icon: "★"
+      }));
+      return { rows, moreUrl: null };
+    }
+    const rows = (data.notifications || []).map((n) => ({
+      id: n.id,
+      href: notifHrefOf(n),
+      name: notifNameOf(n),
+      avatar: n.acting_user_avatar_template || n.avatar_template,
+      time: n.created_at,
+      msg: notifSummaryOf(n),
+      unread: !n.read,
+      icon: notifGlyphOf(n)
+    }));
+    return {
+      rows,
+      moreUrl: data.load_more_notifications ? notifNormalizePath(data.load_more_notifications) : null
+    };
+  }
+
+  function notifFilterPath(f) {
+    if (f.kind === "pm" || f.kind === "bookmarks") {
+      const name = encodeURIComponent(getCurrentUsername() || "");
+      return `/u/${name}/user-menu-${f.kind === "pm" ? "private-messages" : "bookmarks"}`;
+    }
+    // 与原生 user-menu 请求同参（recent+silent）；bump_last_seen_reviewable 不带，避免副作用
+    const qs = new URLSearchParams({ limit: "30", recent: "true", silent: "true" });
+    if (f.types) qs.set("filter_by_types", f.types);
+    return `/notifications?${qs.toString()}`;
+  }
+
+  function notifNormalizePath(url) {
+    return String(url).replace(/^https?:\/\/[^/]+\//, "/");
+  }
+
+  function notifStripTags(s) {
+    return String(s || "").replace(/<[^>]*>/g, "");
+  }
+
+  function notifAvatarUrl(template) {
+    if (!template) return "";
+    const url = template.replace("{size}", "96");
+    return url.startsWith("http") ? url : location.origin + url;
+  }
+
+  function notifAvatarColor(name) {
+    let hash = 0;
+    const s = String(name || "?");
+    for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) | 0;
+    return NOTIF_AVATAR_COLORS[Math.abs(hash) % NOTIF_AVATAR_COLORS.length];
+  }
+
+  function notifAvatarLetter(name) {
+    const s = String(name || "?").trim();
+    const ch = [...s][0] || "?";
+    return /[a-z]/i.test(ch) ? ch.toUpperCase() : ch;
+  }
+
+  function notifAvatarHtml(row) {
+    if (row.avatar) {
+      return `<img src="${escapeHtml(notifAvatarUrl(row.avatar))}" alt="" loading="lazy">`;
+    }
+    return `<span class="cx-np-tava" style="background:${notifAvatarColor(row.name)}">${escapeHtml(notifAvatarLetter(row.name))}</span>`;
+  }
+
+  function notifRowHtml(n) {
+    // 无话题的通知（徽章/系统类）没有落地页：渲染为不可点的 span，避免“点了没反应”
+    const tag = n.href ? "a" : "span";
+    const dead = n.href ? "" : " dead";
+    return `
+    <${tag} class="cx-np-row${n.unread ? " unread" : ""}${dead}" ${n.href ? `href="${escapeHtml(n.href)}"` : ""} ${n.id ? `data-notif-id="${n.id}"` : ""}>
+      <span class="cx-np-ava">${notifAvatarHtml(n)}<span class="cx-np-glyph">${n.icon || "•"}</span></span>
+      <span class="cx-np-info">
+        <span class="cx-np-top"><span class="cx-np-name">${escapeHtml(n.name)}</span><span class="cx-np-time">${escapeHtml(formatTime(n.time))}</span></span>
+        <span class="cx-np-msg">${escapeHtml(n.msg)}</span>
+      </span>
+    </${tag}>`;
+  }
+
+  function notifPanelNode() {
+    return document.querySelector(".codex-notif-panel");
+  }
+
+  /** 一次性构建通知面板 DOM（自绘；不再收养原生 user-menu） */
+  function ensureNotifPanel() {
+    let panel = notifPanelNode();
+    if (panel) return panel;
+    panel = document.createElement("div");
+    panel.className = "codex-notif-panel";
+    panel.innerHTML = `
+      <div class="cx-np-head">
+        <div class="cx-np-title">通知</div>
+        <button type="button" class="cx-np-markall" title="全部忽略">${NOTIF_MARK_ALL_SVG}</button>
+      </div>
+      <div class="cx-np-chips">${NOTIF_FILTERS.map((f) => `<button type="button" class="cx-np-chip" data-ntype="${f.key}">${f.label}</button>`).join("")}</div>
+      <div class="cx-np-body"></div>`;
+    panel.addEventListener("click", (e) => {
+      const chip = e.target.closest(".cx-np-chip[data-ntype]");
+      if (chip) { e.preventDefault(); setNotifFilter(chip.dataset.ntype); return; }
+      if (e.target.closest(".cx-np-markall")) { e.preventDefault(); markAllNotifRead(); return; }
+      const row = e.target.closest("a.cx-np-row");
+      if (row) {
+        e.preventDefault();
+        markNotifRead(row);
+        closeNotifPanelWithCleanup();
+        navigateInApp(row.getAttribute("href"));
       }
+    });
+    // capture 阶段委托 .cx-np-body 的滚动，触底加载更多
+    panel.addEventListener("scroll", (e) => {
+      if (e.target === panel.querySelector(".cx-np-body")) notifLoadMore();
+    }, { capture: true });
+    document.body.appendChild(panel);
+    return panel;
+  }
+
+  function renderNotifPanel() {
+    const panel = notifPanelNode();
+    if (!panel) return;
+    for (const chip of panel.querySelectorAll(".cx-np-chip[data-ntype]")) {
+      chip.classList.toggle("active", chip.dataset.ntype === notifState.filter);
     }
-    return false;
-  }
-
-  function setNotifOpenClass(open) {
-    document.documentElement.classList.toggle("codex-notif-open", !!open);
-  }
-
-  function positionNotifMenu(menu) {
-    if (!menu || !notifWantOpen) return;
-    // 顶栏被 opacity:0 / clip 藏起来；菜单必须挪到 body 才能看见
-    if (menu.parentElement !== document.body) {
-      document.body.appendChild(menu);
-    }
-    menu.classList.add("codex-user-menu-float", "show-avatars");
-    // 显隐交给 html.codex-notif-open；这里清掉 Discourse 内联定位
-    menu.style.display = "";
-    menu.style.visibility = "";
-    menu.style.opacity = "";
-    menu.style.pointerEvents = "";
-    menu.style.position = "";
-    menu.style.left = "";
-    menu.style.top = "";
-    menu.style.right = "";
-    menu.style.bottom = "";
-    menu.style.transform = "";
-    setNotifOpenClass(true);
-  }
-
-  function clickUserMenuToggle() {
-    const toggle = findUserMenuToggle();
-    if (!toggle) return false;
-    try {
-      toggle.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
-    } catch {
-      try { toggle.click(); } catch { return false; }
-    }
-    return true;
-  }
-
-  /** 短暂解除顶栏隐藏，让原生 click / Ember 能创建菜单，再靠 observer 挪到 body */
-  function unlockHeaderForNotifClick() {
-    let style = document.getElementById("codex-unlock-header");
-    if (!style) {
-      style = document.createElement("style");
-      style.id = "codex-unlock-header";
-      style.textContent = `
-        html.codex-theme.codex-notif-opening .d-header-wrap,
-        html.codex-theme.codex-notif-opening .d-header {
-          opacity: 1 !important;
-          clip: auto !important;
-          overflow: visible !important;
-          width: auto !important;
-          height: auto !important;
-          max-width: none !important;
-          max-height: none !important;
-          pointer-events: auto !important;
-          z-index: 850 !important;
-          top: -9999px !important;
-          left: 0 !important;
-          position: fixed !important;
-        }
-      `;
-      document.documentElement.appendChild(style);
-    }
-    document.documentElement.classList.add("codex-notif-opening");
-  }
-
-  function lockHeaderAfterNotif() {
-    document.documentElement.classList.remove("codex-notif-opening");
-  }
-
-  function adoptNotifMenuIfAny() {
-    if (!notifWantOpen) return false;
-    const menu = findUserMenu();
-    if (!menu) return false;
-    positionNotifMenu(menu);
-    lockHeaderAfterNotif();
-    return true;
-  }
-
-  function openNotifMenu() {
-    notifWantOpen = true;
-    if (adoptNotifMenuIfAny()) {
-      // 已打开则确保 Ember 状态同步为可见
-      setUserMenuVisible(true);
-      return true;
-    }
-    if (notifOpenInFlight) return false;
-    notifOpenInFlight = true;
-    ensureNotifMenuObserver();
-
-    let opened = false;
-    try {
-      opened = setUserMenuVisible(true);
-    } catch (err) {
-      console.warn("[linuxdo-codex] setUserMenuVisible threw", err);
-    }
-
-    // Ember 失败或不立刻出 DOM → 解锁顶栏再点一次原生按钮
-    if (!findUserMenu()) {
-      unlockHeaderForNotifClick();
-      clickUserMenuToggle();
+    const cached = notifState.byFilter.get(notifState.filter);
+    const body = panel.querySelector(".cx-np-body");
+    let html;
+    if (!cached && !notifState.loading) {
+      html = `<div class="cx-np-status">加载中…</div>`;
     } else {
-      opened = true;
+      const rows = cached?.rows || [];
+      html = cached?.error
+        ? `<div class="cx-np-status">通知加载失败（${escapeHtml(cached.error)}）</div>`
+        : rows.map(notifRowHtml).join("") +
+          `<div class="cx-np-status">${cached?.moreUrl ? "下拉加载更多…" : rows.length ? "没有更多了" : "暂无通知"}</div>`;
     }
-
-    let tries = 0;
-    const poll = setInterval(() => {
-      if (adoptNotifMenuIfAny()) {
-        notifOpenInFlight = false;
-        clearInterval(poll);
-        return;
-      }
-      if (++tries > 24) {
-        notifOpenInFlight = false;
-        lockHeaderAfterNotif();
-        clearInterval(poll);
-        console.warn("[linuxdo-codex] openNotifMenu: menu not found", {
-          opened,
-          hasOwner: !!getEmberOwner(),
-          hasHeader: !!getHeaderService(),
-          hasToggle: !!findUserMenuToggle()
-        });
-      }
-    }, 50);
-    return opened;
+    // applyTheme 每次 tick 都会走到这里：内容没变就不重写 innerHTML，
+    // 否则行节点被持续拆建，mousedown/mouseup 分家，整个列表表现为点不动
+    if (panel.dataset.sig === html) return;
+    panel.dataset.sig = html;
+    body.innerHTML = html;
   }
 
-  function setNotifPinned(pinned) {
-    notifPinned = !!pinned;
-    document.documentElement.classList.toggle("codex-notif-pinned", notifPinned);
-  }
-
-  function hideNotifMenuNode(menu) {
-    if (!menu) return;
-    // 先靠 html.codex-notif-open 隐藏；再尽量拆掉节点，防止 Ember 残留
-    menu.classList.remove("show-avatars");
+  async function loadNotifFilter(filter, { force } = {}) {
+    if (notifState.loading) return;
+    const cached = notifState.byFilter.get(filter);
+    if (!force && cached && Date.now() - cached.loadedAt < NOTIF_TTL) return;
+    notifState.loading = true;
     try {
-      menu.remove();
-    } catch {
-      menu.classList.remove("codex-user-menu-float");
-      menu.style.display = "none";
+      const f = NOTIF_FILTERS.find((x) => x.key === filter) || NOTIF_FILTERS[0];
+      const data = await api(notifFilterPath(f));
+      const { rows: incoming, moreUrl } = notifNormalize(f, data);
+      const prev = force && cached ? cached.rows : [];
+      const seen = new Set(prev.map((r) => r.id).filter(Boolean));
+      notifState.byFilter.set(filter, {
+        rows: prev.concat(incoming.filter((r) => !r.id || !seen.has(r.id))),
+        moreUrl,
+        loadedAt: Date.now(),
+        error: null
+      });
+      // 面板数据到位后刷新铃铛蓝点（自绘面板未读口径）
+      if (filter === "all") syncRail();
+    } catch (err) {
+      notifState.byFilter.set(filter, {
+        ...(cached || { rows: [], moreUrl: null }),
+        loadedAt: Date.now(),
+        error: err?.message || "网络异常"
+      });
+    } finally {
+      notifState.loading = false;
+      if (notifPanelNode()) renderNotifPanel();
     }
   }
 
-  function closeNotifMenu() {
-    notifWantOpen = false;
-    notifOpenInFlight = false;
-    setNotifPinned(false);
-    setNotifOpenClass(false); // 关键：立刻靠 CSS 藏掉
-    lockHeaderAfterNotif();
-    // 藏掉所有我们捞出来的浮层副本
-    document.querySelectorAll(".user-menu.codex-user-menu-float, .codex-user-menu-float").forEach(hideNotifMenuNode);
-    hideNotifMenuNode(findUserMenu());
-    try { setUserMenuVisible(false); } catch { /* ignore */ }
-    // 看过通知后刷新铃铛蓝点
+  function setNotifFilter(key) {
+    if (!NOTIF_FILTERS.some((f) => f.key === key)) return;
+    notifState.filter = key;
+    renderNotifPanel();
+    loadNotifFilter(key);
+  }
+
+  async function notifLoadMore() {
+    const body = notifPanelNode()?.querySelector(".cx-np-body");
+    if (!body || body.scrollTop + body.clientHeight < body.scrollHeight - 120) return;
+    const cached = notifState.byFilter.get(notifState.filter);
+    if (!cached?.moreUrl || notifState.loading) return;
+    notifState.loading = true;
+    try {
+      const data = await api(cached.moreUrl);
+      const f = NOTIF_FILTERS.find((x) => x.key === notifState.filter) || NOTIF_FILTERS[0];
+      const { rows, moreUrl } = notifNormalize(f, data);
+      cached.rows = cached.rows.concat(rows);
+      cached.moreUrl = moreUrl;
+      cached.loadedAt = Date.now();
+    } catch { /* ignore */ }
+    finally {
+      notifState.loading = false;
+      if (notifPanelNode()) renderNotifPanel();
+    }
+  }
+
+  function markNotifRead(row) {
+    const id = Number(row?.dataset?.notifId);
+    if (!id) return;
+    for (const { rows } of notifState.byFilter.values()) {
+      const r = rows.find((x) => x.id === id);
+      if (r && r.unread) {
+        r.unread = false;
+        apiSend(`/notifications/read?id=${id}`, "PUT").then(syncRail).catch(() => {});
+        break;
+      }
+    }
+  }
+
+  async function markAllNotifRead() {
+    try {
+      await apiSend("/notifications/mark-read", "PUT");
+    } catch { /* ignore */ }
+    notifState.byFilter.clear();
+    renderNotifPanel();
+    syncRail();
+  }
+
+  function openNotifPanel() {
+    ensureNotifPanel();
+    renderNotifPanel();
+    loadNotifFilter(notifState.filter);
+  }
+
+  function closeNotifPanel() {
+    notifPanelNode()?.remove();
+  }
+
+  /** 关闭并延迟刷新铃铛蓝点（markAll/导航等复用） */
+  function closeNotifPanelWithCleanup() {
+    closeNotifPanel();
     setTimeout(() => syncRail(), 400);
   }
 
-  function ensureNotifMenuObserver() {
-    if (notifMenuObserver) return;
-    notifMenuObserver = new MutationObserver(() => {
-      if (otherThemeActive()) return;
-      if (!notifWantOpen) return;
-      adoptNotifMenuIfAny();
-    });
-    notifMenuObserver.observe(document.body, { childList: true, subtree: true });
-  }
-
-  function isNotifMenuOpen() {
-    return notifPinned || document.documentElement.classList.contains("codex-notif-open");
+  function isNotifPanelOpen() {
+    return !!notifPanelNode();
   }
 
   function ensureNotifOutsideClose() {
     if (window.__codexNotifOutsideBound) return;
     window.__codexNotifOutsideBound = true;
     const onOutside = (e) => {
-      if (!isNotifMenuOpen()) return;
+      if (!isNotifPanelOpen()) return;
       const triggers = document.querySelectorAll("[data-codex-notif-trigger]");
-      const menu = document.querySelector(".user-menu.codex-user-menu-float, .codex-user-menu-float");
+      const panel = notifPanelNode();
       const t = e.target;
       for (const el of triggers) {
         if (el === t || el.contains(t)) return;
       }
-      if (menu && (menu === t || menu.contains(t))) return;
-      closeNotifMenu();
+      if (panel && (panel === t || panel.contains(t))) return;
+      closeNotifPanelWithCleanup();
     };
     document.addEventListener("pointerdown", onOutside, true);
     document.addEventListener("mousedown", onOutside, true);
   }
 
-  /** 铃铛 / 底部用户行：点击钉住开菜单，再点收起（无 hover 逻辑，桌面窄屏都可用） */
+  /** 铃铛 / strip 齿轮：点击开/关自绘通知面板（无 hover 逻辑，桌面窄屏都可用） */
   function bindNotifTrigger(el) {
     if (!el || el.dataset.notifBound === "1") return;
     el.dataset.notifBound = "1";
@@ -3757,14 +4327,482 @@
       e.stopPropagation();
       if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
 
-      if (notifPinned) {
-        closeNotifMenu();
+      if (isNotifPanelOpen()) {
+        closeNotifPanelWithCleanup();
+      } else {
+        openNotifPanel();
+      }
+    });
+  }
+
+  /* ============================== 弹出搜索（rail 搜索图标 / ⌘K） ============================== */
+  // 飞书同款弹出搜索：rail 搜索图标点击或 ⌘K 打开居中面板，
+  // 数据 = Discourse 核心全文搜索 /search/query（posts/topics/users/categories/tags），
+  // ↑↓ 选择、↵ 打开（SPA 软跳转）、Esc 关闭；空关键词展示最近搜索（localStorage）。
+
+  const CX_SEARCH_RECENT_KEY = "linuxdo-codex-search-recent";
+  const CX_SEARCH_DEBOUNCE_MS = 220;
+
+  let searchRecent = cxSearchLoadRecent();
+  let searchRoot = null;
+  let searchInputEl = null;
+  let searchBodyEl = null;
+  let searchMoreEl = null;
+  let searchClearEl = null;
+  let searchChipsEl = null;
+  let searchDebounceTimer = 0;
+
+  // 飞书 chips 行：结果类型筛选（key = item.group）
+  const TYPES = [
+    { key: "all", label: "全部" },
+    { key: "话题", label: "话题" },
+    { key: "用户", label: "用户" },
+    { key: "分类", label: "分类" },
+    { key: "标签", label: "标签" }
+  ];
+
+  // 高级指令：5 个下拉，点选即把指令追加进搜索框，回车/更多链接带全部指令跳 /search?q=
+  // token 是追加的原始指令；以 ":" 结尾或 ≤2 字符的是模板（需补参数，如 user:、@），不参与去重
+  const ADV_SELECTS = [
+    { ph: "排序", groups: [
+      { label: "按", items: [
+        ["order:likes", "点赞最多"],
+        ["order:latest", "最新回复"],
+        ["order:oldest", "最旧回复"],
+        ["order:views", "浏览最多"],
+        ["order:latest_topic", "最新主题"],
+        ["order:oldest_topic", "最旧主题"]
+      ]}
+    ]},
+    { ph: "范围", groups: [
+      { label: "搜索范围", items: [
+        ["in:title", "仅标题"],
+        ["in:first", "仅首帖"],
+        ["in:replies", "仅回复"],
+        ["in:all-posts", "全部帖子"],
+        ["in:wiki", "Wiki"],
+        ["in:pinned", "置顶"]
+      ]},
+      { label: "我的", items: [
+        ["in:likes", "我点赞的"],
+        ["in:bookmarks", "我收藏的"],
+        ["in:seen", "已读"],
+        ["in:unseen", "未读"]
+      ]}
+    ]},
+    { ph: "用户", groups: [
+      { label: "用户", items: [
+        ["@", "@用户名 提及"],
+        ["user:", "user: 发帖人"],
+        ["created:", "created: 创建者"],
+        ["group:", "group: 用户组"]
+      ]}
+    ]},
+    { ph: "分类/标签", groups: [
+      { label: "分类/标签", items: [
+        ["category:", "category: 分类"],
+        ["tags:", "tags: 标签"],
+        ["#", "#标签"],
+        ["-tags:", "-tags: 排除标签"]
+      ]}
+    ]},
+    { ph: "时间/状态", groups: [
+      { label: "时间", items: [
+        ["after:", "after: 此后"],
+        ["before:", "before: 此前"]
+      ]},
+      { label: "状态", items: [
+        ["status:open", "开放"],
+        ["status:closed", "已关闭"],
+        ["status:archived", "已归档"],
+        ["status:solved", "已解决"],
+        ["status:noreplies", "无回复"]
+      ]},
+      { label: "数值", items: [
+        ["min_posts:", "min_posts: 最少帖数"],
+        ["max_posts:", "max_posts: 最多帖数"],
+        ["min_views:", "min_views: 最少浏览"]
+      ]}
+    ]}
+  ];
+
+  const CLOSE_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
+  const LINK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 13.5a4 4 0 0 0 5.66 0l3-3a4 4 0 1 0-5.66-5.66l-1.24 1.24"/><path d="M13.5 10.5a4 4 0 0 0-5.66 0l-3 3a4 4 0 1 0 5.66 5.66l1.24-1.24"/></svg>`;
+
+  const searchState = {
+    term: "",
+    itemsTerm: null, // searchState.items 对应的关键词（防旧结果串词）
+    type: "all", // 结果类型筛选（飞书 chips 行）
+    loading: false,
+    error: null,
+    seq: 0, // 丢弃过期响应
+    flat: [], // 渲染后的可导航项（含 recent）
+    active: -1
+  };
+
+  function cxSearchLoadRecent() {
+    try { return JSON.parse(localStorage.getItem(CX_SEARCH_RECENT_KEY) || "[]").slice(0, 8); } catch { return []; }
+  }
+  function cxSearchPushRecent(term) {
+    const t = (term || "").trim();
+    if (!t) return;
+    searchRecent = [t, ...searchRecent.filter((x) => x !== t)].slice(0, 8);
+    try { localStorage.setItem(CX_SEARCH_RECENT_KEY, JSON.stringify(searchRecent)); } catch { /* ignore */ }
+  }
+
+  /* ---------- 数据整形：/q.json → 统一 item {group, href, html} ---------- */
+
+  function cxSearchHl(text, term) {
+    const safe = escapeHtml(String(text || ""));
+    if (!term) return safe;
+    const esc = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    try {
+      return safe.replace(new RegExp(`(${escapeHtml(esc)})`, "gi"), '<span class="cx-sp-hl">$1</span>');
+    } catch { return safe; }
+  }
+
+  function cxSearchLetterAvatar(name) {
+    return `<span class="cx-sp-ava cx-sp-letter" style="background:${notifAvatarColor(name)}">${escapeHtml(notifAvatarLetter(name))}</span>`;
+  }
+
+  function cxSearchBuildItems(data) {
+    const topicsById = new Map((data.topics || []).map((t) => [t.id, t]));
+    const items = [];
+    for (const p of data.posts || []) {
+      const topic = topicsById.get(p.topic_id) || {};
+      const title = notifStripTags(p.topic_title_headline || topic.title || topic.fancy_title || "");
+      if (!title) continue;
+      const author = p.username || "";
+      items.push({
+        group: "话题",
+        title,
+        sub: p.blurb || "",
+        meta: [author, p.like_count > 0 ? `♥ ${p.like_count}` : "", formatTime(p.created_at)]
+          .filter(Boolean).join(" · "),
+        avatar: p.avatar_template
+          ? `<img class="cx-sp-ava" src="${escapeHtml(notifAvatarUrl(p.avatar_template))}" alt="" loading="lazy">`
+          : cxSearchLetterAvatar(author || "?"),
+        href: `/t/${topic.slug || "topic"}/${p.topic_id}${p.post_number > 1 ? `/${p.post_number}` : ""}`
+      });
+    }
+    for (const u of data.users || []) {
+      items.push({
+        group: "用户",
+        title: u.username,
+        sub: u.name || "",
+        avatar: u.avatar_template
+          ? `<img class="cx-sp-ava" src="${escapeHtml(notifAvatarUrl(u.avatar_template))}" alt="" loading="lazy">`
+          : cxSearchLetterAvatar(u.username || "?"),
+        href: `/u/${encodeURIComponent(u.username || "")}`
+      });
+    }
+    for (const c of data.categories || []) {
+      if (!c.name && !c.slug) continue;
+      items.push({
+        group: "分类",
+        title: c.name || c.slug,
+        avatar: `<span class="cx-sp-ava cx-sp-dot" style="background:#${c.color || "0088CC"}"></span>`,
+        href: `/c/${encodeURIComponent(c.slug || c.id)}${c.id ? `/${c.id}` : ""}`
+      });
+    }
+    for (const t of data.tags || []) {
+      // 实测 /search/query 返回对象 {id,name,slug,topic_count}；display 用 name，链接用 slug
+      const name = typeof t === "string" ? t : (t.name || t.id);
+      const slug = typeof t === "string" ? t : (t.slug || t.name || t.id);
+      if (!name) continue;
+      const count = typeof t === "object" && t.topic_count > 0 ? `${t.topic_count} 话题` : "";
+      // 非 ASCII 标签 slug 形如 `2234-tag`，裸 /tag/2234-tag 404，链接要带标签 ID
+      const m = typeof slug === "string" ? /^(\d+)-tag$/.exec(slug) : null;
+      items.push({ group: "标签", title: `#${name}`, sub: count, href: m ? `/tag/${slug}/${m[1]}` : `/tag/${encodeURIComponent(slug)}` });
+    }
+    return items;
+  }
+
+  /* ---------- 渲染 ---------- */
+
+  function cxSearchItemHtml(it, idx, term) {
+    // 飞书行布局：大头像 + 标题 / 元信息 / 摘要（两行截断）+ 悬停复制链接
+    const copy = it.href
+      ? `<span class="cx-sp-copy" title="复制链接">${LINK_SVG}</span>`
+      : "";
+    return `
+    <a class="cx-sp-item${idx === searchState.active ? " active" : ""}" role="option" data-idx="${idx}" href="${escapeHtml(it.href)}">
+      ${it.avatar || ""}
+      <span class="cx-sp-item-main">
+        <span class="tt">${cxSearchHl(it.title, term)}</span>
+        ${it.meta ? `<span class="meta">${escapeHtml(it.meta)}</span>` : ""}
+        ${it.sub ? `<span class="sb">${cxSearchHl(it.sub, term)}</span>` : ""}
+      </span>
+      ${copy}
+    </a>`;
+  }
+
+  function cxSearchRenderChips() {
+    if (!searchChipsEl) return;
+    searchChipsEl.innerHTML = TYPES.map((t) =>
+      `<button type="button" class="cx-sp-chip${t.key === searchState.type ? " active" : ""}" data-type="${t.key}">${t.label}</button>`
+    ).join("");
+  }
+
+  function cxSearchRenderBody() {
+    if (!searchBodyEl) return;
+    const term = searchState.term.trim();
+    let html = "";
+    searchState.flat = [];
+    searchState.active = -1;
+    if (searchClearEl) searchClearEl.hidden = !searchState.term;
+
+    if (searchState.loading) {
+      html = `<div class="cx-sp-status">搜索中…</div>`;
+    } else if (searchState.error) {
+      html = `<div class="cx-sp-status">搜索失败（${escapeHtml(searchState.error)}）</div>`;
+    } else if (term) {
+      // 带关键词：结果仅对应当前词（旧词结果不串显），chips 行做类型过滤
+      const all = searchState.itemsTerm === term ? searchState.items || [] : [];
+      const items = searchState.type === "all" ? all : all.filter((it) => it.group === searchState.type);
+      if (items.length) {
+        let lastGroup = null;
+        for (const it of items) {
+          if (searchState.type === "all" && it.group !== lastGroup) {
+            html += `<div class="cx-sp-group">${escapeHtml(it.group)}</div>`;
+            lastGroup = it.group;
+          }
+          html += cxSearchItemHtml(it, searchState.flat.length, term);
+          searchState.flat.push(it);
+        }
+      } else {
+        html += `<div class="cx-sp-status">没有找到“${escapeHtml(term)}”相关内容</div>`;
+      }
+    } else {
+      // 空关键词：最近搜索
+      if (searchRecent.length) {
+        html += `<div class="cx-sp-group">最近搜索</div>`;
+        for (const t of searchRecent) {
+          const it = { group: "最近", title: t, href: null, recent: true };
+          html += cxSearchItemHtml(it, searchState.flat.length, "");
+          searchState.flat.push(it);
+        }
+      } else {
+        html += `<div class="cx-sp-status">输入关键词搜索话题、用户、分类</div>`;
+      }
+    }
+    searchBodyEl.innerHTML = html;
+    if (searchMoreEl) {
+      searchMoreEl.hidden = !term;
+      searchMoreEl.textContent = `在全文搜索中查看“${term}”的全部结果`;
+      searchMoreEl.href = "/search?q=" + encodeURIComponent(term);
+    }
+  }
+
+  /* ---------- 搜索与交互 ---------- */
+
+  async function cxSearchRun(term) {
+    const seq = ++searchState.seq;
+    searchState.loading = true;
+    searchState.error = null;
+    cxSearchRenderBody();
+    try {
+      // 站点实测路由（原生头部搜索同款）：/search/query?term=
+      const data = await api(`/search/query?term=${encodeURIComponent(term)}`);
+      if (seq !== searchState.seq) return;
+      searchState.items = cxSearchBuildItems(data);
+      searchState.itemsTerm = term;
+      searchState.loading = false;
+      cxSearchRenderBody();
+    } catch (err) {
+      if (seq !== searchState.seq) return;
+      searchState.loading = false;
+      searchState.error = err?.message || "网络异常";
+      cxSearchRenderBody();
+    }
+  }
+
+  function cxSearchSchedule() {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      const term = searchState.term.trim();
+      if (term) cxSearchRun(term);
+      else { searchState.seq++; searchState.loading = false; searchState.error = null; cxSearchRenderBody(); }
+    }, CX_SEARCH_DEBOUNCE_MS);
+  }
+
+  /** 指令面板点选：追加 token 到搜索框；模板指令（@、user: 等需补参数）不去重，完整指令精确去重 */
+  function cxSearchAppendToken(token) {
+    if (!token) return;
+    const isTemplate = token.length <= 2 || token.endsWith(":");
+    const cur = searchInputEl.value.trim();
+    if (!isTemplate && cur.split(/\s+/).includes(token)) return;
+    const next = cur ? `${cur} ${token}` : token;
+    searchInputEl.value = next;
+    searchState.term = next;
+    cxSearchRenderBody();
+    searchInputEl.focus();
+  }
+
+  function cxSearchSetActive(idx) {
+    if (!searchState.flat.length) return;
+    searchState.active = (idx + searchState.flat.length) % searchState.flat.length;
+    for (const el of searchBodyEl.querySelectorAll(".cx-sp-item")) {
+      el.classList.toggle("active", Number(el.dataset.idx) === searchState.active);
+    }
+    searchBodyEl.querySelector(`.cx-sp-item[data-idx="${searchState.active}"]`)?.scrollIntoView({ block: "nearest" });
+  }
+
+  function cxSearchOpenItem(it) {
+    if (!it) return;
+    if (it.recent) {
+      searchInputEl.value = it.title;
+      searchState.term = it.title;
+      cxSearchRun(it.title);
+      return;
+    }
+    if (searchState.term.trim()) cxSearchPushRecent(searchState.term.trim());
+    closeCodexSearch();
+    navigateInApp(it.href);
+  }
+
+  function cxSearchEnsure() {
+    if (searchRoot) return searchRoot;
+    searchRoot = document.createElement("div");
+    searchRoot.className = "cx-sp-overlay";
+    searchRoot.innerHTML = `
+      <div class="cx-sp-pop" role="dialog" aria-modal="true" aria-label="搜索">
+        <div class="cx-sp-head">
+          <div class="cx-sp-field">
+            ${ICONS.search}
+            <input type="search" class="cx-sp-input" placeholder="搜索话题、用户、分类" autocomplete="off" aria-label="搜索关键词">
+            <button type="button" class="cx-sp-clear" hidden>清除</button>
+          </div>
+          <button type="button" class="cx-sp-close" title="退出搜索 (Esc)" aria-label="关闭">${CLOSE_SVG}</button>
+        </div>
+        <div class="cx-sp-chips" role="group" aria-label="结果类型"></div>
+        <div class="cx-sp-body" role="listbox" aria-label="搜索结果"></div>
+        <div class="cx-sp-adv" title="点选追加到搜索框，回车按指令全文搜索">
+          ${ADV_SELECTS.map((s, i) => `
+          <select class="cx-sp-adv-select" data-adv="${i}" aria-label="高级指令：${s.ph}">
+            <option value="" disabled selected>${s.ph}</option>
+            ${s.groups.map((g) =>
+              `<optgroup label="${g.label}">${
+                g.items.map(([token, label]) => `<option value="${escapeHtml(token)}">${label}</option>`).join("")
+              }</optgroup>`
+            ).join("")}
+          </select>`).join("")}
+          <span class="cx-sp-adv-hint">回车按指令搜索</span>
+        </div>
+        <div class="cx-sp-foot">
+          <a class="cx-sp-more" href="/search" hidden></a>
+          <span class="cx-sp-tips">
+            <span><kbd>↑</kbd><kbd>↓</kbd> 移动光标</span>
+            <span><kbd>↵</kbd> 选择条目</span>
+            <span><kbd>esc</kbd> 退出搜索</span>
+          </span>
+        </div>
+      </div>`;
+    document.body.appendChild(searchRoot);
+    searchInputEl = searchRoot.querySelector(".cx-sp-input");
+    searchBodyEl = searchRoot.querySelector(".cx-sp-body");
+    searchMoreEl = searchRoot.querySelector(".cx-sp-more");
+    searchClearEl = searchRoot.querySelector(".cx-sp-clear");
+    searchChipsEl = searchRoot.querySelector(".cx-sp-chips");
+    cxSearchRenderChips();
+
+    searchRoot.addEventListener("mousedown", (e) => {
+      if (e.target === searchRoot) closeCodexSearch(); // 点击遮罩关闭
+    });
+    searchRoot.querySelector(".cx-sp-close").addEventListener("click", closeCodexSearch);
+    // 清除：回到最近搜索视图（同空词分支，不关弹层）
+    searchClearEl.addEventListener("click", () => {
+      searchInputEl.value = "";
+      searchState.term = "";
+      searchState.seq++;
+      searchState.loading = false;
+      searchState.error = null;
+      cxSearchRenderBody();
+      searchInputEl.focus();
+    });
+    searchChipsEl.addEventListener("click", (e) => {
+      const chip = e.target.closest(".cx-sp-chip[data-type]");
+      if (!chip || chip.dataset.type === searchState.type) return;
+      searchState.type = chip.dataset.type;
+      for (const c of searchChipsEl.querySelectorAll(".cx-sp-chip")) {
+        c.classList.toggle("active", c.dataset.type === searchState.type);
+      }
+      cxSearchRenderBody();
+    });
+    searchRoot.querySelector(".cx-sp-adv").addEventListener("change", (e) => {
+      const sel = e.target.closest(".cx-sp-adv-select");
+      if (!sel) return;
+      if (sel.value) cxSearchAppendToken(sel.value);
+      sel.selectedIndex = 0; // 回位占项，允许多次追加
+    });
+
+    searchInputEl.addEventListener("input", () => {
+      searchState.term = searchInputEl.value;
+      cxSearchSchedule();
+    });
+    searchInputEl.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); cxSearchSetActive(searchState.active + 1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); cxSearchSetActive(searchState.active - 1); }
+      else if (e.key === "Enter") {
+        e.preventDefault();
+        const term = searchState.term.trim();
+        if (searchState.active >= 0 && searchState.flat[searchState.active]) cxSearchOpenItem(searchState.flat[searchState.active]);
+        else if (term) {
+          // 无选中项：带全部指令进完整搜索页（Discourse /search?q= 原生解析）
+          cxSearchPushRecent(term);
+          closeCodexSearch();
+          navigateInApp(`/search?q=${encodeURIComponent(term)}`);
+        }
+      }
+    });
+    // 点击结果：委托 + SPA 软跳转（含 recent 关键词）；复制链接按钮拦截
+    searchBodyEl.addEventListener("click", (e) => {
+      const copy = e.target.closest(".cx-sp-copy");
+      if (copy) {
+        e.preventDefault();
+        e.stopPropagation();
+        const href = copy.closest(".cx-sp-item")?.getAttribute("href");
+        if (href) navigator.clipboard?.writeText(location.origin + href).catch(() => {});
+        copy.classList.add("done");
+        setTimeout(() => copy.classList.remove("done"), 1200);
         return;
       }
-      ensureNotifMenuObserver();
-      openNotifMenu();
-      setNotifPinned(true);
+      const el = e.target.closest(".cx-sp-item");
+      if (!el) return;
+      e.preventDefault();
+      cxSearchOpenItem(searchState.flat[Number(el.dataset.idx)]);
     });
+    searchMoreEl.addEventListener("click", (e) => {
+      e.preventDefault();
+      closeCodexSearch();
+      navigateInApp(`/search?q=${encodeURIComponent(searchState.term.trim())}`);
+    });
+    return searchRoot;
+  }
+
+  function openCodexSearch(prefill) {
+    if (otherThemeActive()) return;
+    if (isNotifPanelOpen()) closeNotifPanel();
+    cxSearchEnsure();
+    searchRoot.classList.add("open");
+    if (typeof prefill === "string" && prefill.trim() && prefill !== searchInputEl.value) {
+      searchInputEl.value = prefill;
+    }
+    searchState.term = searchInputEl.value;
+    if (searchState.term.trim() && searchState.itemsTerm !== searchState.term.trim()) cxSearchSchedule();
+    cxSearchRenderBody();
+    setTimeout(() => searchInputEl.focus(), 0);
+  }
+
+  function closeCodexSearch() {
+    if (!searchRoot) return;
+    searchRoot.classList.remove("open");
+    searchState.seq++; // 丢弃在途响应
+  }
+
+  function toggleCodexSearch() {
+    if (searchRoot && searchRoot.classList.contains("open")) closeCodexSearch();
+    else openCodexSearch();
   }
 
   /* ============================== 分类数据 ============================== */
@@ -3898,7 +4936,7 @@
       <div class="codex-strip-item" data-strip="/my/notifications/mentions" title="提及">${ICONS.at}</div>
       <div class="codex-strip-item" data-strip="/categories" title="全部版块">${ICONS.grid}</div>
       <div class="codex-strip-spacer"></div>
-      <div class="codex-strip-item" data-strip="/my/preferences" title="设置">${ICONS.gear}</div>`;
+      <div class="codex-strip-item" data-strip="/my/preferences" title="账户与通知">${ICONS.gear}</div>`;
     strip.addEventListener("click", (e) => {
       const it = e.target.closest("[data-strip]");
       if (it && strip.contains(it)) navigateInApp(it.getAttribute("data-strip"));
@@ -3908,7 +4946,7 @@
   }
 
   function ensureRail() {
-    ensureStrip();
+    const strip = ensureStrip();
     let rail = document.querySelector(".codex-rail");
     if (rail) {
       syncRail();
@@ -3918,13 +4956,15 @@
     rail.className = "codex-rail";
     rail.setAttribute("aria-label", "Codex 风导航");
 
-    // 顶部窗口控制占位（收起/后退/前进装饰图标）
+    // 顶部窗口控制占位（收起/后退/前进装饰图标 + 行尾明暗切换）
     const traffic = document.createElement("div");
     traffic.className = "codex-rail-traffic";
     traffic.innerHTML =
       ICONS.sidebar +
       ICONS.chevronLeft +
-      `<span style="opacity:0.45;display:inline-flex">${ICONS.chevronRight}</span>`;
+      `<span style="opacity:0.45;display:inline-flex">${ICONS.chevronRight}</span>` +
+      `<span class="cx-traffic-spacer"></span>` +
+      `<button class="cx-mode-btn" data-mode-toggle title="切换明暗模式"></button>`;
     // 收起图标：窄屏时收起抽屉；宽屏纯装饰
     traffic.firstElementChild?.addEventListener?.("click", () => {
       document.documentElement.classList.toggle("codex-rail-open");
@@ -3941,7 +4981,7 @@
         <span class="codex-rail-bell" title="通知" data-codex-notif-trigger="1">${ICONS.bell}</span>
       </div>`;
     brand.querySelector(".codex-rail-brand-name").addEventListener("click", () => navigateInApp("/latest"));
-    brand.querySelector(".codex-rail-search-btn").addEventListener("click", () => openNativeSearch());
+    brand.querySelector(".codex-rail-search-btn").addEventListener("click", () => toggleCodexSearch());
     rail.appendChild(brand);
 
     // 可滚动区：导航项 + 动态分组（置顶/分类/最近）
@@ -3960,21 +5000,11 @@
       <div class="codex-rail-dynamic"></div>`;
     rail.appendChild(scroll);
 
-    // 底部：当前用户名 + 明暗切换（收养原生用户菜单）
-    const foot = document.createElement("div");
-    foot.className = "codex-rail-foot";
-    foot.innerHTML = `
-      <div class="codex-rail-foot-user" data-codex-notif-trigger="1" title="账户与通知">
-        ${ICONS.gear}<span class="cx-label" data-username>…</span>
-      </div>
-      <button class="cx-mode-btn" data-mode-toggle title="切换明暗模式"></button>`;
-    rail.appendChild(foot);
-
     // 右缘拖拽把手：调整左栏宽度
     rail.insertAdjacentHTML("beforeend", `<div class="cx-resizer" data-resize="rail" title="拖拽调整侧栏宽度"></div>`);
 
-    // 明暗切换按钮：光/暗二态翻转，偏好写入 localStorage
-    foot.querySelector("[data-mode-toggle]").addEventListener("click", () => {
+    // 明暗切换按钮（左上角工具行行尾）：光/暗二态翻转，偏好写入 localStorage
+    traffic.querySelector("[data-mode-toggle]").addEventListener("click", () => {
       try {
         localStorage.setItem(THEME_OVERRIDE_KEY, isDarkMode() ? "light" : "dark");
       } catch { /* ignore */ }
@@ -4000,7 +5030,7 @@
     });
     scroll.querySelector('[data-nav="messages"]').addEventListener("click", () => {
       closeRailDrawer();
-      navigateInApp("/messages");
+      navigateInApp("/my/messages");
     });
     scroll.querySelector('[data-nav="bots"]').addEventListener("click", () => {
       closeRailDrawer();
@@ -4017,7 +5047,7 @@
     // AI 机器人之外均为真实路由；bots 仅装饰（tooltip 已标）
 
     bindNotifTrigger(brand.querySelector(".codex-rail-bell"));
-    bindNotifTrigger(foot.querySelector(".codex-rail-foot-user"));
+    bindNotifTrigger(strip.querySelector('[data-strip="/my/preferences"]'));
 
     renderRailDynamic();
     syncRail();
@@ -4168,19 +5198,14 @@
     }
   }
 
-  /** 同步 rail 状态：用户名 / 铃铛蓝点 / 书签数 / 导航 active */
+  /** 同步 rail 状态：铃铛蓝点 / 导航 active */
   function syncRail() {
     const rail = document.querySelector(".codex-rail");
     if (!rail) return;
     bindRailClicks();
 
-    const name = getCurrentUsername();
-    const nameEl = rail.querySelector("[data-username]");
-    if (nameEl && name && nameEl.textContent !== name) nameEl.textContent = name;
-    if (nameEl && !name && nameEl.textContent === "…") nameEl.textContent = "未登录";
-
     const bell = rail.querySelector(".codex-rail-bell");
-    if (bell) bell.classList.toggle("has-unread", getUnreadNotificationCount() > 0);
+    if (bell) bell.classList.toggle("has-unread", getUnreadIndicatorCount() > 0);
     syncModeBtn();
 
     // 导航 active：话题 / 我的消息 / 近期活动
@@ -4189,22 +5214,9 @@
       "active",
       path === "/" || /^(\/(latest|new|unread|unseen|top|hot)|\/c\/|\/t\/)/.test(path)
     );
-    rail.querySelector('[data-nav="messages"]')?.classList.toggle("active", path.startsWith("/messages"));
-    rail.querySelector('[data-nav="activity"]')?.classList.toggle("active", path.startsWith("/my"));
-  }
-
-  /** 搜索图标：优先打开原生搜索面板，失败退回 /search 页 */
-  function openNativeSearch() {
-    try {
-      const btn = document.querySelector(
-        "#search-button, .d-header .search-dropdown button, .d-header li.search-dropdown .icon, button.search-dropdown"
-      );
-      if (btn) {
-        btn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
-        return;
-      }
-    } catch { /* ignore */ }
-    navigateInApp("/search");
+    const isMsgs = /^\/(messages|my\/messages|u\/[^/]+\/messages)/.test(path);
+    rail.querySelector('[data-nav="messages"]')?.classList.toggle("active", isMsgs);
+    rail.querySelector('[data-nav="activity"]')?.classList.toggle("active", path.startsWith("/my") && !isMsgs);
   }
 
   /* ============================== 主区骨架与顶栏 ============================== */
@@ -4228,6 +5240,7 @@
               <span class="cx-proj"></span>
               <span style="color:var(--cx-text-faint)">/</span>
               <span class="cx-model"></span>
+              <span class="cx-floor-ind" title="点击选择楼层"></span>
             </div>
             <div class="cx-spacer"></div>
             <div class="cx-icon-btn cx-panel-toggle" title="显示 / 隐藏代码面板" data-panel-toggle>${ICONS.panel}</div>
@@ -4302,6 +5315,7 @@
       const el = e.target;
       if (el.scrollTop < 80) loadOlderPosts();
       if (el.scrollTop + el.clientHeight >= el.scrollHeight - 120) loadNewerPosts();
+      trackVisiblePost();
     });
 
     syncCodePanelVisibility();
@@ -4328,6 +5342,11 @@
       // 顶栏文件夹图标 / 面包屑项目名 → 返回列表
       if (e.target.closest(".cx-back-btn")) {
         backToList();
+        return;
+      }
+      // 顶栏楼层指示 → 弹层输入跳转
+      if (e.target.closest(".cx-floor-ind")) {
+        openFloorPicker();
         return;
       }
       if (e.target.closest("[data-open-native]")) {
@@ -4604,6 +5623,9 @@
       }
       if (mdEdit) mdEdit.dataset.placeholder = `在 ${title} 发新话题…`;
     }
+    // 楼层指示仅详情视图显示（与根类 codex-topic-open 的 CSS 隐藏互为兜底）
+    const floorInd = main.querySelector(".cx-floor-ind");
+    if (floorInd) floorInd.style.display = isTopicPath(pathname) ? "" : "none";
     // 筛选 chips 高亮跟随当前列表路由
     const onPath = location.pathname;
     main.querySelectorAll(".cx-fchip").forEach((chip) => {
@@ -4690,6 +5712,8 @@
     // 用列表 API 做缓存键：进帖子时 pathname 会变，但不应重拉列表；
     // 缓存命中只同步面包屑 / rail，不重绘行（避免抽屉开关等场景重置滚动）
     if (!force && listState.apiPath === apiPath && listState.topics.length) {
+      const rows = document.querySelector(".cx-thread-rows");
+      if (!rows || !rows.childElementCount) renderListRows(); // 主区被原生路由往返重建后补渲染
       syncChrome();
       renderRailDynamic();
       return;
@@ -4974,19 +5998,98 @@
     }
   }
 
-  /** 滚到指定楼层并高亮；未找到返回 false */
-  function scrollToTurnNum(scroller, postNumber) {
+  /** 滚到指定楼层并高亮；未找到返回 false。
+   *  opts: { highlight=true, recordJump=true, smooth=true } —— 初次定位传全部 false（instant、不进 quoteJumpStack） */
+  function scrollToTurnNum(scroller, postNumber, opts = {}) {
+    const { highlight = true, recordJump = true, smooth = true } = opts;
     const target = scroller.querySelector(
       `.cx-turn-user[data-post-number="${postNumber}"], .cx-turn-agent[data-post-number="${postNumber}"]`
     );
     if (!target) return false;
-    quoteJumpStack.push({ topicId: threadState.topicId, scrollTop: scroller.scrollTop });
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
-    target.classList.remove("cx-jump-highlight");
-    void target.offsetWidth;
-    target.classList.add("cx-jump-highlight");
-    showJumpBackBtn();
+    if (recordJump) quoteJumpStack.push({ topicId: threadState.topicId, scrollTop: scroller.scrollTop });
+    target.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "center" });
+    if (highlight) {
+      target.classList.remove("cx-jump-highlight");
+      void target.offsetWidth;
+      target.classList.add("cx-jump-highlight");
+    }
+    if (recordJump) showJumpBackBtn();
     return true;
+  }
+
+  /* ============================== 选择楼层（移植自 im floor picker，类名 im- → cx-） ============================== */
+
+  function floorPickerMax() {
+    return threadState.postsCount || threadState.stream.length || 0;
+  }
+
+  function ensureFloorPicker() {
+    const main = document.querySelector(".codex-main");
+    if (!main) return null;
+    let pop = main.querySelector(".cx-floor-pop");
+    if (pop) return pop;
+    pop = document.createElement("div");
+    pop.className = "cx-floor-pop";
+    pop.innerHTML = `
+      <div class="cx-floor-pop-card" role="dialog" aria-label="选择楼层">
+        <div class="cx-floor-pop-title">跳转到楼层</div>
+        <div class="cx-floor-pop-row">
+          <input class="cx-floor-pop-input" type="number" min="1" step="1" inputmode="numeric" aria-label="楼层号">
+          <span class="cx-floor-pop-total"></span>
+        </div>
+        <div class="cx-floor-pop-actions">
+          <button type="button" class="cx-floor-pop-cancel">取消</button>
+          <button type="button" class="cx-floor-pop-go">跳转</button>
+        </div>
+      </div>`;
+    main.appendChild(pop);
+    pop.querySelector(".cx-floor-pop-cancel").addEventListener("click", closeFloorPicker);
+    pop.querySelector(".cx-floor-pop-go").addEventListener("click", submitFloorPicker);
+    pop.addEventListener("click", (e) => {
+      if (e.target === pop) closeFloorPicker(); // 点遮罩关闭
+    });
+    const input = pop.querySelector(".cx-floor-pop-input");
+    input.addEventListener("keydown", (e) => {
+      e.stopPropagation(); // 别让全局快捷键收到
+      if (e.key === "Enter") submitFloorPicker();
+      if (e.key === "Escape") closeFloorPicker();
+    });
+    input.addEventListener("input", () => input.classList.remove("error"));
+    return pop;
+  }
+
+  function openFloorPicker() {
+    if (!threadState.topicId) return;
+    const pop = ensureFloorPicker();
+    if (!pop) return;
+    const max = floorPickerMax();
+    pop.querySelector(".cx-floor-pop-total").textContent = max ? `共 ${max} 楼` : "";
+    const input = pop.querySelector(".cx-floor-pop-input");
+    input.max = max || "";
+    input.classList.remove("error");
+    pop.classList.add("open");
+    const current = visiblePostNumbers()[0] || 0;
+    input.value = current > 0 ? String(current) : "";
+    setTimeout(() => { input.focus(); input.select(); }, 0);
+  }
+
+  function closeFloorPicker() {
+    document.querySelector(".codex-main .cx-floor-pop")?.classList.remove("open");
+  }
+
+  function submitFloorPicker() {
+    const pop = document.querySelector(".codex-main .cx-floor-pop");
+    if (!pop) return;
+    const input = pop.querySelector(".cx-floor-pop-input");
+    const max = floorPickerMax();
+    const n = Math.floor(Number(input.value));
+    if (!n || n < 1 || (max && n > max)) {
+      input.classList.add("error");
+      input.focus();
+      return;
+    }
+    closeFloorPicker();
+    jumpToSource(n); // 本地命中直接滚+高亮；未加载远端拉窗口；失败 toast 已有
   }
 
   /* ============================== 投票组件（移植自 im features/polls.js，改 Codex token） ============================== */
@@ -5289,6 +6392,63 @@
   let readLastScrolled = 0;
   let readSinceFlush = 0;
   let readFlushing = false;
+
+  /* ============================== 阅读位置记忆（匿名兜底，移植 im readLastReadMap） ============================== */
+
+  const CX_LAST_READ_KEY = "linuxdo-codex-lastread";
+  const CX_LAST_READ_MAX_TOPICS = 200;
+
+  function readLastReadMap() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(CX_LAST_READ_KEY) || "{}");
+      return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function rememberTopicPost(topicId, postNumber) {
+    const id = Number(topicId);
+    const n = Number(postNumber) || 0;
+    if (!id || n < 1) return;
+    const map = readLastReadMap();
+    map[id] = n;
+    const keys = Object.keys(map);
+    if (keys.length > CX_LAST_READ_MAX_TOPICS) {
+      for (const key of keys.slice(0, keys.length - CX_LAST_READ_MAX_TOPICS)) delete map[key];
+    }
+    try {
+      localStorage.setItem(CX_LAST_READ_KEY, JSON.stringify(map));
+    } catch { /* 配额满忽略 */ }
+  }
+
+  function getRememberedPost(topicId) {
+    return Number(readLastReadMap()[topicId]) || 0;
+  }
+
+  /** /t/<slug>/<id>/<post_number> 中提取楼层号（现有 topicIdFromPath 不抓楼层） */
+  function routePostNumberFromPath(pathname) {
+    const m = pathname.match(/^\/t\/(?:[\w-]+\/)?\d+(?:\/(\d+))?/);
+    return m && m[1] ? Number(m[1]) : 0;
+  }
+
+  /** 顶栏楼层指示：N/M（N=可见首楼，M=总楼数） */
+  function paintFloorInd() {
+    const ind = document.querySelector(".codex-main .cx-floor-ind");
+    if (!ind) return;
+    const m = threadState.postsCount || threadState.stream.length || 0;
+    const nums = visiblePostNumbers();
+    const n = nums[0] || 0;
+    ind.innerHTML = m ? `${n || "–"}<span class="cx-floor-sep">/</span>${m}` : "";
+  }
+
+  /** 滚动节流：记本机阅读位置 + 刷新顶栏楼层指示 */
+  const trackVisiblePost = debounce(() => {
+    if (!threadState.topicId) return;
+    const postNumber = visiblePostNumbers()[0];
+    if (postNumber > 0) rememberTopicPost(threadState.topicId, postNumber);
+    paintFloorInd();
+  }, 220);
 
   function visiblePostNumbers() {
     const box = detailContainer();
@@ -6011,7 +7171,8 @@ const THINK_CLOSERS = [
 
   async function loadTopic(topicId) {
     if (!topicId || threadState.loading) return;
-    if (threadState.topicId === topicId) {
+    if (threadState.topicId === topicId && detailContainer()?.childElementCount) {
+      // 同帖且详情 DOM 还在才走缓存；去搜索/消息等原生页往返会 removeApp 重建主区，需重渲染
       syncChrome();
       return;
     }
@@ -6025,9 +7186,50 @@ const THINK_CLOSERS = [
     if (box) box.innerHTML = `<div class="cx-list-status">加载中…</div>`;
     syncChrome();
     try {
-      const data = await api(`/t/${topicId}.json`);
+      // 定位优先级：路由携带楼层（通知行 /t/.../id/N）> 服务端阅读进度（登录态）> 本机记忆（匿名兜底）> 1 楼
+      const routePost = routePostNumberFromPath(location.pathname);
+      // 登录态信任服务端「上次阅读处」（原生 last_read 语义，跨设备一致）；匿名无服务端进度，才用本机记忆兜底
+      const rememberedPost = getCurrentUsername() ? 0 : getRememberedPost(topicId);
+      const anchorPost = routePost > 1 ? routePost : rememberedPost;
+      let data;
+      let scrollToPost = 0;
+      if (anchorPost > 1) {
+        try {
+          data = await api(`/t/${topicId}/${anchorPost}.json`);
+          scrollToPost = anchorPost;
+        } catch {
+          data = await api(`/t/${topicId}.json`);
+        }
+      } else {
+        data = await api(`/t/${topicId}.json`);
+      }
       if (threadState.topicId !== topicId) return; // 路由已切走
-      const posts = (data.post_stream && data.post_stream.posts) || [];
+      let posts = (data.post_stream && data.post_stream.posts) || [];
+      // 登录态下服务端窗口已锚定在「上次阅读处」：窗口不从首楼开始时落到第一未读楼（last_read+1）；
+      // 字段缺失或落点不在窗口时 scrollToPost 保持 0，自然落在窗口顶部
+      if (!scrollToPost && posts.length && Number(posts[0].post_number) !== 1) {
+        scrollToPost = (Number(data.last_read_post_number) || 0) + 1;
+        if (!posts.some((p) => p.post_number === scrollToPost)) scrollToPost = 0;
+      }
+      // 窗口从首楼开始 = 已全部读完：回到服务端记录的楼层（跨设备），而非每次从头看
+      const serverRead = Number(data.last_read_post_number) || 0;
+      if (
+        !scrollToPost &&
+        posts.length &&
+        Number(posts[0].post_number) === 1 &&
+        serverRead > (Number(posts[posts.length - 1]?.post_number) || 0)
+      ) {
+        try {
+          const readData = await api(`/t/${topicId}/${serverRead}.json`);
+          if (threadState.topicId !== topicId) return;
+          const readPosts = (readData.post_stream && readData.post_stream.posts) || [];
+          if (readPosts.length) {
+            data = readData;
+            posts = readPosts;
+            scrollToPost = serverRead;
+          }
+        } catch { /* 拉取失败时保留头部窗口 */ }
+      }
       threadState.stream = (data.post_stream && data.post_stream.stream) || posts.map((p) => p.id);
       threadState.renderedFirstIdx = threadState.stream.indexOf(posts.length ? posts[0].id : -1);
       if (threadState.renderedFirstIdx < 0) threadState.renderedFirstIdx = 0;
@@ -6054,9 +7256,18 @@ const THINK_CLOSERS = [
       if (box) {
         renderTurns(box, posts, "replace");
         syncThreadDivider();
-        // 楼主在顶部，从头开始读
         const scroller = document.querySelector(".cx-view-detail");
-        if (scroller) scroller.scrollTop = 0;
+        if (scrollToPost > 1) {
+          // 初次定位：instant、不进 quoteJumpStack、不高亮（与 jumpToSource 的滚动路径区分开）
+          requestAnimationFrame(() => {
+            scrollToTurnNum(scroller, scrollToPost, { highlight: false, recordJump: false, smooth: false });
+            paintFloorInd();
+          });
+        } else {
+          // 从头开始读
+          if (scroller) scroller.scrollTop = 0;
+          paintFloorInd();
+        }
       }
       syncChrome();
       // 话题 id 是代码面板的随机种子：换帖重排一份代码
@@ -6245,7 +7456,7 @@ const THINK_CLOSERS = [
   }
 
   function removeApp() {
-    closeNotifMenu();
+    closeNotifPanelWithCleanup();
     document.querySelector(".codex-main")?.remove();
     document.querySelector(".codex-rail")?.remove();
     document.querySelector(".codex-strip")?.remove();
@@ -6365,7 +7576,7 @@ const THINK_CLOSERS = [
     }
 
     const CODEX_UI_SEL =
-      ".codex-rail, .codex-main, #linuxdo-codex-theme, .codex-user-menu-float, " +
+      ".codex-rail, .codex-main, #linuxdo-codex-theme, " +
       "#reply-control, .codex-unlock-header, #codex-unlock-header, #codex-temp-reply-click, #codex-unlock-for-reply";
     let cleanupDone = false;
     const observer = new MutationObserver((mutations) => {
@@ -6427,15 +7638,21 @@ const THINK_CLOSERS = [
     // 阅读进度上报（自渲染流按可见楼层累计，刷新未读计数）
     startReadTracking();
 
-    // ⌘/Ctrl+K → 原生搜索
-    window.addEventListener("keydown", (e) => {      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+    // ⌘/Ctrl+K → 弹出搜索；Esc 关闭
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && searchRoot && searchRoot.classList.contains("open")) {
+        e.preventDefault();
+        closeCodexSearch();
+        return;
+      }
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
       if ((e.key || "").toLowerCase() !== "k") return;
       if (otherThemeActive()) return;
       const tag = (e.target && e.target.tagName) || "";
       if (tag === "TEXTAREA" || tag === "INPUT") return;
       e.preventDefault();
       e.stopPropagation();
-      openNativeSearch();
+      toggleCodexSearch();
     }, true);
 
     scheduleApply();
