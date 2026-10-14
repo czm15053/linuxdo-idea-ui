@@ -52,6 +52,17 @@ display: inline-flex; align-items: center; gap: 3px;
 width: 8px; height: 8px; border-radius: 2px; margin: 0;
 }
 
+/* 头部帖子标签 chip：中性配色，与板块 chip（蓝底 + 色点）区分 */
+.im-chat-chip.im-chat-chip-tag {
+color: var(--im-text-2) !important;
+      background: var(--im-hover);
+      border-color: var(--im-border) !important;
+}
+.im-chat-chip.im-chat-chip-tag:hover {
+color: var(--im-text) !important;
+      background: var(--im-active);
+}
+
 .im-list-chips {
 display: inline-flex; align-items: center; gap: 2px;
       background: #E7EAF1; border-radius: 14px; padding: 2px;

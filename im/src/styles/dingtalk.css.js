@@ -1495,8 +1495,9 @@ export const CSS_DD = String.raw`
     }
 
     /* ============================== 分类标签隐藏 ============================== */
+    /* 只隐藏板块（列表行分类标签 + 详情头板块 chip），帖子标签 chip 照常显示 */
     .__ROOT_CLASS__.im-hide-cat-tags .im-conv-tag,
-    .__ROOT_CLASS__.im-hide-cat-tags .im-chat-chips {
+    .__ROOT_CLASS__.im-hide-cat-tags .im-chat-chip-cat {
       display: none !important;
     }
 
