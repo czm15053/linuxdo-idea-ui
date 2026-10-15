@@ -207,6 +207,10 @@
   const AI_DEFAULT_NAME = "豆包";
   const SPAM_FILTER_KEY = "linuxdo-im-spam-filter";
   const HIGHLIGHT_KEY = "linuxdo-im-highlight-keywords";
+  const DETAIL_PANEL_W_KEY = "linuxdo-im-detail-width";
+  const DETAIL_PANEL_W_DEFAULT = 420;
+  const DETAIL_PANEL_W_MIN = 280;
+  const DETAIL_PANEL_W_MAX = 720;
   const CSS_DD = String.raw`
     /* ---------- Token ---------- */
     .__ROOT_CLASS__ {
@@ -7028,15 +7032,854 @@ html.im-theme {
   --im-text-4: #B0B4BE
 }
 `;
-  const CSS_FS_FULL = CSS_FS + "\n" + CSS_FS_BRIDGE + "\n" + CSS_CORE_EXTRA;
+  const CSS_POST_DETAIL = String.raw`
+/* 帖子详情右侧面板 */
+.linuxdo-post-detail {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: var(--im-detail-w, 420px);
+  height: 100vh;
+  background: var(--im-bg);
+  border-left: 1px solid var(--im-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 99998;
+  transform: translateX(100%);
+  transition: transform 0.24s ease;
+  font-family: var(--im-font);
+  color: var(--im-text-1);
+}
+.linuxdo-post-detail.open {
+  transform: translateX(0);
+}
+body.im-detail-open .im-chat-panel {
+  right: var(--im-detail-w, 420px) !important;
+}
+body.im-detail-open .im-chat-header {
+  right: var(--im-detail-w, 420px) !important;
+}
+body.im-detail-open #reply-control {
+  right: var(--im-detail-w, 420px) !important;
+}
+
+.im-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--im-border);
+  flex-shrink: 0;
+  background: var(--im-bg-2);
+}
+.im-detail-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.im-detail-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--im-bg-3);
+}
+.im-detail-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.im-detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.im-detail-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--im-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.im-detail-time {
+  font-size: 12px;
+  color: var(--im-text-3);
+}
+.im-detail-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--im-text-2);
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.im-detail-close:hover {
+  background: var(--im-bg-3);
+  color: var(--im-text-1);
+}
+.im-detail-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.im-detail-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  -webkit-overflow-scrolling: touch;
+}
+
+.im-detail-content {
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--im-text-1);
+  word-break: break-word;
+}
+.im-detail-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  cursor: zoom-in;
+}
+.im-detail-content p {
+  margin: 0 0 12px;
+}
+.im-detail-content p:last-child {
+  margin-bottom: 0;
+}
+.im-detail-content pre {
+  background: var(--im-bg-3);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 12px;
+}
+.im-detail-content code {
+  background: var(--im-bg-3);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.im-detail-content blockquote {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--im-border);
+  color: var(--im-text-2);
+  background: var(--im-bg-2);
+  border-radius: 0 6px 6px 0;
+}
+.im-detail-content a {
+  color: var(--im-blue);
+  text-decoration: none;
+}
+.im-detail-content a:hover {
+  text-decoration: underline;
+}
+.im-detail-content ul, .im-detail-content ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+.im-detail-content h1, .im-detail-content h2, .im-detail-content h3 {
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+
+.im-detail-boosts {
+  padding: 0 16px 12px;
+}
+
+.im-detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--im-border);
+  border-bottom: 1px solid var(--im-border);
+  background: var(--im-bg-2);
+  flex-shrink: 0;
+}
+.im-detail-act {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--im-text-2);
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.im-detail-act:hover {
+  background: var(--im-bg-3);
+  color: var(--im-text-1);
+}
+.im-detail-act svg {
+  width: 18px;
+  height: 18px;
+}
+.im-detail-act.liked {
+  color: #F2495C;
+}
+.im-detail-act.liked svg {
+  fill: #F2495C;
+}
+.im-detail-act.bookmarked {
+  color: var(--im-blue);
+}
+.im-detail-act.cannot-undo {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.im-detail-replies {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.im-detail-reply-head {
+  padding: 10px 16px;
+  border-top: 1px solid var(--im-border);
+  border-bottom: 1px solid var(--im-border);
+  background: var(--im-bg-2);
+  flex-shrink: 0;
+}
+.im-detail-reply-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--im-text-2);
+}
+.im-detail-reply-list {
+  padding: 4px 0;
+}
+.im-detail-reply-item {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.im-detail-reply-item:hover {
+  background: var(--im-bg-2);
+}
+.im-detail-reply-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.im-detail-reply-avatar img,
+.im-detail-reply-avatar span {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.im-detail-reply-body {
+  flex: 1;
+  min-width: 0;
+}
+.im-detail-reply-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.im-detail-reply-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--im-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+.im-detail-reply-num {
+  font-size: 11px;
+  color: var(--im-text-3);
+  flex-shrink: 0;
+}
+.im-detail-reply-text {
+  font-size: 12px;
+  color: var(--im-text-2);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.im-detail-reply-main {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  align-items: flex-start;
+}
+.im-detail-reply-main .im-detail-reply-body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 嵌套子回复：左侧竖线 + 缩进 */
+.im-detail-reply-children {
+  margin-left: 18px;
+  padding-left: 10px;
+  border-left: 2px solid var(--im-border);
+  margin-top: 4px;
+}
+.im-detail-reply-children .im-detail-reply-item {
+  padding: 6px 0 6px 8px;
+}
+.im-detail-reply-children .im-detail-reply-item:hover {
+  background: var(--im-bg-2);
+  border-radius: 4px;
+}
+
+/* 展开/折叠子回复按钮 */
+.im-detail-reply-expand {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  margin: 2px 0 4px 36px;
+  border: none;
+  background: transparent;
+  color: var(--im-blue);
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: var(--im-font);
+}
+.im-detail-reply-expand:hover {
+  background: var(--im-blue-soft);
+}
+.im-detail-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--im-text-3);
+}
+
+.im-detail-resizer {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  z-index: 2;
+  transition: background 0.15s;
+}
+.im-detail-resizer:hover,
+.im-detail-resizer.dragging {
+  background: var(--im-blue);
+  opacity: 0.3;
+}
+
+/* 气泡楼层号：点击打开详情面板 */
+.im-msg-floor {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.im-msg-floor:hover {
+  color: var(--im-blue);
+}
+
+/* 「查看对话」按钮 */
+.im-detail-thread-btn {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--im-text-3);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: all 0.15s;
+  align-self: center;
+}
+.im-detail-reply-item:hover .im-detail-thread-btn {
+  opacity: 1;
+}
+.im-detail-thread-btn:hover {
+  background: var(--im-bg-3);
+  color: var(--im-blue);
+}
+.im-detail-thread-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* 线程视图 */
+.im-detail-thread {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.im-detail-thread-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  border-bottom: 1px solid var(--im-border);
+  background: var(--im-bg-2);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--im-text-2);
+  font-family: var(--im-font);
+  flex-shrink: 0;
+}
+.im-detail-thread-back:hover {
+  color: var(--im-blue);
+  background: var(--im-bg-3);
+}
+.im-detail-thread-back-icon {
+  font-size: 14px;
+}
+
+/* 两人对话消息流 */
+.im-detail-thread-chain {
+  padding: 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.im-detail-thread-msg {
+  display: flex;
+  gap: 8px;
+  max-width: 85%;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.im-detail-thread-msg:hover {
+  opacity: 0.9;
+}
+.im-detail-thread-msg-left {
+  align-self: flex-start;
+}
+.im-detail-thread-msg-right {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+.im-detail-thread-msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.im-detail-thread-msg-avatar img,
+.im-detail-thread-msg-avatar span {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.im-detail-thread-msg-body {
+  min-width: 0;
+}
+.im-detail-thread-msg-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+  font-size: 11px;
+  color: var(--im-text-3);
+}
+.im-detail-thread-msg-right .im-detail-thread-msg-head {
+  justify-content: flex-end;
+}
+.im-detail-thread-msg-name {
+  font-weight: 600;
+  color: var(--im-text-2);
+}
+.im-detail-thread-msg-num {
+  flex-shrink: 0;
+}
+.im-detail-thread-msg-content {
+  background: var(--im-bg-2);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--im-text-1);
+  word-break: break-word;
+  border: 1px solid var(--im-border);
+}
+.im-detail-thread-msg-right .im-detail-thread-msg-content {
+  background: var(--im-blue-soft);
+  border-color: var(--im-blue)33;
+}
+.im-detail-thread-msg-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+.im-detail-thread-msg-content p {
+  margin: 0 0 8px;
+}
+.im-detail-thread-msg-content p:last-child {
+  margin-bottom: 0;
+}
+.im-detail-thread-msg-content blockquote {
+  margin: 6px 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--im-border);
+  color: var(--im-text-2);
+  background: rgba(0,0,0,0.03);
+  border-radius: 0 4px 4px 0;
+  font-size: 12px;
+}
+.im-detail-thread-msg-content pre {
+  background: var(--im-bg-3);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 11px;
+}
+.im-detail-thread-msg-content code {
+  background: var(--im-bg-3);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+.im-detail-thread-msg-content a {
+  color: var(--im-blue);
+  text-decoration: none;
+}
+.im-detail-thread-msg-current .im-detail-thread-msg-content {
+  outline: 2px solid var(--im-blue);
+  outline-offset: 1px;
+}
+
+.im-detail-thread-current {
+  display: none;
+}
+.im-detail-thread-replies-label {
+  display: none;
+}
+
+/* 头部楼的全部回复列表：完整正文展开 */
+.im-detail-thread-reply-full {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--im-border);
+  align-items: flex-start;
+}
+.im-detail-thread-reply-full:last-child {
+  border-bottom: none;
+}
+.im-detail-thread-reply-full .im-detail-reply-body {
+  margin-right: 8px;
+}
+.im-detail-reply-content {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--im-text-1);
+  word-break: break-word;
+  margin-top: 4px;
+}
+
+
+/* 楼中楼缩进树样式 */
+.im-detail-reply-list.im-detail-reply-threaded {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.im-detail-thread-item {
+  position: relative;
+}
+.im-detail-thread-item-main {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.im-detail-thread-item:hover > .im-detail-thread-item-main {
+  background: var(--im-bg-2);
+}
+.im-detail-thread-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.im-detail-thread-avatar img,
+.im-detail-thread-avatar span {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.im-detail-thread-body {
+  flex: 1;
+  min-width: 0;
+}
+.im-detail-thread-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: var(--im-text-3);
+  flex-wrap: wrap;
+}
+.im-detail-thread-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--im-text-1);
+}
+.im-detail-thread-op {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--im-blue);
+  background: var(--im-blue-soft);
+  border: 1px solid var(--im-blue)33;
+  flex-shrink: 0;
+}
+.im-detail-thread-replyto {
+  font-size: 11px;
+  color: var(--im-text-3);
+  flex-shrink: 0;
+}
+.im-detail-thread-num {
+  flex-shrink: 0;
+}
+.im-detail-thread-time {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.im-detail-thread-content {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--im-text-1);
+  word-break: break-word;
+}
+.im-detail-thread-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  display: block;
+  margin: 6px 0;
+}
+.im-detail-thread-content p {
+  margin: 0 0 0.6em;
+}
+.im-detail-thread-content p:last-child {
+  margin-bottom: 0;
+}
+.im-detail-thread-content blockquote {
+  margin: 6px 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--im-border);
+  color: var(--im-text-2);
+  background: var(--im-bg-2);
+  border-radius: 0 4px 4px 0;
+  font-size: 13px;
+}
+.im-detail-thread-content pre {
+  background: var(--im-bg-3);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 12px;
+}
+.im-detail-thread-content code {
+  background: var(--im-bg-3);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.im-detail-thread-content a {
+  color: var(--im-blue);
+  text-decoration: none;
+}
+.im-detail-thread-actions {
+  display: flex;
+  gap: 2px;
+  margin-top: 6px;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.im-detail-thread-item:hover .im-detail-thread-actions {
+  opacity: 1;
+}
+.im-detail-thread-action {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--im-text-3);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.im-detail-thread-action:hover {
+  background: var(--im-bg-3);
+  color: var(--im-text-1);
+}
+.im-detail-thread-action svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* 子回复缩进 + 左侧连线 + 灰底分组 */
+.im-detail-thread-children {
+  margin-left: 32px;
+  padding-left: 12px;
+  border-left: 2px solid var(--im-border);
+  background: var(--primary-very-low, #f7f8fa);
+}
+.im-detail-thread-item[data-depth="3"] > .im-detail-thread-children {
+  margin-left: 12px;
+}
+
+/* 首末项圆角 */
+.im-detail-thread-item > .im-detail-thread-children > .im-detail-thread-item:first-child > .im-detail-thread-item-main {
+  padding-top: 8px;
+}
+.im-detail-thread-item > .im-detail-thread-children > .im-detail-thread-item:last-child > .im-detail-thread-item-main {
+  padding-bottom: 8px;
+}
+.im-detail-thread-item > .im-detail-thread-children > .im-detail-thread-item:only-child > .im-detail-thread-item-main {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+/* 高亮闪烁 */
+.im-detail-thread-item-highlight > .im-detail-thread-item-main {
+  background: var(--im-blue-soft) !important;
+  animation: thread-highlight-flash 1.2s ease-out;
+}
+@keyframes thread-highlight-flash {
+  0% { box-shadow: inset 3px 0 0 var(--im-blue); }
+  100% { box-shadow: inset 3px 0 0 transparent; }
+}
+
+/* 子回复计数按钮（在点赞左边） */
+.im-detail-thread-reply-count {
+  width: auto !important;
+  min-width: 36px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--im-text-2);
+  background: var(--im-bg-3);
+  border-radius: 10px;
+}
+.im-detail-thread-reply-count:hover {
+  color: var(--im-blue);
+  background: var(--im-blue-soft);
+}
+.im-detail-thread-reply-count.open {
+  color: var(--im-blue);
+  background: var(--im-blue-soft);
+}
+/* 头部回复数按钮（楼层号 + 时间右边） */
+.im-detail-thread-head-replies {
+  margin-left: auto;
+  padding: 1px 6px;
+  height: 18px;
+  border: none;
+  border-radius: 9px;
+  background: var(--im-bg-3);
+  color: var(--im-text-2);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--im-font);
+  cursor: pointer;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.im-detail-thread-head-replies:hover {
+  color: var(--im-blue);
+  background: var(--im-blue-soft);
+}
+.im-detail-thread-head-replies.open {
+  color: var(--im-blue);
+  background: var(--im-blue-soft);
+}
+`;
+  const CSS_FS_FULL = CSS_FS + "\n" + CSS_FS_BRIDGE + "\n" + CSS_CORE_EXTRA + "\n" + CSS_POST_DETAIL;
   function interpolate(css) {
     return css.replace(/__ROOT_CLASS__/g, ROOT_CLASS$1).replace(/__DARK_CLASS__/g, DARK_CLASS).replace(/__LOCK_CLASS__/g, LOCK_CLASS).replace(/__RAIL_WIDTH__/g, String(RAIL_WIDTH)).replace(/__NAV2_WIDTH__/g, String(NAV2_WIDTH)).replace(/__STRIP_WIDTH__/g, String(STRIP_WIDTH)).replace(/__LIST_WIDTH__/g, String(LIST_WIDTH)).replace(/__TITLEBAR_HEIGHT__/g, String(TITLEBAR_HEIGHT));
   }
   function skinCss() {
     let css;
     if (SKIN_ID === "feishu") css = CSS_FS_FULL;
-    else if (SKIN_ID === "wecom") css = CSS_WECOM + "\n" + CSS_WECOM_BRIDGE + "\n" + CSS_CORE_EXTRA;
-    else css = CSS_DD + "\n" + CSS_CORE_EXTRA;
+    else if (SKIN_ID === "wecom") css = CSS_WECOM + "\n" + CSS_WECOM_BRIDGE + "\n" + CSS_CORE_EXTRA + "\n" + CSS_POST_DETAIL;
+    else css = CSS_DD + "\n" + CSS_CORE_EXTRA + "\n" + CSS_POST_DETAIL;
     return interpolate(css);
   }
   function debounce(fn, wait) {
@@ -7507,8 +8350,16 @@ html.im-theme {
     // features：聊天头「AI 总结」按钮
     syncAiSummary: null,
     // features：主贴下重插/恢复总结气泡
-    startAiSummary: null
+    startAiSummary: null,
     // features：触发总结（订阅 MessageBus + POST）
+    openPostDetail: null,
+    // ui：打开帖子详情侧栏
+    closePostDetail: null,
+    // ui：关闭帖子详情侧栏
+    refreshDetailIfOpen: null,
+    // ui：操作后刷新详情面板状态
+    toggleBookmark: null
+    // features：切换书签
   };
   let listReloader = null;
   function onListReload(fn) {
@@ -9162,7 +10013,7 @@ html.im-theme {
   }, true);
   function bindChatPanelEvents(panel) {
     panel.addEventListener("click", (e) => {
-      var _a2, _b2, _c, _d;
+      var _a2, _b2, _c, _d, _e;
       const challengeBtn = e.target.closest(".im-chat-error .im-empty-btn");
       if (challengeBtn && panel.contains(challengeBtn)) {
         e.preventDefault();
@@ -9299,20 +10150,40 @@ html.im-theme {
         toggleQuoteExpand(quoteBtn);
         return;
       }
+      const floorEl = e.target.closest(".im-msg-floor");
+      if (floorEl && panel.contains(floorEl)) {
+        const msg2 = floorEl.closest(".im-msg");
+        if (msg2) {
+          e.preventDefault();
+          e.stopPropagation();
+          (_d = chatHooks.openPostDetail) == null ? void 0 : _d.call(chatHooks, Number(msg2.dataset.postNumber));
+        }
+        return;
+      }
       const likeBadge = e.target.closest(".im-like-badge");
       if (likeBadge && panel.contains(likeBadge)) {
         e.preventDefault();
         e.stopPropagation();
         const postId = likeBadge.dataset.postId;
+        const postNum2 = Number(likeBadge.dataset.postNumber) || 0;
         if (postId) chatHooks.toggleLike(Number(postId), likeBadge);
+        if (postNum2) setTimeout(() => {
+          var _a3;
+          return (_a3 = chatHooks.refreshDetailIfOpen) == null ? void 0 : _a3.call(chatHooks, postNum2);
+        }, 400);
         return;
       }
       const toolBtn = e.target.closest(".im-msg-tool");
       if (!toolBtn || !panel.contains(toolBtn)) return;
       const msg = toolBtn.closest(".im-msg");
       if (!msg) return;
+      const postNum = Number(msg.dataset.postNumber) || 0;
       if (toolBtn.dataset.action === "like") {
         chatHooks.toggleLike(Number(msg.dataset.postId), toolBtn);
+        if (postNum) setTimeout(() => {
+          var _a3;
+          return (_a3 = chatHooks.refreshDetailIfOpen) == null ? void 0 : _a3.call(chatHooks, postNum);
+        }, 400);
       } else if (toolBtn.dataset.action === "boost") {
         e.preventDefault();
         e.stopPropagation();
@@ -9324,7 +10195,11 @@ html.im-theme {
       } else if (toolBtn.dataset.action === "bookmark") {
         e.preventDefault();
         e.stopPropagation();
-        (_d = chatHooks.toggleBookmark) == null ? void 0 : _d.call(chatHooks, Number(msg.dataset.postId), toolBtn);
+        (_e = chatHooks.toggleBookmark) == null ? void 0 : _e.call(chatHooks, Number(msg.dataset.postId), toolBtn);
+        if (postNum) setTimeout(() => {
+          var _a3;
+          return (_a3 = chatHooks.refreshDetailIfOpen) == null ? void 0 : _a3.call(chatHooks, postNum);
+        }, 400);
       } else if (NATIVE_ACTION_SEL[toolBtn.dataset.action]) {
         e.preventDefault();
         e.stopPropagation();
@@ -9707,7 +10582,7 @@ html.im-theme {
         </div>
         ${boostBar}
         <span class="im-msg-meta">
-          <span>#${post.post_number}</span>
+          <span class="im-msg-floor" title="查看详情">#${post.post_number}</span>
           <span>${escapeHtml(formatTime(post.created_at))}</span>
           ${deviceHtml}
           ${badgeHtml}
@@ -16433,6 +17308,582 @@ ${data.raw}
     ensureAiSummaryButton,
     syncAiSummary,
     startAiSummary
+  });
+  let panelEl$1 = null;
+  let currentPostNumber = 0;
+  let threadPostNumber = 0;
+  function ensurePostDetailPanel() {
+    if (panelEl$1) return panelEl$1;
+    panelEl$1 = document.createElement("aside");
+    panelEl$1.id = "linuxdo-post-detail";
+    panelEl$1.className = "linuxdo-post-detail";
+    panelEl$1.setAttribute("role", "dialog");
+    panelEl$1.setAttribute("aria-label", "帖子详情");
+    panelEl$1.innerHTML = `
+    <div class="im-detail-header">
+      <div class="im-detail-author">
+        <span class="im-detail-avatar"></span>
+        <div class="im-detail-meta">
+          <div class="im-detail-name"></div>
+          <div class="im-detail-time"></div>
+        </div>
+      </div>
+      <button type="button" class="im-detail-close" title="关闭">${ICONS.close || "✕"}</button>
+    </div>
+    <div class="im-detail-body">
+      <div class="im-detail-content"></div>
+      <div class="im-detail-boosts"></div>
+      <div class="im-detail-actions">
+        <button class="im-detail-act" data-action="like" title="点赞">${ICONS.heartOutline}</button>
+        <button class="im-detail-act" data-action="boost" title="小火箭">${ICONS.rocket}</button>
+        <button class="im-detail-act" data-action="reply" title="回复">${ICONS.reply}</button>
+        <button class="im-detail-act" data-action="copy-link" title="复制链接">${ICONS.link}</button>
+        <button class="im-detail-act" data-action="bookmark" title="收藏">${ICONS.bookmark}</button>
+        <button class="im-detail-act" data-action="flag" title="举报">${ICONS.flag}</button>
+      </div>
+      <div class="im-detail-replies">
+        <div class="im-detail-reply-head">
+          <span class="im-detail-reply-count">0 条回复</span>
+        </div>
+        <div class="im-detail-reply-list"></div>
+        <div class="im-detail-thread" style="display:none;">
+          <button type="button" class="im-detail-thread-back">
+            <span class="im-detail-thread-back-icon">←</span>
+            <span>返回回复列表</span>
+          </button>
+          <div class="im-detail-thread-chain"></div>
+          <div class="im-detail-thread-current"></div>
+          <div class="im-detail-thread-replies-label"></div>
+        </div>
+      </div>
+    </div>
+    <div class="im-detail-resizer" title="拖动调整宽度（双击复位）"></div>
+  `;
+    document.body.appendChild(panelEl$1);
+    bindDetailEvents(panelEl$1);
+    ensureDetailResizer(panelEl$1);
+    applyDetailWidth(getDetailWidth());
+    return panelEl$1;
+  }
+  function getDetailWidth() {
+    try {
+      const w = parseInt(localStorage.getItem(DETAIL_PANEL_W_KEY), 10);
+      if (w >= DETAIL_PANEL_W_MIN && w <= DETAIL_PANEL_W_MAX) return w;
+    } catch {
+    }
+    return DETAIL_PANEL_W_DEFAULT;
+  }
+  function applyDetailWidth(w) {
+    const width = Math.min(DETAIL_PANEL_W_MAX, Math.max(DETAIL_PANEL_W_MIN, Math.round(w)));
+    document.documentElement.style.setProperty("--im-detail-w", `${width}px`);
+  }
+  function ensureDetailResizer(panel) {
+    const rz = panel.querySelector(".im-detail-resizer");
+    if (!rz || rz._bound) return;
+    rz._bound = true;
+    let dragging = false;
+    let startX = 0;
+    let startW = 0;
+    rz.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      startX = e.clientX;
+      startW = parseInt(document.documentElement.style.getPropertyValue("--im-detail-w"), 10) || getDetailWidth();
+      rz.classList.add("dragging");
+      try {
+        rz.setPointerCapture(e.pointerId);
+      } catch {
+      }
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    rz.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      applyDetailWidth(startW + startX - e.clientX);
+    });
+    const endDrag = () => {
+      if (!dragging) return;
+      dragging = false;
+      rz.classList.remove("dragging");
+      const w = parseInt(document.documentElement.style.getPropertyValue("--im-detail-w"), 10);
+      if (w) {
+        try {
+          localStorage.setItem(DETAIL_PANEL_W_KEY, String(w));
+        } catch {
+        }
+      }
+    };
+    rz.addEventListener("pointerup", endDrag);
+    rz.addEventListener("pointercancel", endDrag);
+    rz.addEventListener("dblclick", () => {
+      applyDetailWidth(DETAIL_PANEL_W_DEFAULT);
+      try {
+        localStorage.removeItem(DETAIL_PANEL_W_KEY);
+      } catch {
+      }
+    });
+  }
+  function openPostDetail(postNumber) {
+    var _a2, _b2, _c;
+    const post = topicPostsMap.get(postNumber);
+    if (!post) return;
+    const panel = ensurePostDetailPanel();
+    currentPostNumber = postNumber;
+    threadPostNumber = 0;
+    const displayName = userDisplayName(post, post.username || "?");
+    const avatarEl = panel.querySelector(".im-detail-avatar");
+    if (isMaskAvatar()) {
+      const d = (_a2 = skinHooks.msgAvatar) == null ? void 0 : _a2.call(skinHooks, displayName);
+      if (d) {
+        avatarEl.style.background = d.bg;
+        avatarEl.innerHTML = d.html;
+      } else {
+        avatarEl.style.background = avatarColor(displayName);
+        avatarEl.textContent = avatarLetter(displayName);
+      }
+    } else if (post.avatar_template) {
+      avatarEl.style.background = "transparent";
+      avatarEl.innerHTML = `<img src="${escapeHtml(fullAvatarUrl(post.avatar_template))}" alt="" loading="lazy">`;
+    } else {
+      avatarEl.style.background = avatarColor(displayName);
+      avatarEl.textContent = avatarLetter(displayName);
+    }
+    panel.querySelector(".im-detail-name").textContent = displayName;
+    panel.querySelector(".im-detail-time").textContent = `#${post.post_number} · ${formatTime(post.created_at)}`;
+    const contentEl = panel.querySelector(".im-detail-content");
+    contentEl.innerHTML = cookedWithQuoteBars(post);
+    contentEl.querySelectorAll("img").forEach((img) => {
+      img.loading = "lazy";
+    });
+    const boostEl = panel.querySelector(".im-detail-boosts");
+    boostEl.innerHTML = ((_b2 = chatHooks.renderBoosts) == null ? void 0 : _b2.call(chatHooks, post)) || "";
+    syncDetailActions(post);
+    renderDetailReplies(postNumber);
+    closeThreadView();
+    panel.classList.add("open");
+    document.body.classList.add("im-detail-open");
+    (_c = chatHooks.enhancePolls) == null ? void 0 : _c.call(chatHooks, panel);
+  }
+  function syncDetailActions(post) {
+    var _a2;
+    if (!panelEl$1) return;
+    const actLike = (post.actions_summary || []).find((a) => a.id === 2);
+    const isLiked = post.id && (likedPosts.has(post.id) || (actLike == null ? void 0 : actLike.acted));
+    const canUndo = actLike ? actLike.can_undo !== false : true;
+    const likeBtn = panelEl$1.querySelector('.im-detail-act[data-action="like"]');
+    if (likeBtn) {
+      likeBtn.classList.toggle("liked", !!isLiked);
+      likeBtn.classList.toggle("cannot-undo", !canUndo);
+      likeBtn.innerHTML = isLiked ? ICONS.heartFilled : ICONS.heartOutline;
+      likeBtn.title = isLiked ? canUndo ? "已点赞，点击取消" : ((_a2 = chatHooks.cantUndoText) == null ? void 0 : _a2.call(chatHooks, post.post_number)) || "无法撤销" : "点赞";
+    }
+    const bmBtn = panelEl$1.querySelector('.im-detail-act[data-action="bookmark"]');
+    if (bmBtn) {
+      bmBtn.classList.toggle("bookmarked", !!post.bookmarked);
+      bmBtn.innerHTML = post.bookmarked ? ICONS.bookmarkFill || ICONS.bookmark : ICONS.bookmark;
+      bmBtn.title = post.bookmarked ? "取消收藏" : "收藏";
+    }
+  }
+  function collectAllReplies(postNumber) {
+    const result = [];
+    const stack = [postNumber];
+    const seen = /* @__PURE__ */ new Set();
+    while (stack.length) {
+      const cur = stack.pop();
+      if (seen.has(cur)) continue;
+      seen.add(cur);
+      const children = getDirectReplies(cur);
+      for (const c of children) {
+        result.push(c);
+        stack.push(c.post_number);
+      }
+    }
+    result.sort((a, b) => a.post_number - b.post_number);
+    return result;
+  }
+  function renderReplyTree(parentNumber, rootNumber, depth) {
+    const children = getDirectReplies(parentNumber);
+    if (!children.length) return "";
+    const maxDepth = 3;
+    const indent = Math.min(depth, maxDepth);
+    return children.map((p) => {
+      const name = userDisplayName(p, p.username || "?");
+      let avatarHtml2 = "";
+      if (isMaskAvatar()) {
+        avatarHtml2 = `<span style="background:${avatarColor(name)}">${escapeHtml(avatarLetter(name))}</span>`;
+      } else if (p.avatar_template) {
+        avatarHtml2 = `<img src="${escapeHtml(fullAvatarUrl(p.avatar_template))}" alt="" loading="lazy">`;
+      } else {
+        avatarHtml2 = `<span style="background:${avatarColor(name)}">${escapeHtml(avatarLetter(name))}</span>`;
+      }
+      const opLabel = p.post_number === 1 ? `<span class="im-detail-thread-op">楼主</span>` : "";
+      let replyToLabel = "";
+      const replyToNum = Number(p.reply_to_post_number) || 0;
+      if (replyToNum && replyToNum !== Number(rootNumber)) {
+        const target = topicPostsMap.get(replyToNum);
+        if (target) {
+          const targetName = userDisplayName(target, target.username || "?");
+          replyToLabel = `<span class="im-detail-thread-replyto">回复 ${escapeHtml(targetName)}</span>`;
+        }
+      }
+      const childrenCount = getDirectReplies(p.post_number).length;
+      const grandchildren = childrenCount ? renderReplyTree(p.post_number, rootNumber, depth + 1) : "";
+      const hasChildren = childrenCount > 0;
+      return `
+      <div class="im-detail-thread-item" data-post-number="${p.post_number}" data-depth="${indent}" style="--indent: ${indent}">
+        <div class="im-detail-thread-item-main">
+          <span class="im-detail-thread-avatar">${avatarHtml2}</span>
+          <div class="im-detail-thread-body">
+            <div class="im-detail-thread-head">
+              <span class="im-detail-thread-name">${escapeHtml(name)}</span>
+              ${opLabel}
+              ${replyToLabel}
+              <span class="im-detail-thread-num">#${p.post_number}</span>
+              <span class="im-detail-thread-time">${escapeHtml(formatTime(p.created_at))}</span>
+              ${hasChildren ? `<button class="im-detail-thread-head-replies" data-action="toggle-children" title="展开/收起回复">${childrenCount} 回复</button>` : ""}
+            </div>
+            <div class="im-detail-thread-content">${cookedWithQuoteBars(p)}</div>
+            <div class="im-detail-thread-actions">
+              <button class="im-detail-thread-action" data-action="like" title="点赞">${ICONS.heartOutline}</button>
+              <button class="im-detail-thread-action" data-action="reply" title="回复">${ICONS.reply}</button>
+              <button class="im-detail-thread-action" data-action="thread" title="查看对话">${ICONS.chat || "💬"}</button>
+            </div>
+          </div>
+        </div>
+        ${hasChildren ? `<div class="im-detail-thread-children">${grandchildren}</div>` : ""}
+      </div>`;
+    }).join("");
+  }
+  function renderDetailReplies(postNumber) {
+    if (!panelEl$1) return;
+    const root2 = Number(postNumber);
+    const allReplies = collectAllReplies(root2);
+    const countEl = panelEl$1.querySelector(".im-detail-reply-count");
+    countEl.textContent = `${allReplies.length} 条回复`;
+    const listEl = panelEl$1.querySelector(".im-detail-reply-list");
+    if (!allReplies.length) {
+      listEl.innerHTML = '<div class="im-detail-empty">暂无回复</div>';
+      listEl.classList.remove("im-detail-reply-threaded");
+      return;
+    }
+    listEl.classList.add("im-detail-reply-threaded");
+    listEl.classList.remove("im-detail-reply-timeline");
+    listEl.innerHTML = renderReplyTree(root2, root2, 0);
+  }
+  function getDirectReplies(postNumber) {
+    const n = Number(postNumber);
+    const result = [];
+    for (const [, p] of topicPostsMap) {
+      if (Number(p.reply_to_post_number) === n) result.push(p);
+    }
+    result.sort((a, b) => a.post_number - b.post_number);
+    return result;
+  }
+  function getReplyChain(postNumber) {
+    const chain = [];
+    let cur = Number(postNumber);
+    const seen = /* @__PURE__ */ new Set();
+    while (cur > 0 && !seen.has(cur)) {
+      seen.add(cur);
+      const p = topicPostsMap.get(cur);
+      if (!p) break;
+      chain.unshift(p);
+      cur = Number(p.reply_to_post_number) || 0;
+    }
+    return chain;
+  }
+  function normUsername(u) {
+    return String(u || "").trim().toLowerCase();
+  }
+  function getTwoPersonThread(postNumber) {
+    const start = topicPostsMap.get(postNumber);
+    if (!start) return [];
+    const me = normUsername(start.username);
+    if (!me) return [start];
+    let other = "";
+    const chain = getReplyChain(postNumber);
+    for (let i = chain.length - 2; i >= 0; i--) {
+      const u = normUsername(chain[i].username);
+      if (u && u !== me) {
+        other = u;
+        break;
+      }
+    }
+    if (!other) return [start];
+    const allPosts = [...topicPostsMap.values()];
+    allPosts.sort((a, b) => a.post_number - b.post_number);
+    const strictReply = /* @__PURE__ */ new Set();
+    let minPost = Infinity;
+    let maxPost = 0;
+    for (const p of allPosts) {
+      const u = normUsername(p.username);
+      if (u !== me && u !== other) continue;
+      const replyTo = Number(p.reply_to_post_number) || 0;
+      if (!replyTo) continue;
+      const target = topicPostsMap.get(replyTo);
+      if (!target) continue;
+      const targetUser = normUsername(target.username);
+      if (u === me && targetUser === other || u === other && targetUser === me) {
+        strictReply.add(p.post_number);
+        strictReply.add(replyTo);
+        minPost = Math.min(minPost, p.post_number, replyTo);
+        maxPost = Math.max(maxPost, p.post_number, replyTo);
+      }
+    }
+    if (strictReply.size === 0) return [start];
+    const thread = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const p of allPosts) {
+      if (Number(p.post_number) < minPost || Number(p.post_number) > maxPost) continue;
+      const u = normUsername(p.username);
+      if (u !== me && u !== other) continue;
+      const replyTo = Number(p.reply_to_post_number) || 0;
+      if (replyTo) {
+        const target = topicPostsMap.get(replyTo);
+        if (target) {
+          const targetUser = normUsername(target.username);
+          if (targetUser !== me && targetUser !== other && targetUser !== u) continue;
+        }
+      }
+      if (seen.has(p.post_number)) continue;
+      thread.push(p);
+      seen.add(p.post_number);
+    }
+    if (!seen.has(start.post_number)) {
+      thread.push(start);
+      thread.sort((a, b) => a.post_number - b.post_number);
+    }
+    return thread;
+  }
+  function miniAvatarHtml(p) {
+    const name = userDisplayName(p, p.username || "?");
+    if (isMaskAvatar()) {
+      const bg = avatarColor(name);
+      return `<span style="background:${bg}">${escapeHtml(avatarLetter(name))}</span>`;
+    }
+    if (p.avatar_template) {
+      return `<img src="${escapeHtml(fullAvatarUrl(p.avatar_template))}" alt="" loading="lazy">`;
+    }
+    return `<span style="background:${avatarColor(name)}">${escapeHtml(avatarLetter(name))}</span>`;
+  }
+  function openThreadView(postNumber) {
+    if (!panelEl$1) return;
+    const post = topicPostsMap.get(postNumber);
+    if (!post) return;
+    threadPostNumber = Number(postNumber);
+    panelEl$1.dataset.threadPost = String(threadPostNumber);
+    panelEl$1.querySelector(".im-detail-reply-list").style.display = "none";
+    const threadEl = panelEl$1.querySelector(".im-detail-thread");
+    threadEl.style.display = "";
+    const chainEl = panelEl$1.querySelector(".im-detail-thread-chain");
+    const curEl = panelEl$1.querySelector(".im-detail-thread-current");
+    const labelEl = panelEl$1.querySelector(".im-detail-thread-replies-label");
+    curEl.style.display = "none";
+    labelEl.style.display = "none";
+    const backBtn = panelEl$1.querySelector(".im-detail-thread-back span:last-child");
+    const isHead = !post.reply_to_post_number || Number(post.post_number) === 1;
+    if (isHead) {
+      const replies = getDirectReplies(postNumber);
+      if (backBtn) backBtn.textContent = `${replies.length} 条回复`;
+      chainEl.style.display = "";
+      if (!replies.length) {
+        chainEl.innerHTML = `<div class="im-detail-empty">暂无回复</div>`;
+        return;
+      }
+      chainEl.innerHTML = replies.map((p) => {
+        const name = userDisplayName(p, p.username || "?");
+        const isCurrent = Number(p.post_number) === Number(postNumber);
+        return `
+        <div class="im-detail-reply-item im-detail-thread-reply-full" data-post-number="${p.post_number}">
+          <span class="im-detail-reply-avatar">${miniAvatarHtml(p)}</span>
+          <div class="im-detail-reply-body">
+            <div class="im-detail-reply-head">
+              <span class="im-detail-reply-name">${escapeHtml(name)}</span>
+              <span class="im-detail-reply-num">#${p.post_number}</span>
+            </div>
+            <div class="im-detail-reply-content${isCurrent ? " current" : ""}">${cookedWithQuoteBars(p)}</div>
+          </div>
+          <button type="button" class="im-detail-thread-btn" title="查看对话">${ICONS.reply || "💬"}</button>
+        </div>`;
+      }).join("");
+    } else {
+      const thread = getTwoPersonThread(postNumber);
+      const me = normUsername(post.username);
+      let otherName = "";
+      for (const p of thread) {
+        const u = normUsername(p.username);
+        if (u && u !== me) {
+          otherName = userDisplayName(p, p.username || "?");
+          break;
+        }
+      }
+      const myName = userDisplayName(post, post.username || "?");
+      if (backBtn) backBtn.textContent = otherName ? `${myName} 与 ${otherName}` : "对话";
+      if (thread.length <= 1) {
+        chainEl.style.display = "";
+        chainEl.innerHTML = `<div class="im-detail-empty">暂无多轮对话</div>`;
+        return;
+      }
+      chainEl.style.display = "";
+      chainEl.innerHTML = thread.map((p) => {
+        const name = userDisplayName(p, p.username || "?");
+        const isCurrent = Number(p.post_number) === Number(postNumber);
+        const side = normUsername(p.username) === me ? "right" : "left";
+        return `
+        <div class="im-detail-thread-msg im-detail-thread-msg-${side}${isCurrent ? " im-detail-thread-msg-current" : ""}" data-post-number="${p.post_number}">
+          <span class="im-detail-thread-msg-avatar">${miniAvatarHtml(p)}</span>
+          <div class="im-detail-thread-msg-body">
+            <div class="im-detail-thread-msg-head">
+              <span class="im-detail-thread-msg-name">${escapeHtml(name)}</span>
+              <span class="im-detail-thread-msg-num">#${p.post_number}</span>
+            </div>
+            <div class="im-detail-thread-msg-content">${cookedWithQuoteBars(p)}</div>
+          </div>
+        </div>`;
+      }).join("");
+    }
+  }
+  function closeThreadView() {
+    if (!panelEl$1) return;
+    threadPostNumber = 0;
+    delete panelEl$1.dataset.threadPost;
+    panelEl$1.querySelector(".im-detail-thread").style.display = "none";
+  }
+  function closePostDetail() {
+    if (!panelEl$1) return;
+    panelEl$1.classList.remove("open");
+    document.body.classList.remove("im-detail-open");
+    currentPostNumber = 0;
+  }
+  function bindDetailEvents(panel) {
+    panel.querySelector(".im-detail-close").addEventListener("click", (e) => {
+      e.stopPropagation();
+      closePostDetail();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && panel.classList.contains("open")) {
+        closePostDetail();
+      }
+    });
+    panel.querySelector(".im-detail-actions").addEventListener("click", (e) => {
+      var _a2, _b2, _c, _d, _e, _f;
+      const btn = e.target.closest(".im-detail-act");
+      if (!btn) return;
+      e.stopPropagation();
+      const action = btn.dataset.action;
+      const post = topicPostsMap.get(currentPostNumber);
+      if (!post) return;
+      if (action === "like") {
+        (_a2 = chatHooks.toggleLike) == null ? void 0 : _a2.call(chatHooks, post.id, btn);
+        setTimeout(() => syncDetailFromChat(), 500);
+      } else if (action === "boost") {
+        (_b2 = chatHooks.openBoostComposer) == null ? void 0 : _b2.call(chatHooks, post.id, post.post_number, panel);
+      } else if (action === "reply") {
+        (_c = chatHooks.replyToPost) == null ? void 0 : _c.call(chatHooks, post.post_number);
+      } else if (action === "copy-link") {
+        const url = `${location.origin}/t/${chatState.topicId}/${post.post_number}`;
+        (_d = navigator.clipboard) == null ? void 0 : _d.writeText(url).catch(() => {
+        });
+        (_e = chatHooks.toast) == null ? void 0 : _e.call(chatHooks, "链接已复制", btn);
+      } else if (action === "bookmark") {
+        (_f = chatHooks.toggleBookmark) == null ? void 0 : _f.call(chatHooks, post.id, btn);
+        setTimeout(() => syncDetailFromChat(), 500);
+      } else if (action === "flag") {
+        const nativeBtn = document.querySelector(`.im-msg[data-post-number="${post.post_number}"] .im-msg-tool[data-action="flag"]`);
+        nativeBtn == null ? void 0 : nativeBtn.click();
+      }
+    });
+    panel.querySelector(".im-detail-reply-list").addEventListener("click", (e) => {
+      var _a2, _b2, _c;
+      const actionBtn = e.target.closest(".im-detail-thread-action");
+      const item = e.target.closest(".im-detail-thread-item");
+      if (!item) return;
+      const num = Number(item.dataset.postNumber);
+      if (!num) return;
+      const post = topicPostsMap.get(num);
+      if (actionBtn) {
+        e.stopPropagation();
+        const action = actionBtn.dataset.action;
+        if (action === "toggle-children") {
+          const children = item.querySelector(":scope > .im-detail-thread-children");
+          if (children) {
+            const open = children.style.display !== "none";
+            children.style.display = open ? "none" : "";
+            actionBtn.classList.toggle("open", !open);
+          }
+          return;
+        }
+        if (action === "like" && post) {
+          (_a2 = chatHooks.toggleLike) == null ? void 0 : _a2.call(chatHooks, post.id, actionBtn);
+        } else if (action === "reply") {
+          (_b2 = chatHooks.replyToPost) == null ? void 0 : _b2.call(chatHooks, num);
+        } else if (action === "thread") {
+          openThreadView(num);
+        }
+        return;
+      }
+      e.stopPropagation();
+      (_c = chatHooks.jumpToPost) == null ? void 0 : _c.call(chatHooks, num);
+    });
+    panel.querySelector(".im-detail-thread-back").addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeThreadView();
+    });
+    panel.querySelector(".im-detail-thread-chain").addEventListener("click", (e) => {
+      var _a2;
+      const threadBtn = e.target.closest(".im-detail-thread-btn");
+      const msg = e.target.closest(".im-detail-thread-msg, .im-detail-thread-reply-full");
+      if (!msg) return;
+      const num = Number(msg.dataset.postNumber);
+      if (!num) return;
+      e.stopPropagation();
+      if (threadBtn) {
+        openThreadView(num);
+      } else {
+        (_a2 = chatHooks.jumpToPost) == null ? void 0 : _a2.call(chatHooks, num);
+      }
+    });
+    panel.querySelector(".im-detail-content").addEventListener("click", (e) => {
+      const a = e.target.closest("a");
+      if (!a) return;
+      const href = a.getAttribute("href") || "";
+      if (href.startsWith("/") && !href.startsWith("//")) {
+        e.preventDefault();
+        e.stopPropagation();
+        navigateInApp(href);
+        closePostDetail();
+      }
+    });
+  }
+  function syncDetailFromChat() {
+    if (!currentPostNumber || !panelEl$1) return;
+    const chatMsg = document.querySelector(`.im-msg[data-post-number="${currentPostNumber}"]`);
+    if (!chatMsg) return;
+    const post = topicPostsMap.get(currentPostNumber);
+    if (post) {
+      const likeBtn = chatMsg.querySelector('.im-msg-tool[data-action="like"]');
+      if (likeBtn) {
+        const liked = likeBtn.classList.contains("liked");
+        const actLike = (post.actions_summary || []).find((a) => a.id === 2);
+        if (actLike) actLike.acted = liked;
+        if (post.id) {
+          if (liked) likedPosts.add(post.id);
+          else likedPosts.delete(post.id);
+        }
+      }
+      post.bookmarked = chatMsg.dataset.bookmarked === "1";
+      syncDetailActions(post);
+    }
+  }
+  function refreshDetailIfOpen(postNumber) {
+    if (!panelEl$1 || !panelEl$1.classList.contains("open")) return;
+    if (Number(postNumber) !== currentPostNumber) return;
+    const post = topicPostsMap.get(postNumber);
+    if (post) syncDetailActions(post);
+  }
+  Object.assign(chatHooks, {
+    openPostDetail,
+    closePostDetail,
+    refreshDetailIfOpen
   });
   function ensureTitlebar() {
     var _a2, _b2;

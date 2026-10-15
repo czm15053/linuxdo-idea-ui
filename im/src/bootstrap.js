@@ -45,6 +45,7 @@ import "./features/read-track.js";
 import "./features/ai-summary.js";
 import "./features/spam-filter.js";
 import "./features/highlight-keywords.js";
+import "./ui/post-detail-panel.js";
 import { ensureTitlebar } from "./ui/titlebar.js";
 import { ensureModeFab } from "./ui/mode-fab.js";
 import {

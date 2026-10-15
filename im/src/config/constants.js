@@ -29,3 +29,9 @@ export const AI_DEFAULT_NAME = "豆包";
 
 export const SPAM_FILTER_KEY = "linuxdo-im-spam-filter";
 export const HIGHLIGHT_KEY = "linuxdo-im-highlight-keywords";
+
+// 帖子详情面板
+export const DETAIL_PANEL_W_KEY = "linuxdo-im-detail-width";
+export const DETAIL_PANEL_W_DEFAULT = 420;
+export const DETAIL_PANEL_W_MIN = 280;
+export const DETAIL_PANEL_W_MAX = 720;

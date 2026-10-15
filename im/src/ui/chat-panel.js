@@ -327,21 +327,36 @@ function bindChatPanelEvents(panel) {
       toggleQuoteExpand(quoteBtn);
       return;
     }
+    // 点击楼层号 → 打开详情面板
+    const floorEl = e.target.closest(".im-msg-floor");
+    if (floorEl && panel.contains(floorEl)) {
+      const msg = floorEl.closest(".im-msg");
+      if (msg) {
+        e.preventDefault();
+        e.stopPropagation();
+        chatHooks.openPostDetail?.(Number(msg.dataset.postNumber));
+      }
+      return;
+    }
     // 点击点赞徽章
     const likeBadge = e.target.closest(".im-like-badge");
     if (likeBadge && panel.contains(likeBadge)) {
       e.preventDefault();
       e.stopPropagation();
       const postId = likeBadge.dataset.postId;
+      const postNum = Number(likeBadge.dataset.postNumber) || 0;
       if (postId) chatHooks.toggleLike(Number(postId), likeBadge);
+      if (postNum) setTimeout(() => chatHooks.refreshDetailIfOpen?.(postNum), 400);
       return;
     }
     const toolBtn = e.target.closest(".im-msg-tool");
     if (!toolBtn || !panel.contains(toolBtn)) return;
     const msg = toolBtn.closest(".im-msg");
     if (!msg) return;
+    const postNum = Number(msg.dataset.postNumber) || 0;
     if (toolBtn.dataset.action === "like") {
       chatHooks.toggleLike(Number(msg.dataset.postId), toolBtn);
+      if (postNum) setTimeout(() => chatHooks.refreshDetailIfOpen?.(postNum), 400);
     } else if (toolBtn.dataset.action === "boost") {
       e.preventDefault();
       e.stopPropagation();
@@ -354,6 +369,7 @@ function bindChatPanelEvents(panel) {
       e.preventDefault();
       e.stopPropagation();
       chatHooks.toggleBookmark?.(Number(msg.dataset.postId), toolBtn);
+      if (postNum) setTimeout(() => chatHooks.refreshDetailIfOpen?.(postNum), 400);
     } else if (NATIVE_ACTION_SEL[toolBtn.dataset.action]) {
       // 回应摘要 / 复制链接 / 书签 / 举报：转发点击到原生楼层按钮，行为与原站一致
       e.preventDefault();
@@ -560,7 +576,7 @@ export function startRealtimeChatPolling() {
  *  去重删除仅限「aside 指向的楼层 = reply_to_post_number 且该楼已加载」：
  *  转载帖 / 跨话题引用 / 原楼未加载的 aside 一律转引用条，避免内容被整块删掉。
  *  嵌套引用不动；跨话题引用不设楼层跳转（会跳错楼层）。 */
-function cookedWithQuoteBars(post) {
+export function cookedWithQuoteBars(post) {
   const cooked = post.cooked || "";
   if (!/<aside[\s>][^>]*class="[^"]*\bquote\b/.test(cooked)) return cooked;
   try {
@@ -768,7 +784,7 @@ function bubbleHtml(post, myName) {
         </div>
         ${boostBar}
         <span class="im-msg-meta">
-          <span>#${post.post_number}</span>
+          <span class="im-msg-floor" title="查看详情">#${post.post_number}</span>
           <span>${escapeHtml(formatTime(post.created_at))}</span>
           ${deviceHtml}
           ${badgeHtml}

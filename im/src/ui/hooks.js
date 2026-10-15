@@ -18,5 +18,9 @@ export const chatHooks = {
   enhancePolls: null,        // features：投票组件增强
   ensureAiSummaryButton: null, // features：聊天头「AI 总结」按钮
   syncAiSummary: null,       // features：主贴下重插/恢复总结气泡
-  startAiSummary: null       // features：触发总结（订阅 MessageBus + POST）
+  startAiSummary: null,      // features：触发总结（订阅 MessageBus + POST）
+  openPostDetail: null,      // ui：打开帖子详情侧栏
+  closePostDetail: null,     // ui：关闭帖子详情侧栏
+  refreshDetailIfOpen: null, // ui：操作后刷新详情面板状态
+  toggleBookmark: null,      // features：切换书签
 };
