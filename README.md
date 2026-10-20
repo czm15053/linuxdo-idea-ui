@@ -1,6 +1,6 @@
-# 摸鱼办公皮肤合集 · Linux DO & X (Twitter) & 小红书
+# 摸鱼办公皮肤合集 · Linux DO & X (Twitter) & 小红书 & 知乎
 
-为 **Linux DO**、**X (Twitter)** 和 **小红书** 深度定制的办公界面伪装外观脚本，支持 **钉钉 PC 端**、**飞书 IM**、**企业微信 5.x**、**JetBrains IDE**、**终端 TUI** 等多种风格。只换皮，不碰数据——内容、链接、按钮与交互全部保留。
+为 **Linux DO**、**X (Twitter)**、**小红书** 和 **知乎** 深度定制的办公界面伪装外观脚本，支持 **钉钉 PC 端**、**飞书 IM**、**企业微信 5.x**、**JetBrains IDE**、**终端 TUI** 等多种风格。只换皮，不碰数据——内容、链接、按钮与交互全部保留。
 
 > ⚠️ 同一站点内的不同外观脚本**互斥**，同一时刻对同一网站只启用一个外观。
 
@@ -20,6 +20,9 @@
 
 ### 📕 小红书专区
 - [小红书专属：IM 三合一外观（`xhs-im.user.js`）](#小红书专属im-三合一外观xhs-imuserjs)
+
+### 💡 知乎专区
+- [知乎专属：IM 三合一外观（`zhihu-im.user.js`）](#知乎专属im-三合一外观zhihu-imuserjs)
 
 ### ✨ 通用工具
 - [文章一键伪装（`doc-select.user.js` · 全网站通用）](#文章一键伪装doc-selectuserjs--全网站通用)
@@ -90,6 +93,30 @@ https://github.com/czm15053/linuxdo-idea-ui/raw/main/xhs/xhs-im.user.js
 ```
 
 完整功能说明与开发构建详见 [`xhs/README.md`](./xhs/README.md)。
+
+## 知乎专属：IM 三合一外观（`zhihu-im.user.js`）
+
+为 [zhihu.com](https://www.zhihu.com/) 深度定制的办公 IM 伪装脚本。将推荐 / 关注 / 热榜信息流伪装为 **钉钉 / 飞书 / 企业微信** 聊天列表，回答以聊天气泡呈现。单文件脚本，直接安装即用。
+
+### 安装
+
+1. 安装 [Tampermonkey](https://www.tampermonkey.net/)（或 Violentmonkey）
+2. 打开 [`zhihu-im.user.js`](./zhihu-im.user.js)，点 **Raw** 后安装
+3. 访问 <https://www.zhihu.com/> 自动生效（初次安装后请硬刷新一次）
+
+Raw 直链（仓库公开后可用）：
+
+```text
+https://github.com/czm15053/linuxdo-idea-ui/raw/main/zhihu-im.user.js
+```
+
+### 功能
+
+- **三套 IM 皮肤一键切换**：钉钉 / 飞书 / 企业微信，深色跟随系统
+- **中栏会话列表**：推荐流走原生 API 捕获渲染（自动补齐前三页），支持关注 / 推荐 / 热榜切换、下拉刷新、搜索页结果列表
+- **右栏聊天式详情**：问题回答就地渲染为聊天气泡，长回答点击展开，feeds API 加载更多回答（到底自动触发），专栏 / 视频页同样适配
+- **伪装模式**：一键把真实头像 / 标题替换为工作群名称与文字头像（2~6 字随机群名），真标题下沉到消息行
+- **只换皮不碰数据**：点赞 / 评论 / 收藏等交互保留原生行为，会话列表仅做展示层重排
 
 ## 文章一键伪装（`doc-select.user.js` · 全网站通用）
 
