@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linux DO · 终端 TUI 外观
 // @namespace    https://linux.do/
-// @version      0.3.0
+// @version      0.5.0
 // @description  终端 AI TUI 风格的 LinuxDo（Claude Code / Codex CLI 双配色）
 // @author       czm15053
 // @match        https://linux.do/*
@@ -35,6 +35,8 @@
 
   const FAKE_TITLE = `linux.do — ${SHELL_NAME}`; // TUI 模式下标签页标题，不暴露帖子标题
   const SESSION_KEY = "linuxdo-terminal-sessions"; // 最近浏览记录 → splash 的 Recent activity
+  const LAST_READ_KEY = "linuxdo-terminal-last-read"; // 本机楼层记忆（仅匿名兜底）：topicId -> postNumber
+  const LAST_READ_MAX_TOPICS = 200;
   let originalTitle = "";
 
   /** 记录最近浏览的话题，splash 伪装成 CLI 会话历史（最多 5 条） */
@@ -164,6 +166,12 @@
   function topicIdFromPath(pathname) {
     const m = pathname.match(/^\/t\/(?:[\w-]+\/)?(\d+)/);
     return m ? Number(m[1]) : null;
+  }
+
+  /** 路由携带的楼层号（/t/[slug/]id/N），无则 0 */
+  function postNumberFromPath(pathname) {
+    const m = pathname.match(/^\/t\/(?:[\w-]+\/)?\d+(?:\/(\d+))?/);
+    return m && m[1] ? Number(m[1]) : 0;
   }
 
   function isHomePath(pathname) {
@@ -929,6 +937,71 @@
       background: var(--tt-bg-raised); user-select: none;
     }
     .tt-sel-hint b { color: var(--tt-text-dim); font-weight: 400; }
+
+    /* ---------- 楼层跳转浮层（状态栏 [#] 段 / # 键唤出） ---------- */
+    .tt-floormenu {
+      display: none; position: fixed; inset: 0; z-index: 1150;
+      background: rgba(6, 8, 9, 0.62);
+      align-items: flex-start; justify-content: center;
+    }
+    .tt-floormenu.open { display: flex; }
+    .tt-floormenu-box {
+      margin-top: 22vh; width: 320px; max-width: 92vw;
+      background: var(--tt-bg-raised);
+      border: 1px solid var(--tt-border-strong); border-radius: 6px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+      padding: 12px 16px 12px; user-select: none;
+    }
+    .tt-floormenu-box .fm-title {
+      color: var(--tt-text-faint); font-size: 11px; letter-spacing: 0.12em;
+      text-transform: uppercase; margin-bottom: 10px;
+    }
+    .tt-floormenu-box .fm-row { display: flex; align-items: center; gap: 8px; }
+    .tt-floormenu-box .fm-prompt { color: var(--tt-accent); font-weight: 700; }
+    .tt-floormenu-box .fm-input {
+      flex: 1; min-width: 0; padding: 5px 8px;
+      background: var(--tt-bg-inset); border: 1px solid var(--tt-border-strong);
+      border-radius: 4px; color: var(--tt-text);
+      font-family: inherit; font-size: 13px; outline: none;
+    }
+    .tt-floormenu-box .fm-input:focus { border-color: var(--tt-accent); }
+    .tt-floormenu-box .fm-input.error { border-color: var(--tt-red); }
+    .tt-floormenu-box .fm-input::-webkit-outer-spin-button,
+    .tt-floormenu-box .fm-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .tt-floormenu-box .fm-total { font-size: 11.5px; color: var(--tt-text-faint); white-space: nowrap; }
+    .tt-floormenu-box .fm-hint {
+      margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--tt-border-soft);
+      font-size: 11.5px; color: var(--tt-text-faint);
+    }
+    .tt-floormenu-box .fm-hint b { color: var(--tt-text-dim); font-weight: 400; }
+
+    /* ---------- 引用跳转「返回原处」按钮 ---------- */
+    .tt-jumpback {
+      position: fixed; right: 16px; bottom: 110px; z-index: 1000;
+      display: none; align-items: center; gap: 8px;
+      font-family: inherit; font-size: 12px; line-height: 1;
+      color: var(--tt-text); background: var(--tt-bg-raised);
+      border: 1px solid var(--tt-border-strong); border-radius: 6px;
+      padding: 8px 12px; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    .tt-jumpback:hover { color: var(--tt-accent); border-color: var(--tt-accent); }
+    .tt-jumpback .x { color: var(--tt-text-faint); }
+    .tt-jumpback .x:hover { color: var(--tt-red); }
+
+    /* ---------- 引用卡楼层跳转标记 ---------- */
+    .tt-quote-card .qc-jump {
+      margin-left: auto; padding: 0 4px;
+      color: var(--tt-text-faint); font-size: 11px; cursor: pointer;
+    }
+    .tt-quote-card .qc-jump:hover { color: var(--tt-accent); }
+
+    /* ---------- 跳楼落点高亮闪烁 ---------- */
+    @keyframes tt-flash {
+      0% { background: var(--tt-accent-dim); }
+      100% { background: transparent; }
+    }
+    .tt-post.fl-highlight { animation: tt-flash 1.8s ease-out; }
 
     /* ---------- 原生视图回跳按钮（native 模式 html 无 tt-tui-theme，变量未定义，需给固定回退值） ---------- */
     .tt-restore {
@@ -1726,6 +1799,7 @@
       <div class="tt-statusbar">
         <span class="seg mode">TUI</span>
         <span class="seg route"></span>
+        <span class="seg clickable floorseg" data-action="floor-menu" title="跳转到楼层">[#] -/-</span>
         <span class="seg spacer"></span>
         <span class="seg clickable unread" data-action="notifications">[·] unread</span>
         <span class="seg clickable" data-action="native-view">native</span>
@@ -1744,6 +1818,7 @@
           <div class="h-row"><span class="k"><b>↵</b></span><span class="d">open topic</span></div>
           <div class="h-group">── thread</div>
           <div class="h-row"><span class="k"><b>j / k</b></span><span class="d">scroll down / up</span></div>
+          <div class="h-row"><span class="k"><b>#</b></span><span class="d">jump to floor</span></div>
           <div class="h-row"><span class="k"><b>r</b></span><span class="d">focus reply input</span></div>
           <div class="h-row"><span class="k"><b>l</b></span><span class="d">like post</span></div>
           <div class="h-row"><span class="k"><b>c</b></span><span class="d">copy link</span></div>
@@ -1761,6 +1836,17 @@
           <input class="sel-filter" placeholder="filter…" spellcheck="false">
           <div class="sel-items"></div>
           <div class="sel-hint tt-sel-hint"><b>↑/k ↓/j</b> move · <b>→/tab</b> drill · <b>←/h</b> back · <b>↵</b> open · <b>esc</b> close</div>
+        </div>
+      </div>
+      <div class="tt-floormenu">
+        <div class="tt-floormenu-box">
+          <div class="fm-title">jump to floor</div>
+          <div class="fm-row">
+            <span class="fm-prompt">:</span>
+            <input class="fm-input" type="number" min="1" step="1" inputmode="numeric" placeholder="floor…" spellcheck="false">
+            <span class="fm-total"></span>
+          </div>
+          <div class="fm-hint"><b>↵</b> jump · <b>esc</b> close</div>
         </div>
       </div>
     `;
@@ -1784,6 +1870,7 @@
     const routeSeg = `~/linux.do${isTopic ? `/t/${threadState.topicId || ""}` : `/${label}`}`;
 
     app.querySelector(".tt-statusbar .route").textContent = routeSeg;
+    if (!isTopic) updateFloorSeg(0); // 列表态楼层段复位
     const catLabel = isTopic
       ? pinyinSlugOf(categoryById(threadState.categoryId) || { name: "", slug: "topic", id: 0 })
       : label;
@@ -2053,10 +2140,14 @@
       wrap.appendChild(pre);
     });
 
-    // Discourse 引用 aside.quote → 可折叠工具调用卡片
+    // Discourse 引用 aside.quote → 可折叠工具调用卡片（同话题引用带楼层跳转标记）
     root.querySelectorAll("aside.quote").forEach((quote) => {
       if (quote.closest(".tt-quote-card")) return;
       const postNo = quote.getAttribute("data-post");
+      // 跨话题引用不设楼层跳转（data-topic 指向别的帖子，跳了会落错楼层）
+      const crossTopic = !!Number(quote.dataset.topic || 0) && !!threadState.topicId &&
+        Number(quote.dataset.topic) !== threadState.topicId;
+      const jumpable = !!postNo && !crossTopic && Number(postNo) >= 1;
       const titleEl = quote.querySelector(":scope > .title");
       const username = (titleEl?.textContent || "").replace(/[:：]\s*$/, "").trim();
       const label = postNo
@@ -2067,7 +2158,9 @@
       card.className = "tt-quote-card";
       const head = document.createElement("div");
       head.className = "qc-head";
-      head.innerHTML = `<span class="mark" style="color:var(--tt-accent)">⏺</span><span>${escapeHtml(label)}</span><span class="chev"></span>`;
+      head.innerHTML = `<span class="mark" style="color:var(--tt-accent)">⏺</span><span>${escapeHtml(label)}</span>` +
+        (jumpable ? `<span class="qc-jump" data-jump-floor="${Number(postNo)}" title="jump to #${Number(postNo)}">↵#${Number(postNo)}</span>` : "") +
+        `<span class="chev"></span>`;
       const bodyEl = document.createElement("div");
       bodyEl.className = "qc-body";
       if (body) {
@@ -2457,6 +2550,7 @@
       syncChrome();
       return;
     }
+    await flushReadTracking(); // 结算上一话题的阅读计时，再开新话题
     // 不因 loading 而拒绝重入：快速切换话题时，旧响应会被 topicId 校验丢弃
     threadState.loading = true;
     threadState.topicId = topicId;
@@ -2467,10 +2561,46 @@
     threadState.title = "";
     renderTopicHead();
     syncChrome();
+    clearQuoteJumpHistory(); // 换话题即离开引用链
+    // 定位优先级：路由携带的楼层（/t/.../id/N，通知/复制链接进入）> 本机记忆（仅匿名；登录态信任服务端窗口进度）> 第 1 楼
+    const routePost = postNumberFromPath(location.pathname);
+    const rememberedPost = getCurrentUsername() ? 0 : getRememberedPost(topicId);
+    const anchorPost = routePost > 1 ? routePost : rememberedPost;
+    let landAt = 0;
     try {
-      const data = await api(`/t/${topicId}.json`);
+      let data;
+      if (anchorPost > 1) {
+        try {
+          data = await api(`/t/${topicId}/${anchorPost}.json`);
+          landAt = anchorPost;
+        } catch {
+          data = await api(`/t/${topicId}.json`);
+        }
+      } else {
+        data = await api(`/t/${topicId}.json`);
+      }
       if (threadState.topicId !== topicId) return; // 路由已切走
-      const posts = (data.post_stream && data.post_stream.posts) || [];
+      let posts = (data.post_stream && data.post_stream.posts) || [];
+      // 登录态服务端窗口已锚在「上次阅读处」（原生 last_read 语义）：窗口不从 1 楼开始 → 落到第一未读（last_read+1）
+      if (!landAt && posts.length && Number(posts[0].post_number) !== 1) {
+        landAt = (Number(data.last_read_post_number) || 0) + 1;
+        if (!posts.some((p) => p.post_number === landAt)) landAt = 0;
+      }
+      // 窗口从第 1 楼开始且上次读的位置在窗口之后（= 已全部读完）：回到上次停的楼层（服务端进度，跨设备），而非每次从头看
+      const serverRead = Number(data.last_read_post_number) || 0;
+      const windowLast = Number(posts[posts.length - 1]?.post_number) || 0;
+      if (!landAt && posts.length && Number(posts[0].post_number) === 1 && serverRead > windowLast) {
+        try {
+          const readData = await api(`/t/${topicId}/${serverRead}.json`);
+          if (threadState.topicId !== topicId) return;
+          const readPosts = (readData.post_stream && readData.post_stream.posts) || [];
+          if (readPosts.length) {
+            data = readData;
+            posts = readPosts;
+            landAt = serverRead;
+          }
+        } catch { /* 拉取失败时保留头部窗口 */ }
+      }
       threadState.stream = (data.post_stream && data.post_stream.stream) || posts.map((p) => p.id);
       threadState.posts = posts;
       threadState.renderedFirstIdx = threadState.stream.indexOf(posts.length ? posts[0].id : -1);
@@ -2501,8 +2631,16 @@
         renderTurns(box, posts, "replace");
         syncThreadDivider();
         const scroller = document.querySelector(".tt-app .tt-main");
-        if (scroller) scroller.scrollTop = 0;
-        streamRevealPosts(box); // 进帖流式输出
+        if (landAt) {
+          // 锚点落在中间楼层：跳过流式输出动画，直接渲染 + 高亮落点
+          cancelStream();
+          rememberTopicPost(topicId, landAt);
+          updateFloorSeg(landAt);
+          requestAnimationFrame(() => scrollToPost(landAt, true));
+        } else {
+          if (scroller) scroller.scrollTop = 0;
+          streamRevealPosts(box); // 进帖流式输出
+        }
       }
       syncChrome();
       if (!categoriesCache && threadState.categoryId) {
@@ -2884,6 +3022,381 @@
     }
   }
 
+  /* ============================== 楼层跳转与记忆（移植自 im 项目） ============================== */
+
+  /* ---------- 本机记忆：localStorage topicId -> 楼层（仅匿名兜底；登录态信任服务端进度） ---------- */
+
+  function readLastReadMap() {
+    try {
+      return JSON.parse(localStorage.getItem(LAST_READ_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  }
+
+  function rememberTopicPost(topicId, postNumber) {
+    const id = Number(topicId);
+    const n = Number(postNumber) || 0;
+    if (!id || n < 1) return;
+    const map = readLastReadMap();
+    map[id] = n;
+    const keys = Object.keys(map);
+    if (keys.length > LAST_READ_MAX_TOPICS) {
+      for (const key of keys.slice(0, keys.length - LAST_READ_MAX_TOPICS)) delete map[key];
+    }
+    try {
+      localStorage.setItem(LAST_READ_KEY, JSON.stringify(map));
+    } catch { /* ignore quota */ }
+  }
+
+  function getRememberedPost(topicId) {
+    return Number(readLastReadMap()[topicId]) || 0;
+  }
+
+  /* ---------- 本地滚动落点 / 视口可见楼层 ---------- */
+
+  function scrollToPost(postNumber, highlight = false) {
+    const box = detailContainer();
+    const scroller = document.querySelector(".tt-app .tt-main");
+    if (!box || !scroller || !postNumber) return false;
+    const el = box.querySelector(`.tt-turn[data-post-number="${postNumber}"]`);
+    if (!el) return false;
+    const delta = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    scroller.scrollTop = Math.max(0, scroller.scrollTop + delta - 8);
+    if (highlight) {
+      const post = el.closest(".tt-post") || el;
+      post.classList.remove("fl-highlight");
+      void post.offsetWidth; // 重启动画
+      post.classList.add("fl-highlight");
+    }
+    return true;
+  }
+
+  function visibleTopicPosts() {
+    const scroller = document.querySelector(".tt-app .tt-main");
+    const box = detailContainer();
+    if (!scroller || !box) return [];
+    const rect = scroller.getBoundingClientRect();
+    const posts = [];
+    for (const el of box.querySelectorAll(".tt-turn[data-post-number]")) {
+      const r = el.getBoundingClientRect();
+      if (r.bottom <= rect.top + 8 || r.top >= rect.bottom - 8) continue;
+      const number = Number(el.dataset.postNumber) || 0;
+      if (number) posts.push(number);
+    }
+    return posts;
+  }
+
+  /* ---------- 状态栏楼层段 + 滚动位置记忆（debounce） ---------- */
+
+  function updateFloorSeg(current) {
+    const seg = document.querySelector(".tt-app .tt-statusbar .floorseg");
+    if (!seg) return;
+    const total = threadState.postsCount || 0;
+    const text = total ? `[#] ${current || "-"}/${total}` : "[#] -/-";
+    if (seg.textContent !== text) seg.textContent = text;
+  }
+
+  let floorTrackTimer = null;
+  function trackVisibleTopicPost() {
+    if (floorTrackTimer) clearTimeout(floorTrackTimer);
+    floorTrackTimer = setTimeout(() => {
+      floorTrackTimer = null;
+      const app = document.querySelector(".tt-app");
+      if (!app || app.dataset.view !== "detail" || !threadState.topicId) return;
+      const postNumber = visibleTopicPosts()[0];
+      if (!postNumber) return;
+      rememberTopicPost(threadState.topicId, postNumber);
+      updateFloorSeg(postNumber);
+    }, 200);
+  }
+
+  /* ---------- 远端跳楼：目标楼层未渲染时拉目标窗口整体重渲（与 loadTopic 锚点同源） ---------- */
+
+  async function jumpToFloorRemote(postNumber, highlight = true) {
+    const topicId = threadState.topicId;
+    if (!topicId || threadState.loading) return false;
+    const n = Math.floor(Number(postNumber));
+    if (!n || n < 1) return false;
+    threadState.loading = true;
+    cancelStream(); // 流式输出中的旧节点会被整体替换，先停演
+    try {
+      const data = await api(`/t/${topicId}/${n}.json`);
+      if (threadState.topicId !== topicId) return false;
+      const posts = (data.post_stream && data.post_stream.posts) || [];
+      if (!posts.length) return false;
+      threadState.stream = (data.post_stream && data.post_stream.stream) || posts.map((p) => p.id);
+      threadState.posts = posts;
+      threadState.postsCount = Number(data.posts_count) || threadState.postsCount;
+      threadState.renderedFirstIdx = threadState.stream.indexOf(posts[0].id);
+      if (threadState.renderedFirstIdx < 0) threadState.renderedFirstIdx = 0;
+      const lastId = posts[posts.length - 1].id;
+      threadState.renderedLastIdx = threadState.stream.indexOf(lastId);
+      if (threadState.renderedLastIdx < 0) {
+        threadState.renderedLastIdx = threadState.renderedFirstIdx + posts.length - 1;
+      }
+      threadState.hasOlder = threadState.renderedFirstIdx > 0;
+      threadState.hasNewer = threadState.renderedLastIdx >= 0 &&
+        threadState.renderedLastIdx < threadState.stream.length - 1;
+      const box = detailContainer();
+      if (box) {
+        // 目标楼层可能不在返回窗口里（尾楼/删楼边界）：落到窗口内最近一楼
+        const landed = posts.some((p) => p.post_number === n) ? n : posts[posts.length - 1].post_number;
+        renderTurns(box, posts, "replace");
+        syncThreadDivider();
+        rememberTopicPost(topicId, landed);
+        updateFloorSeg(landed);
+        requestAnimationFrame(() => scrollToPost(landed, highlight));
+      }
+      return true;
+    } catch {
+      return false;
+    } finally {
+      threadState.loading = false;
+    }
+  }
+
+  /* ---------- 楼层浮层：状态栏 [#] 段点击 / # 键唤出，输入楼层号回车跳 ---------- */
+
+  function floorMenuMax() {
+    return threadState.postsCount || 0;
+  }
+
+  function openFloorMenu() {
+    const app = document.querySelector(".tt-app");
+    if (!app || app.dataset.view !== "detail" || !threadState.topicId) return;
+    const menu = app.querySelector(".tt-floormenu");
+    if (!menu) return;
+    const max = floorMenuMax();
+    menu.querySelector(".fm-total").textContent = max ? `/ ${max}` : "";
+    const input = menu.querySelector(".fm-input");
+    input.max = max || "";
+    input.classList.remove("error");
+    const current = visibleTopicPosts()[0] || 0;
+    input.value = current > 0 ? String(current) : "";
+    menu.classList.add("open");
+    setTimeout(() => { input.focus(); input.select(); }, 0);
+  }
+
+  function closeFloorMenu() {
+    document.querySelector(".tt-app .tt-floormenu")?.classList.remove("open");
+  }
+
+  function submitFloorMenu() {
+    const menu = document.querySelector(".tt-app .tt-floormenu");
+    if (!menu) return;
+    const input = menu.querySelector(".fm-input");
+    const max = floorMenuMax();
+    const n = Math.floor(Number(input.value));
+    if (!n || n < 1 || (max && n > max)) {
+      input.classList.add("error");
+      input.focus();
+      return;
+    }
+    closeFloorMenu();
+    if (scrollToPost(n, true)) {
+      rememberTopicPost(threadState.topicId, n);
+      updateFloorSeg(n);
+      return;
+    }
+    jumpToFloorRemote(n).then((ok) => {
+      if (!ok) setComposerStatus(`jump failed: #${n} not found`, "error");
+    });
+  }
+
+  /* ---------- 引用跳转返回堆栈（移植自 im quote-jump） ---------- */
+
+  const quoteJumpHistory = [];
+
+  function pushQuoteJump(postNumber) {
+    if (!threadState.topicId) return;
+    quoteJumpHistory.push({ topicId: threadState.topicId, postNumber: postNumber || 0 });
+    updateJumpBackBtn();
+  }
+
+  function updateJumpBackBtn() {
+    const app = document.querySelector(".tt-app");
+    if (!app) return;
+    let btn = app.querySelector(".tt-jumpback");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tt-jumpback";
+      btn.innerHTML = `<span class="txt">← return</span><span class="x" title="关闭">✕</span>`;
+      btn.addEventListener("click", (e) => {
+        if (e.target.closest(".x")) clearQuoteJumpHistory();
+        else popQuoteJump();
+      });
+      app.appendChild(btn);
+    }
+    const cur = quoteJumpHistory.filter((h) => h.topicId === threadState.topicId);
+    if (!cur.length) {
+      // 基础 CSS 的 display 优先级问题：行内非 important 的 none 会被压掉
+      btn.style.setProperty("display", "none", "important");
+      return;
+    }
+    const last = cur[cur.length - 1];
+    btn.querySelector(".txt").textContent = last.postNumber ? `← return to #${last.postNumber}` : "← return";
+    btn.style.setProperty("display", "inline-flex", "important");
+  }
+
+  function clearQuoteJumpHistory() {
+    quoteJumpHistory.length = 0;
+    updateJumpBackBtn();
+  }
+
+  async function popQuoteJump() {
+    // 只消费当前主题的栈：返回即视为离开引用链（与 im 一致）
+    const idx = quoteJumpHistory.map((h) => h.topicId).lastIndexOf(threadState.topicId);
+    if (idx === -1) return;
+    const item = quoteJumpHistory[idx];
+    for (let i = quoteJumpHistory.length - 1; i >= 0; i--) {
+      if (quoteJumpHistory[i].topicId === threadState.topicId) quoteJumpHistory.splice(i, 1);
+    }
+    updateJumpBackBtn();
+    if (item.postNumber) {
+      if (scrollToPost(item.postNumber, true)) return;
+      await jumpToFloorRemote(item.postNumber);
+    }
+  }
+
+  /** 引用卡「↵#N」入口：来源楼层入栈，再本地滚或远端取窗 */
+  function quoteJumpTo(postNumber) {
+    const n = Math.floor(Number(postNumber));
+    if (!threadState.topicId || !n) return;
+    pushQuoteJump(visibleTopicPosts()[0] || 0);
+    if (scrollToPost(n, true)) return;
+    jumpToFloorRemote(n).then((ok) => {
+      if (!ok) setComposerStatus(`jump failed: #${n} not found`, "error");
+    });
+  }
+
+  /* ---------- 阅读计时上报（/topics/timings，对齐原生 screen-track 语义） ----------
+   * 原生按「原生楼层 DOM 的视口可见性」计时；TUI 锁定态下原生流被压在应用下不滚动，
+   * 已读位置不随真实浏览推进 —— 这里改用 TUI 详情滚窗的可见楼层，其余规则照搬原生：
+   * 每秒 tick 累计可见楼层时长；停止滚动 3 分钟暂停（防挂机）；页面不可见不累计；
+   * 15s 周期 / 切话题 / 页面隐藏 / 切原生视图前即时 flush。只报真实读到的楼层。 */
+
+  const RT_TICK_MS = 1000;
+  const RT_PAUSE_UNLESS_SCROLLED = 3 * 60 * 1000; // 原生 PAUSE_UNLESS_SCROLLED
+  const RT_MAX_TRACKING_TIME = 6 * 60 * 1000; // 原生 MAX_TRACKING_TIME：每楼每次会话最多报 6 分钟
+  const RT_FLUSH_INTERVAL = 15 * 1000; // 调优为 15s 周期（原生 60s），适应快速阅读
+  const RT_MAX_TICK_GAP = 60 * 1000; // 休眠恢复的巨大跳变整段丢弃
+
+  let rtStarted = false;
+  let rtActiveTopicId = null;
+  let rtTimings = new Map(); // post_number -> 本批 ms
+  let rtTotalTimings = new Map(); // post_number -> 本会话已上报总量（6 分钟上限过滤用）
+  let rtTopicTime = 0;
+  let rtLastTick = Date.now();
+  let rtLastScrolled = Date.now();
+  let rtSinceFlush = 0;
+  let rtFlushPromise = null;
+
+  async function flushReadTracking() {
+    if (rtFlushPromise) {
+      try { await rtFlushPromise; } catch { /* ignore */ }
+    }
+    if (!rtTimings.size || !rtActiveTopicId) return;
+    if (!getCurrentUsername()) return; // 匿名不报（服务端也拒）
+    const id = rtActiveTopicId;
+    // 原生 flush 过滤：本楼累计已报满 6 分钟后不再计入（不截断，整批要么报要么丢）
+    const batch = [];
+    for (const [n, ms] of rtTimings) {
+      const total = rtTotalTimings.get(n) || 0;
+      if (ms > 0 && total < RT_MAX_TRACKING_TIME) {
+        rtTotalTimings.set(n, total + ms);
+        batch.push([n, ms]);
+      }
+    }
+    rtTimings = new Map();
+    const time = rtTopicTime;
+    rtTopicTime = 0;
+    rtSinceFlush = 0;
+    if (!batch.length) return;
+    const params = batch.map(([n, ms]) => `timings[${n}]=${Math.round(ms)}`).join("&");
+    const body = `${params}&topic_time=${Math.round(time)}&topic_id=${id}`;
+    const doFetch = async () => {
+      try {
+        await fetch("/topics/timings", {
+          method: "POST",
+          credentials: "same-origin",
+          keepalive: true, // pagehide 时也尽量发出
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "X-CSRF-Token": csrfToken(),
+            "X-Requested-With": "XMLHttpRequest",
+            "X-SILENCE-LOGGER": "true",
+            "Discourse-Background": "true"
+          },
+          body
+        });
+      } catch { /* 丢弃本批（原生 inProgress 期间同样丢弃；下批继续） */ }
+    };
+    rtFlushPromise = doFetch();
+    try {
+      await rtFlushPromise;
+    } finally {
+      rtFlushPromise = null;
+    }
+  }
+
+  function readTrackVisiblePosts() {
+    const app = document.querySelector(".tt-app");
+    if (!app || app.dataset.view !== "detail" || !threadState.topicId) return [];
+    if (viewMode() !== "tui" || otherThemeActive()) return []; // 原生视图/避让时由原生 screen-track 负责
+    return visibleTopicPosts();
+  }
+
+  function readTrackTick() {
+    const now = Date.now();
+    const diff = now - rtLastTick;
+    rtLastTick = now;
+    if (diff <= 0) return;
+
+    // 话题切换：先结算旧话题再重置（loadTopic 只改 threadState.topicId，这里被动感知）
+    if (threadState.topicId !== rtActiveTopicId) {
+      flushReadTracking();
+      rtActiveTopicId = threadState.topicId;
+      rtTimings = new Map();
+      rtTotalTimings = new Map(); // 重新进入话题后重新计 6 分钟上限（原生 start() 同理）
+      rtTopicTime = 0;
+      rtSinceFlush = 0;
+      rtLastScrolled = Date.now(); // 进新话题重置空闲计时，短帖无需滚动也不被 PAUSE 误拒
+    }
+    if (!rtActiveTopicId) return;
+
+    if (now - rtLastScrolled > RT_PAUSE_UNLESS_SCROLLED) return;
+    if (document.visibilityState !== "visible") return;
+    if (diff > RT_MAX_TICK_GAP) return;
+
+    // flush 计时与原生一致：先于可见楼层检查累计，避免「有滚动但暂无可见楼」时批次滞留
+    rtSinceFlush += diff;
+    if (rtSinceFlush > RT_FLUSH_INTERVAL) flushReadTracking();
+
+    const posts = readTrackVisiblePosts();
+    if (!posts.length) return;
+    rtTopicTime += diff;
+    for (const n of posts) rtTimings.set(n, (rtTimings.get(n) || 0) + diff);
+  }
+
+  function startReadTracking() {
+    if (rtStarted) return;
+    rtStarted = true;
+    // scroll 不冒泡，capture 阶段委托；只认 TUI 主滚窗的滚动
+    document.addEventListener("scroll", (e) => {
+      if (e.target instanceof Element && e.target.closest(".tt-main")) {
+        rtLastScrolled = Date.now();
+      }
+    }, true);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") flushReadTracking();
+      rtLastTick = Date.now();
+    });
+    window.addEventListener("pagehide", () => flushReadTracking());
+    setInterval(readTrackTick, RT_TICK_MS);
+  }
+
   /* ============================== 点赞（CSRF 调原生 /post_actions） ============================== */
 
   async function toggleLike(postId, op) {
@@ -3216,6 +3729,13 @@
         clickSelItem(t.closest(".tt-sel-item"));
         return;
       }
+      const qJump = t.closest(".qc-jump");
+      if (qJump) {
+        e.preventDefault();
+        e.stopPropagation();
+        quoteJumpTo(Number(qJump.dataset.jumpFloor));
+        return;
+      }
       if (t.closest(".qc-head")) {
         t.closest(".tt-quote-card")?.classList.toggle("open");
         return;
@@ -3255,6 +3775,7 @@
       }
       if (action === "notifications") { navigateInApp("/notifications"); return; }
       if (action === "native-view") { setViewMode("native"); return; }
+      if (action === "floor-menu") { openFloorMenu(); return; }
       if (action === "reply") {
         const postBox = actEl.closest(".tt-post");
         const no = postBox?.querySelector(".tt-turn")?.dataset.postNumber;
@@ -3298,6 +3819,7 @@
       } else {
         if (nearTop) loadOlderPosts();
         if (nearBottom) loadNewerPosts();
+        trackVisibleTopicPost(); // 楼层段跟随 + 本机记忆
       }
     }, { passive: true });
 
@@ -3373,6 +3895,20 @@
     app.querySelector(".tt-overlay").addEventListener("click", (e) => {
       if (e.target === e.currentTarget) closeOverlay();
     });
+
+    // 楼层浮层：Enter 跳 / Esc 关，按键不外泄给全局快捷键
+    const fmInput = app.querySelector(".tt-floormenu .fm-input");
+    if (fmInput) {
+      fmInput.addEventListener("keydown", (e) => {
+        e.stopPropagation();
+        if (e.key === "Enter") submitFloorMenu();
+        if (e.key === "Escape") closeFloorMenu();
+      });
+      fmInput.addEventListener("input", () => fmInput.classList.remove("error"));
+    }
+    app.querySelector(".tt-floormenu").addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) closeFloorMenu();
+    });
   }
 
   /* ---------- 原生视图模式 ---------- */
@@ -3388,6 +3924,7 @@
   function setViewMode(mode) {
     const prev = localStorage.getItem(VIEW_KEY);
     try { localStorage.setItem(VIEW_KEY, mode); } catch { /* ignore */ }
+    if (mode === "native") flushReadTracking(); // 切原皮前结算（之后由原生 screen-track 接管）
     // native → tui 回切需要立即重渲染，避免依赖 MutationObserver（原生页可能没有后续 DOM 变化）
     if (prev === "native" && mode === "tui") {
       applyTheme();
@@ -3418,6 +3955,7 @@
   /* ============================== 编排与 SPA ============================== */
 
   function removeApp() {
+    flushReadTracking(); // 应用卸载前结算，避免批次滞留
     cancelStream();
     document.querySelector(".tt-app")?.remove();
     removeRestoreButton();
@@ -3565,6 +4103,13 @@
         return;
       }
 
+      // 楼层浮层打开时：Esc 关闭，其余按键交给输入框
+      const floorMenu = document.querySelector(".tt-app .tt-floormenu");
+      if (floorMenu?.classList.contains("open")) {
+        if (key === "Escape") { e.preventDefault(); closeFloorMenu(); }
+        return;
+      }
+
       // 分类浮层
       if (isOverlayOpen()) {
         const toViews = () => { selCol = 1; selViewIdx = 0; paintSel(); };
@@ -3599,6 +4144,12 @@
         e.preventDefault();
         e.stopPropagation();
         openOverlay();
+        return;
+      }
+      if (key === "#" && isDetail) {
+        e.preventDefault();
+        e.stopPropagation();
+        openFloorMenu();
         return;
       }
       if (key === "Escape") {
@@ -3718,6 +4269,7 @@
 
     bindOutsideCloseComposer();
     bindKeyboard();
+    startReadTracking(); // 阅读计时上报（模块级开关，重复调用安全）
 
     // 定时刷新未读
     if (!window.__ttUnreadTimer) {
