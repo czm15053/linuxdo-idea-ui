@@ -9,3 +9,4 @@ dist/
 
 # AI 工作流本地目录（不入库）
 .trellis/
+.pnpm-store/
