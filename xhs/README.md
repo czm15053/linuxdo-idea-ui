@@ -57,6 +57,9 @@ pnpm dev
 # 代码检查与生产打包（产物自动输出至 xhs-im.user.js 及 dist/xhs-im.user.js）
 pnpm lint
 pnpm build
+
+# 构建并运行评论同步、排序、分页与滚动锚定回归测试（Node.js 18+）
+pnpm test
 ```
 
 ---

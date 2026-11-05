@@ -16,7 +16,7 @@ import { bindSkinButtons, ensureNativeFab } from "./ui/skin-menu.js";
 import { setChatId } from "./state/prefs.js";
 
 export function run() {
-  const version = typeof __XHSIM_VERSION__ !== "undefined" ? __XHSIM_VERSION__ : "0.1.0";
+  const version = typeof __XHSIM_VERSION__ !== "undefined" ? __XHSIM_VERSION__ : "0.1.1";
   console.info(`[xhs-im] v${version} loaded, skin=${currentSkinId()}`);
   // 尽早被动监听官方搜索接口响应（document-start 阶段安装，先于页面脚本发请求）
   installSearchCapture();
@@ -126,7 +126,13 @@ export function run() {
     });
     const startObs = () => {
       if (!document.body) { requestAnimationFrame(startObs); return; }
-      mo.observe(document.body, { childList: true, subtree: true });
+      mo.observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ["src"],
+      });
     };
     startObs();
   }
