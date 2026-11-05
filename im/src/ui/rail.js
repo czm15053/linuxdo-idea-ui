@@ -10,6 +10,7 @@ import { getEmberOwner, safeLookup } from "../bridge/discourse.js";
 import { pg } from "../bridge/page.js";
 import { getCurrentUsername } from "../bridge/user.js";
 import { listState } from "../state/list-state.js";
+import { topicUnreadCount } from "./list-panel.js";
 import { getViewMode } from "../state/view-state.js";
 import { avatarColor, avatarLetter } from "./shared/avatars.js";
 import { hasSource, setActiveRailKey } from "./list-sources.js";
@@ -373,8 +374,8 @@ export function syncRailDingtalk() {
     avatarBadge.textContent = notifCount > 99 ? "99+" : String(notifCount);
   }
 
-  // 「消息」项未读（中栏话题求和）
-  const unread = listState.topics.reduce((sum, t) => sum + (t.unread || 0) + (t.new_posts || 0), 0);
+  // 「消息」项未读（中栏话题求和，unread_posts/new_posts + unseen 口径）
+  const unread = listState.topics.reduce((sum, t) => sum + topicUnreadCount(t), 0);
   setRailBadge("chat", unread);
   setRailBadge("notifications", notifCount);
   setRailBadge("messages", getPersonalMessagesUnread());

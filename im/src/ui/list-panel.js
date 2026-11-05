@@ -361,7 +361,13 @@ function convCategoryTag(topic) {
   return `<span class="im-conv-tag">${escapeHtml(cat.name)}</span>`;
 }
 function convRowHtml(topic, usersById) {
-  const unread = topic.unread > 0 ? topic.unread : (topic.new_posts > 0 ? topic.new_posts : 0);
+  // Discourse 序列化口径：unread 恒为 0（遗留字段）；unread_posts/new_posts 只对
+  // tracked/watched 话题有值；普通话题唯一未读信号是 unseen —— 三者并集才是"未读"
+  //（与 codex 皮肤 .cx-np-row.unread 判定一致，见 ListableTopicSerializer）
+  const unread = (topic.unread_posts || 0) > 0
+    ? topic.unread_posts
+    : (topic.new_posts || 0) > 0 ? topic.new_posts : 0;
+  const isUnread = unread > 0 || !!topic.unseen;
   const replyCount = Math.max(0, (topic.posts_count || 1) - 1);
   const rawSummary = topic.last_poster_username
     ? `[${replyCount}条] ${topic.last_poster_username}`
@@ -374,12 +380,13 @@ function convRowHtml(topic, usersById) {
   const highlightedTitle = highlightTitleText(title);
   const highlightedSummary = highlightTitleText(summary);
   return `
-    <a class="im-conv${isHl ? " is-highlighted" : ""}" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.id}" title="${escapeHtml(title)}">
+    <a class="im-conv${isHl ? " is-highlighted" : ""}${isUnread ? " is-unread" : ""}" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.id}" title="${escapeHtml(title)}">
       ${convAvatarHtml(topic, usersById)}
       <span class="im-conv-info">
         <span class="im-conv-top">
           <span class="im-conv-title">
             <span class="im-conv-name">${highlightedTitle}</span>
+            ${isUnread ? `<span class="im-conv-dot" title="${unread > 0 ? `${unread} 条未读回复` : "有新内容"}"></span>` : ""}
             ${tag}
           </span>
           <span class="im-conv-time">${escapeHtml(formatTime(topic.bumped_at || topic.last_activity_at || topic.created_at))}</span>
@@ -469,13 +476,19 @@ export function renderTopicListRows(topics, usersById, statusLine) {
   }
   syncListActive();
 }
-/** 中栏 chips 计数：消息 = 已加载话题数，未读 = unread/new_posts 求和 */
+/** 话题未读数：unread_posts/new_posts 计数 + unseen 新话题兜底（见 convRowHtml 口径） */
+export function topicUnreadCount(t) {
+  const n = (t.unread_posts || 0) > 0 ? t.unread_posts : (t.new_posts || 0);
+  return n > 0 ? n : (t.unseen ? 1 : 0);
+}
+
+/** 中栏 chips 计数：消息 = 已加载话题数，未读 = topicUnreadCount 求和 */
 function syncListChips() {
   const allN = document.querySelector('.im-chip[data-chip="all"] .n');
   const unreadN = document.querySelector('.im-chip[data-chip="unread"] .n');
   if (allN) allN.textContent = listState.topics.length ? String(listState.topics.length) : "";
   if (unreadN) {
-    const n = listState.topics.reduce((sum, t) => sum + (t.unread || 0) + (t.new_posts || 0), 0);
+    const n = listState.topics.reduce((sum, t) => sum + topicUnreadCount(t), 0);
     unreadN.textContent = n > 0 ? String(n > 99 ? "99+" : n) : "";
   }
 }

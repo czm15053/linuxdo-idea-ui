@@ -2,7 +2,7 @@
 // @name         Linux DO · IM 外观（钉钉 / 飞书 / 企业微信）
 // @namespace    https://linux.do/
 // @author       czm15053
-// @version      1.2.0
+// @version      1.3.0
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，列表按钮一键切换。公共内核：投票、小火箭、图片灯箱、引用跳转、实时刷新、三态深色、伪装模式。
 // @match        https://linux.do/*
 // @exclude-match https://linux.do/pub/*
@@ -849,6 +849,12 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       flex: 1; min-width: 0;
     }
+    /* 未读小蓝点：跟在标题后，提示该话题有新回复（数量徽标仍压头像角） */
+    .im-conv-dot {
+      display: inline-block; flex: none; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--im-blue); margin-left: 2px;
+    }
+    .im-conv.is-unread .im-conv-name { font-weight: 600; }
     .im-conv-tag {
       display: inline-flex; align-items: center;
       height: 16px; padding: 0 5px; border-radius: 4px;
@@ -2496,10 +2502,22 @@
     }
     .im-conv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
     .im-conv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    /* 标题行 flex 化：无它 .im-conv-name 省略号与小蓝点宽高均不生效（inline 上下文） */
+    .im-conv-title {
+      display: flex; align-items: center; gap: 6px;
+      min-width: 0; flex: 1;
+    }
     .im-conv-name {
       font-size: 14px; font-weight: 500; color: var(--im-text);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      flex: 1; min-width: 0;
     }
+    /* 未读小蓝点：跟在标题后，提示该话题有新回复（数量徽标仍压头像角） */
+    .im-conv-dot {
+      display: inline-block; flex: none; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--im-accent); margin-left: 2px;
+    }
+    .im-conv.is-unread .im-conv-name { font-weight: 600; }
     .im-conv-time { font-size: 12px; color: var(--im-text-3); flex-shrink: 0; }
     .im-conv-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .im-conv-msg {
@@ -6342,6 +6360,14 @@ color: #7AA3D6;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       flex: 1; min-width: 0;
     }
+    /* 未读小蓝点：跟在标题后，提示该话题有新回复（数量徽标仍压头像角） */
+    .im-conv-dot {
+      display: inline-block; flex: none; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--wc-blue); margin-left: 2px;
+    }
+    .im-conv.is-unread .im-conv-name { font-weight: 600; }
+    /* 选中行蓝底白字，小蓝点反白保持可见 */
+    .im-conv.active .im-conv-dot { background: #FFFFFF; }
     .im-conv-tag {
       display: inline-flex; align-items: center;
       height: 16px; padding: 0 5px; border-radius: 4px;
@@ -13626,7 +13652,7 @@ ${data.raw}
       avatarBadge.style.display = notifCount > 0 ? "" : "none";
       avatarBadge.textContent = notifCount > 99 ? "99+" : String(notifCount);
     }
-    const unread = listState.topics.reduce((sum, t) => sum + (t.unread || 0) + (t.new_posts || 0), 0);
+    const unread = listState.topics.reduce((sum, t) => sum + topicUnreadCount(t), 0);
     setRailBadge("chat", unread);
     setRailBadge("notifications", notifCount);
     setRailBadge("messages", getPersonalMessagesUnread());
@@ -14860,7 +14886,8 @@ ${data.raw}
     return `<span class="im-conv-tag">${escapeHtml(cat.name)}</span>`;
   }
   function convRowHtml(topic, usersById) {
-    const unread = topic.unread > 0 ? topic.unread : topic.new_posts > 0 ? topic.new_posts : 0;
+    const unread = (topic.unread_posts || 0) > 0 ? topic.unread_posts : (topic.new_posts || 0) > 0 ? topic.new_posts : 0;
+    const isUnread = unread > 0 || !!topic.unseen;
     const replyCount = Math.max(0, (topic.posts_count || 1) - 1);
     const rawSummary = topic.last_poster_username ? `[${replyCount}条] ${topic.last_poster_username}` : `${topic.posts_count || 0} 回复`;
     const title = convDisplayTitle(topic);
@@ -14870,12 +14897,13 @@ ${data.raw}
     const highlightedTitle = highlightTitleText(title);
     const highlightedSummary = highlightTitleText(summary);
     return `
-    <a class="im-conv${isHl ? " is-highlighted" : ""}" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.id}" title="${escapeHtml(title)}">
+    <a class="im-conv${isHl ? " is-highlighted" : ""}${isUnread ? " is-unread" : ""}" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.id}" title="${escapeHtml(title)}">
       ${convAvatarHtml(topic, usersById)}
       <span class="im-conv-info">
         <span class="im-conv-top">
           <span class="im-conv-title">
             <span class="im-conv-name">${highlightedTitle}</span>
+            ${isUnread ? `<span class="im-conv-dot" title="${unread > 0 ? `${unread} 条未读回复` : "有新内容"}"></span>` : ""}
             ${tag}
           </span>
           <span class="im-conv-time">${escapeHtml(formatTime(topic.bumped_at || topic.last_activity_at || topic.created_at))}</span>
@@ -14950,12 +14978,16 @@ ${data.raw}
     }
     syncListActive();
   }
+  function topicUnreadCount(t) {
+    const n = (t.unread_posts || 0) > 0 ? t.unread_posts : t.new_posts || 0;
+    return n > 0 ? n : t.unseen ? 1 : 0;
+  }
   function syncListChips() {
     const allN = document.querySelector('.im-chip[data-chip="all"] .n');
     const unreadN = document.querySelector('.im-chip[data-chip="unread"] .n');
     if (allN) allN.textContent = listState.topics.length ? String(listState.topics.length) : "";
     if (unreadN) {
-      const n = listState.topics.reduce((sum, t) => sum + (t.unread || 0) + (t.new_posts || 0), 0);
+      const n = listState.topics.reduce((sum, t) => sum + topicUnreadCount(t), 0);
       unreadN.textContent = n > 0 ? String(n > 99 ? "99+" : n) : "";
     }
   }
@@ -18125,7 +18157,7 @@ ${data.raw}
       avatarBadge.style.display = notifCount > 0 ? "" : "none";
       avatarBadge.textContent = notifCount > 99 ? "99+" : String(notifCount);
     }
-    const unread = listState.topics.reduce((sum, t) => sum + (t.unread || 0) + (t.new_posts || 0), 0);
+    const unread = listState.topics.reduce((sum, t) => sum + topicUnreadCount(t), 0);
     const badge = rail.querySelector('[data-rail-key="chat"] .im-rail-badge');
     if (badge) {
       badge.style.display = unread > 0 ? "" : "none";
@@ -18876,7 +18908,7 @@ ${data.raw}
       }
     }
     function bootstrap() {
-      console.info(`[linuxdo-im] v${"1.2.0"} loaded, skin=${SKIN_ID}`);
+      console.info(`[linuxdo-im] v${"1.3.0"} loaded, skin=${SKIN_ID}`);
       if (!document.documentElement) {
         setTimeout(bootstrap, 0);
         return;

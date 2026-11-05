@@ -4,6 +4,7 @@ import { ICONS } from "../config/icons.js";
 import { escapeHtml } from "../utils/html.js";
 import { getCurrentUsername } from "../bridge/user.js";
 import { listState } from "../state/list-state.js";
+import { topicUnreadCount } from "../ui/list-panel.js";
 import {
   bindRailAvatarNotif, isNav2Open, setNav2Open,
   getUnreadNotificationCount, ensureRailFold,
@@ -176,8 +177,8 @@ export function syncRailFeishu() {
     avatarBadge.textContent = notifCount > 99 ? "99+" : String(notifCount);
   }
 
-  // 「消息」项未读（中栏话题求和）
-  const unread = listState.topics.reduce((sum, t) => sum + (t.unread || 0) + (t.new_posts || 0), 0);
+  // 「消息」项未读（中栏话题求和，unread_posts/new_posts + unseen 口径）
+  const unread = listState.topics.reduce((sum, t) => sum + topicUnreadCount(t), 0);
   const badge = rail.querySelector('[data-rail-key="chat"] .im-rail-badge');
   if (badge) {
     badge.style.display = unread > 0 ? "" : "none";

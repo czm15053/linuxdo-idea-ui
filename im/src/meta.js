@@ -2,7 +2,7 @@
 // @name         Linux DO · IM 外观（钉钉 / 飞书 / 企业微信）
 // @namespace    https://linux.do/
 // @author       czm15053
-// @version      1.2.0
+// @version      1.3.0
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，列表按钮一键切换。公共内核：投票、小火箭、图片灯箱、引用跳转、实时刷新、三态深色、伪装模式。
 // @match        https://linux.do/*
 // @exclude-match https://linux.do/pub/*

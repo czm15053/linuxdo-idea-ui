@@ -636,6 +636,12 @@ export const CSS_DD = String.raw`
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       flex: 1; min-width: 0;
     }
+    /* 未读小蓝点：跟在标题后，提示该话题有新回复（数量徽标仍压头像角） */
+    .im-conv-dot {
+      display: inline-block; flex: none; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--im-blue); margin-left: 2px;
+    }
+    .im-conv.is-unread .im-conv-name { font-weight: 600; }
     .im-conv-tag {
       display: inline-flex; align-items: center;
       height: 16px; padding: 0 5px; border-radius: 4px;

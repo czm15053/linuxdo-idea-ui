@@ -622,10 +622,22 @@ export const CSS_FS = String.raw`
     }
     .im-conv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
     .im-conv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    /* 标题行 flex 化：无它 .im-conv-name 省略号与小蓝点宽高均不生效（inline 上下文） */
+    .im-conv-title {
+      display: flex; align-items: center; gap: 6px;
+      min-width: 0; flex: 1;
+    }
     .im-conv-name {
       font-size: 14px; font-weight: 500; color: var(--im-text);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      flex: 1; min-width: 0;
     }
+    /* 未读小蓝点：跟在标题后，提示该话题有新回复（数量徽标仍压头像角） */
+    .im-conv-dot {
+      display: inline-block; flex: none; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--im-accent); margin-left: 2px;
+    }
+    .im-conv.is-unread .im-conv-name { font-weight: 600; }
     .im-conv-time { font-size: 12px; color: var(--im-text-3); flex-shrink: 0; }
     .im-conv-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .im-conv-msg {
