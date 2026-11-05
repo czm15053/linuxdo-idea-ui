@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Linux DO · 终端 TUI 外观
 // @namespace    https://linux.do/
-// @version      0.5.0
+// @version      0.5.1
 // @description  终端 AI TUI 风格的 LinuxDo（Claude Code / Codex CLI 双配色）
 // @author       czm15053
 // @match        https://linux.do/*
@@ -2276,6 +2276,7 @@
     slug: "",
     categoryId: null,
     postsCount: 0,
+    highestPostNumber: 0, // 最高楼层号：post_number 递增不回收，删楼留空号，可能远大于 posts_count
     likeCount: 0,
     views: 0
   };
@@ -2581,6 +2582,17 @@
       }
       if (threadState.topicId !== topicId) return; // 路由已切走
       let posts = (data.post_stream && data.post_stream.posts) || [];
+      // [排查] 服务端到底给了什么：posts_count / highest_post_number / 窗口范围 / last_read
+      console.log("[tt-floor] loadTopic 收到", {
+        topicId,
+        path: location.pathname,
+        路由楼层: routePost, 本机记忆: rememberedPost, 锚点: anchorPost,
+        posts_count: data.posts_count,
+        highest_post_number: data.highest_post_number,
+        last_read_post_number: data.last_read_post_number,
+        窗口: posts.length ? [posts[0].post_number, posts[posts.length - 1].post_number] : null,
+        stream长度: (data.post_stream && data.post_stream.stream || []).length
+      });
       // 登录态服务端窗口已锚在「上次阅读处」（原生 last_read 语义）：窗口不从 1 楼开始 → 落到第一未读（last_read+1）
       if (!landAt && posts.length && Number(posts[0].post_number) !== 1) {
         landAt = (Number(data.last_read_post_number) || 0) + 1;
@@ -2601,6 +2613,14 @@
           }
         } catch { /* 拉取失败时保留头部窗口 */ }
       }
+      console.log("[tt-floor] loadTopic 落定", {
+        landAt,
+        落点分支: landAt === routePost && landAt ? "路由楼层" :
+          landAt === rememberedPost && landAt ? "本机记忆" :
+          landAt === serverRead && landAt ? "服务端已读位置" :
+          landAt ? "第一未读(last_read+1)" : "头部窗口(第1楼起)",
+        最终窗口: posts.length ? [posts[0].post_number, posts[posts.length - 1].post_number] : null
+      });
       threadState.stream = (data.post_stream && data.post_stream.stream) || posts.map((p) => p.id);
       threadState.posts = posts;
       threadState.renderedFirstIdx = threadState.stream.indexOf(posts.length ? posts[0].id : -1);
@@ -2618,6 +2638,9 @@
       recordSession(threadState.title);
       threadState.categoryId = data.category_id || null;
       threadState.postsCount = data.posts_count || posts.length;
+      // 楼层上限用 highest_post_number（含删楼空号），否则集中贴（如 any 帖）的大楼层号会被 posts_count 卡死
+      threadState.highestPostNumber = Number(data.highest_post_number) ||
+        posts.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), 0);
       threadState.likeCount = data.like_count || 0;
       threadState.views = data.views || 0;
 
@@ -3092,7 +3115,8 @@
   function updateFloorSeg(current) {
     const seg = document.querySelector(".tt-app .tt-statusbar .floorseg");
     if (!seg) return;
-    const total = threadState.postsCount || 0;
+    // 分母跟楼层号走（含删楼空号），与原生 UI 的 x / Y 一致
+    const total = threadState.highestPostNumber || threadState.postsCount || 0;
     const text = total ? `[#] ${current || "-"}/${total}` : "[#] -/-";
     if (seg.textContent !== text) seg.textContent = text;
   }
@@ -3124,10 +3148,20 @@
       const data = await api(`/t/${topicId}/${n}.json`);
       if (threadState.topicId !== topicId) return false;
       const posts = (data.post_stream && data.post_stream.posts) || [];
+      // [排查] 远端跳楼的请求结果
+      console.log("[tt-floor] remote jump", {
+        请求: `/t/${topicId}/${n}.json`,
+        posts_count: data.posts_count,
+        highest_post_number: data.highest_post_number,
+        返回窗口: posts.length ? [posts[0].post_number, posts[posts.length - 1].post_number] : null,
+        目标在窗口内: posts.some((p) => p.post_number === n)
+      });
       if (!posts.length) return false;
       threadState.stream = (data.post_stream && data.post_stream.stream) || posts.map((p) => p.id);
       threadState.posts = posts;
       threadState.postsCount = Number(data.posts_count) || threadState.postsCount;
+      threadState.highestPostNumber = Number(data.highest_post_number) ||
+        posts.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), threadState.highestPostNumber);
       threadState.renderedFirstIdx = threadState.stream.indexOf(posts[0].id);
       if (threadState.renderedFirstIdx < 0) threadState.renderedFirstIdx = 0;
       const lastId = posts[posts.length - 1].id;
@@ -3159,7 +3193,8 @@
   /* ---------- 楼层浮层：状态栏 [#] 段点击 / # 键唤出，输入楼层号回车跳 ---------- */
 
   function floorMenuMax() {
-    return threadState.postsCount || 0;
+    // 上限跟楼层号走（含删楼空号）：posts_count 不含已删帖，集中贴的大楼层号会被卡死
+    return threadState.highestPostNumber || threadState.postsCount || 0;
   }
 
   function openFloorMenu() {
@@ -3188,6 +3223,12 @@
     const input = menu.querySelector(".fm-input");
     const max = floorMenuMax();
     const n = Math.floor(Number(input.value));
+    // [排查] 校验时的上限来源
+    console.log("[tt-floor] submit", {
+      输入: input.value, 解析: n, max,
+      highestPostNumber: threadState.highestPostNumber,
+      postsCount: threadState.postsCount
+    });
     if (!n || n < 1 || (max && n > max)) {
       input.classList.add("error");
       input.focus();

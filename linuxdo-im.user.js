@@ -2,7 +2,7 @@
 // @name         Linux DO · IM 外观（钉钉 / 飞书 / 企业微信）
 // @namespace    https://linux.do/
 // @author       czm15053
-// @version      1.3.0
+// @version      1.3.1
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，列表按钮一键切换。公共内核：投票、小火箭、图片灯箱、引用跳转、实时刷新、三态深色、伪装模式。
 // @match        https://linux.do/*
 // @exclude-match https://linux.do/pub/*
@@ -7947,7 +7947,9 @@ body.im-detail-open #reply-control {
     renderedLastNumber: 0,
     // 已渲染的最大 post_number
     totalPosts: 0,
-    // 话题总楼数（posts_count，选择楼层用）
+    // 话题有效楼数（posts_count，不含已删帖）
+    highestPostNumber: 0,
+    // 最高楼层号：post_number 递增不回收，删楼留空号，可能远大于 posts_count（选择楼层/显示上限用）
     hasOlder: false,
     hasNewer: false,
     title: "",
@@ -10683,8 +10685,9 @@ body.im-detail-open #reply-control {
     if (!postNumber) return;
     rememberTopicPost(chatState.topicId, postNumber);
     const metrics = document.querySelector(".im-chat-metrics");
-    if (metrics && chatState.totalPosts) {
-      metrics.innerHTML = `${ICONS.chat}${postNumber}<span class="im-metrics-sep">/</span>${chatState.totalPosts}`;
+    if (metrics && (chatState.highestPostNumber || chatState.totalPosts)) {
+      // 分母跟楼层号走（含删楼空号），与原生 UI 的 x / Y 一致
+      metrics.innerHTML = `${ICONS.chat}${postNumber}<span class="im-metrics-sep">/</span>${chatState.highestPostNumber || chatState.totalPosts}`;
     }
   }, 220);
   function renderPostOrSpam(post, myName) {
@@ -10824,6 +10827,9 @@ body.im-detail-open #reply-control {
       chatState.op = posts.find((p) => p.post_number === 1) || posts[0] || null;
       chatState.title = data.title || "";
       chatState.totalPosts = Number(data.posts_count) || chatState.stream.length || posts.length || 0;
+      // 楼层上限用 highest_post_number（含删楼空号），否则集中贴（如 any 帖）的大楼层号会被 posts_count 卡死
+      chatState.highestPostNumber = Number(data.highest_post_number) ||
+        posts.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), 0);
       const panel = document.querySelector(".im-chat-panel");
       if (panel) panel.dataset.empty = "0";
       const sub = document.querySelector(".im-chat-sub");
@@ -10840,14 +10846,17 @@ body.im-detail-open #reply-control {
         }
       }
       const replyTotal = data.posts_count || posts.length;
+      // 楼层号口径（含删楼空号），用于「当前 / 总楼数」显示与选层上限
+      const floorTotal = Number(data.highest_post_number) ||
+        posts.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), 0) || replyTotal;
       if (sub) sub.textContent = `归属于 linux.do · ${replyTotal} 条回复`;
       const metrics = document.querySelector(".im-chat-metrics");
       if (metrics) {
-        if (replyTotal) {
+        if (floorTotal) {
           metrics.style.display = "";
           metrics.title = "点击选择楼层";
           const startFloor = scrollToPost || Number((_b2 = posts[0]) == null ? void 0 : _b2.post_number) || 1;
-          metrics.innerHTML = `${ICONS.chat}${Math.min(startFloor, replyTotal)}<span class="im-metrics-sep">/</span>${replyTotal}`;
+          metrics.innerHTML = `${ICONS.chat}${Math.min(startFloor, floorTotal)}<span class="im-metrics-sep">/</span>${floorTotal}`;
         } else {
           metrics.style.display = "none";
           metrics.textContent = "";
@@ -10941,6 +10950,7 @@ body.im-detail-open #reply-control {
           (m, p) => Math.max(m, p.post_number || 0),
           chatState.renderedLastNumber
         );
+        chatState.highestPostNumber = Math.max(chatState.highestPostNumber || 0, chatState.renderedLastNumber);
       }
       if (body && posts.length) {
         body.insertAdjacentHTML("beforeend", renderBubbles(posts, getCurrentUsername()));
@@ -10966,6 +10976,8 @@ body.im-detail-open #reply-control {
       if (!posts.length) return false;
       chatState.stream = data.post_stream && data.post_stream.stream || posts.map((p) => p.id);
       chatState.totalPosts = Number(data.posts_count) || chatState.stream.length || chatState.totalPosts;
+      chatState.highestPostNumber = Number(data.highest_post_number) ||
+        posts.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), chatState.highestPostNumber || 0);
       chatState.renderedFirstIdx = chatState.stream.indexOf(posts[0].id);
       if (chatState.renderedFirstIdx < 0) chatState.renderedFirstIdx = 0;
       const lastId = posts[posts.length - 1].id;
@@ -10992,7 +11004,8 @@ body.im-detail-open #reply-control {
     }
   }
   function floorPickerMax() {
-    return chatState.totalPosts || chatState.renderedLastNumber || 0;
+    // 上限跟楼层号走（含删楼空号）：posts_count 不含已删帖，集中贴的大楼层号会被卡死
+    return chatState.highestPostNumber || chatState.totalPosts || chatState.renderedLastNumber || 0;
   }
   function ensureFloorPicker(panel) {
     let pop = panel.querySelector(".im-floor-pop");
