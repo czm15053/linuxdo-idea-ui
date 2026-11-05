@@ -2,7 +2,7 @@
 // @name         小红书 · IM 三合一样式（钉钉 / 飞书 / 企业微信）
 // @namespace    https://github.com/linuxdo-community/xhs-im
 // @author       linuxdo
-// @version      0.1.0
+// @version      0.1.1
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，把小红书换成三栏 IM 办公聊天壳。只换皮不碰数据：中栏笔记列表（推荐/搜索/频道）＋ 右栏笔记详情与树状评论收成聊天抽屉，点赞/收藏/关注走原生代理。支持纯文本摸鱼模式、深浅色跟随、百家姓脱敏、皮肤一键切换。
 // @match        https://www.xiaohongshu.com/*
 // @match        https://xiaohongshu.com/*
@@ -7870,35 +7870,40 @@ html.im-theme .im-me-btn { cursor: pointer; }
   function collectNoteComments(noteId, container = noteContainer()) {
     const fromDom = harvestNoteComments(container);
     const fromState = harvestCommentsFromState(noteId);
-    const map = /* @__PURE__ */ new Map();
-    for (const c of fromState) {
-      const k = c.id && !c.id.startsWith("0.") ? c.id : `${c.name}|${c.text}`;
-      map.set(k, { ...c });
-    }
+    const keyOf = (c) => c.id && !c.id.startsWith("0.") ? c.id : `${c.name}|${c.text}`;
+    const map = new Map(fromState.map((c) => [keyOf(c), c]));
+    const order = [];
+    const ordered = /* @__PURE__ */ new Set();
     for (const c of fromDom) {
-      const k = c.id && !c.id.startsWith("0.") ? c.id : `${c.name}|${c.text}`;
-      if (map.has(k)) {
-        const existing = map.get(k);
-        map.set(k, {
-          ...existing,
-          ...c,
-          avatar: c.avatar || existing.avatar || ""
-        });
-      } else {
-        map.set(k, c);
+      const key = keyOf(c);
+      const existing = map.get(key);
+      map.set(key, { ...existing, ...c, avatar: c.avatar || (existing == null ? void 0 : existing.avatar) || "" });
+      if (!ordered.has(key)) {
+        order.push(key);
+        ordered.add(key);
       }
     }
-    return Array.from(map.values());
+    let nextKey = null;
+    for (let i = fromState.length - 1; i >= 0; i--) {
+      const key = keyOf(fromState[i]);
+      if (!ordered.has(key)) {
+        const nextIndex = nextKey === null ? order.length : order.indexOf(nextKey);
+        order.splice(nextIndex, 0, key);
+        ordered.add(key);
+      }
+      nextKey = key;
+    }
+    return order.map((key) => map.get(key));
   }
   function kickCommentScroller() {
     const c = noteContainer();
     if (!c) return;
-    const scroller = c.querySelector(".comments-container, .list-container, .note-scroller, .interaction-container, .note-content") || c;
-    try {
-      scroller.scrollTop = scroller.scrollHeight;
-      scroller.dispatchEvent(new Event("scroll", { bubbles: true }));
-    } catch {
-    }
+    const scroller = [...c.querySelectorAll(".comments-container, .list-container, .note-scroller, .interaction-container, .note-content"), c].find(
+      (node) => node.clientHeight > 0 && node.scrollHeight > node.clientHeight && /^(auto|scroll)$/.test(getComputedStyle(node).overflowY)
+    );
+    if (!scroller) return;
+    scroller.scrollTop = scroller.scrollHeight;
+    scroller.dispatchEvent(new Event("scroll", { bubbles: true }));
   }
   function commentMoreButtons() {
     const target = noteContainer();
@@ -9611,7 +9616,7 @@ ${pin.text || "无"}
     return panel;
   }
   function composerText(box) {
-    return String((box == null ? void 0 : box.innerText) || "").replace(/ /g, " ").trim();
+    return String((box == null ? void 0 : box.innerText) || "").replace(/\u00a0/g, " ").trim();
   }
   function syncComposeState(panel) {
     const box = panel.querySelector(".im-chat-compose");
@@ -10140,21 +10145,28 @@ ${pin.text || "无"}
   let detailPrevUrl = "";
   let lastThreadDetail = null;
   function applyCommentBatch(noteId, replies) {
-    var _a, _b, _c;
+    var _a, _b;
     if (!(replies == null ? void 0 : replies.length)) return 0;
     const detail = (lastThreadDetail == null ? void 0 : lastThreadDetail.id) === noteId ? lastThreadDetail.detail : { pin: ((_a = lastThreadDetail == null ? void 0 : lastThreadDetail.detail) == null ? void 0 : _a.pin) || null, replies: [] };
     if (!detail.pin && ((_b = lastThreadDetail == null ? void 0 : lastThreadDetail.detail) == null ? void 0 : _b.pin)) detail.pin = lastThreadDetail.detail.pin;
     const prevList = detail.replies || [];
-    let hasAvatarUpdate = false;
-    if (replies.length === prevList.length) {
-      for (let i = 0; i < replies.length; i++) {
-        if (replies[i].avatar && !((_c = prevList[i]) == null ? void 0 : _c.avatar)) {
-          hasAvatarUpdate = true;
-          break;
-        }
-      }
-    }
-    if (replies.length <= prevList.length && !hasAvatarUpdate) return prevList.length;
+    if (replies.length < prevList.length) return prevList.length;
+    const signature = (list) => JSON.stringify(list.map((c) => [
+      c.id,
+      c.name,
+      c.handle,
+      c.profileHref,
+      c.avatar,
+      c.text,
+      c.time,
+      c.likeCount,
+      c.liked,
+      c.photos,
+      c.replyTo,
+      c.repliedTo,
+      c.isSub
+    ]));
+    if (signature(replies) === signature(prevList)) return prevList.length;
     detail.replies = replies;
     lastThreadDetail = { id: noteId, detail };
     renderDetailThread(detail);
@@ -10273,14 +10285,23 @@ ${pin.text || "无"}
     } else {
       html += `<div class="im-detail-loadmore">${detail.commentsPaging ? "正在加载更多评论…" : "下滑加载更多评论"}</div>`;
     }
-    const keepTop = dbody.dataset.pinId && pt && dbody.dataset.pinId === pt.id ? dbody.scrollTop : 0;
+    const sameNote = dbody.dataset.pinId && pt && dbody.dataset.pinId === pt.id;
+    const keepTop = sameNote ? dbody.scrollTop : 0;
+    const bodyTop = dbody.getBoundingClientRect().top;
+    const anchor = sameNote && keepTop > 0 ? Array.from(dbody.querySelectorAll(".im-msg[data-id]")).find((node) => node.getBoundingClientRect().bottom > bodyTop) : null;
+    const anchorId = anchor == null ? void 0 : anchor.dataset.id;
+    const anchorOffset = anchor ? anchor.getBoundingClientRect().top - bodyTop : 0;
     dbody.dataset.sig = pt ? pt.id : html;
     dbody.innerHTML = html;
     if (pt) {
       dbody.dataset.pinId = pt.id;
       (_h = dbody.querySelector(".im-thread-pin")) == null ? void 0 : _h.setAttribute("data-pin-id", pt.id);
     }
-    if (keepTop) dbody.scrollTop = keepTop;
+    if (sameNote) {
+      dbody.scrollTop = keepTop;
+      const restored = anchorId ? Array.from(dbody.querySelectorAll(".im-msg[data-id]")).find((node) => node.dataset.id === anchorId) : null;
+      if (restored) dbody.scrollTop += restored.getBoundingClientRect().top - bodyTop - anchorOffset;
+    }
   }
   function openTweetDetail(href, contextEl) {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r;
@@ -11050,7 +11071,12 @@ ${pin.text || "无"}
   }
   function syncDetailDrawer() {
     var _a;
-    if ((detailView == null ? void 0 : detailView.classList.contains("is-open")) && detailRenderedHref) return true;
+    if ((detailView == null ? void 0 : detailView.classList.contains("is-open")) && detailRenderedHref) {
+      if (lastThreadDetail && detailRenderedHref.includes(lastThreadDetail.id)) {
+        applyCommentBatch(lastThreadDetail.id, collectNoteComments(lastThreadDetail.id));
+      }
+      return true;
+    }
     const status = statusInfo();
     if (!status) {
       if (detailView == null ? void 0 : detailView.classList.contains("is-open")) console.info(`[xhs-im:drawer] closing: path=${location.pathname} statusInfo=null detailHref=${detailRenderedHref}`);
@@ -11648,7 +11674,7 @@ ${pin.text || "无"}
     document.title = `${name} - ${skin.label}`;
   }
   function run() {
-    const version = "0.1.0";
+    const version = "0.1.1";
     console.info(`[xhs-im] v${version} loaded, skin=${currentSkinId()}`);
     installSearchCapture();
     if (typeof window !== "undefined" && window.matchMedia) {
@@ -11754,7 +11780,13 @@ ${pin.text || "无"}
           requestAnimationFrame(startObs);
           return;
         }
-        mo.observe(document.body, { childList: true, subtree: true });
+        mo.observe(document.body, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+          attributes: true,
+          attributeFilter: ["src"]
+        });
       };
       startObs();
     }
