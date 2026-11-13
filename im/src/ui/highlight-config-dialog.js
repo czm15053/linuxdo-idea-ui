@@ -1,12 +1,8 @@
 // 中栏关键词高亮配置弹窗
 import {
   loadHighlightConfig,
-  saveHighlightConfig,
-  categoryFilterOptions,
-  tagFilterOptions
+  saveHighlightConfig
 } from "../features/highlight-keywords.js";
-import { loadCategories } from "../bridge/categories.js";
-import { api } from "../bridge/api.js";
 import { escapeHtml } from "../utils/html.js";
 import { chatHooks } from "./hooks.js";
 
@@ -43,9 +39,7 @@ export function openHighlightConfigDialog() {
     keywords: [...current.keywords],
     filterEnabled: current.filterEnabled,
     filterKeywords: [...current.filterKeywords],
-    filterUsers: [...current.filterUsers],
-    filterCategories: [...current.filterCategories],
-    filterTags: [...current.filterTags]
+    filterUsers: [...current.filterUsers]
   };
 
   const overlay = document.createElement("div");
@@ -134,26 +128,7 @@ export function openHighlightConfigDialog() {
             <input type="text" class="im-spam-input" id="input-hl-fuser" placeholder="输入用户名（可带 @），回车添加..." maxlength="40">
             <button type="button" class="im-spam-btn im-spam-add-btn" id="btn-add-hl-fuser">添加</button>
           </div>
-
-          <div class="im-spam-tags-header" style="margin-top: 12px;">
-            <span>屏蔽分类:</span>
-            <span class="im-spam-tags-count" id="count-hl-fcat"></span>
-          </div>
-          <div class="im-spam-tags-container im-hl-pillbox" id="container-hl-fcat"></div>
-          <div class="im-spam-tag-add-row">
-            <input type="text" class="im-spam-input" id="input-hl-fcat" placeholder="搜索分类…" autocomplete="off">
-          </div>
-          <div class="im-hl-options" id="options-hl-fcat" hidden></div>
-
-          <div class="im-spam-tags-header" style="margin-top: 12px;">
-            <span>屏蔽标签:</span>
-            <span class="im-spam-tags-count" id="count-hl-ftag"></span>
-          </div>
-          <div class="im-spam-tags-container im-hl-pillbox" id="container-hl-ftag"></div>
-          <div class="im-spam-tag-add-row">
-            <input type="text" class="im-spam-input" id="input-hl-ftag" placeholder="搜索标签（如 集中帖、快问快答）…" autocomplete="off">
-          </div>
-          <div class="im-hl-options" id="options-hl-ftag" hidden></div>
+          <div class="im-spam-unit" style="margin-top: 6px;">💡 分类和标签过滤请用 Discourse 自带的静音（偏好设置 → 跟踪/静音）。</div>
         </div>
       </div>
     </div>
@@ -181,8 +156,6 @@ export function openHighlightConfigDialog() {
   const filterInputEl = panel.querySelector("#input-hl-filter");
   const filterAddBtn = panel.querySelector("#btn-add-hl-filter");
 
-  // 分类/标签下拉：值 -> 显示名（长效保存 id / 标签名，展示仍用原名）
-  const filterLabels = new Map();
   // 即时生效：打开弹窗后任何增删/勾选都立刻落盘并重绘列表（无需点保存）
   let liveReady = false;
 
@@ -192,9 +165,7 @@ export function openHighlightConfigDialog() {
       keywords: form.keywords,
       filterEnabled: panel.querySelector("#hl-cfg-filter-switch").checked,
       filterKeywords: form.filterKeywords,
-      filterUsers: form.filterUsers,
-      filterCategories: form.filterCategories,
-      filterTags: form.filterTags
+      filterUsers: form.filterUsers
     };
   }
 
@@ -297,160 +268,6 @@ export function openHighlightConfigDialog() {
   bindAdd(fuserInputEl, panel.querySelector("#btn-add-hl-fuser"), form.filterUsers);
   renderFilterUsers();
 
-  /* ---------- 屏蔽分类 / 标签：可搜索下拉多选 ---------- */
-  function setupFilterPicker({ key, input, optionsBox, containerEl, countEl, loadOptions, search, emptyTip }) {
-    const state = { options: [], visible: [], timer: null, seq: 0 };
-
-    function renderPills() {
-      containerEl.innerHTML = "";
-      countEl.textContent = `(${form[key].length}/500)`;
-      if (!form[key].length) {
-        const tip = document.createElement("span");
-        tip.className = "im-spam-tags-empty";
-        tip.textContent = emptyTip;
-        containerEl.appendChild(tip);
-        return;
-      }
-      for (let i = 0; i < form[key].length; i++) {
-        const value = form[key][i];
-        const label = filterLabels.get(`${key}:${value}`) || value;
-        const pill = document.createElement("span");
-        pill.className = "im-spam-tag-pill im-hl-tag-pill";
-        pill.innerHTML = `<span>${escapeHtml(label)}</span><button type="button" class="im-spam-tag-del" title="删除">×</button>`;
-        pill.querySelector(".im-spam-tag-del").addEventListener("click", () => {
-          form[key].splice(i, 1);
-          renderPills();
-          renderOptions(input.value.trim());
-          applyLive();
-        });
-        containerEl.appendChild(pill);
-      }
-    }
-
-    function renderOptions(query) {
-      const q = query.toLowerCase();
-      state.visible = state.options
-        .filter((option) => !q || option.label.toLowerCase().includes(q) || option.value.includes(q))
-        .slice(0, 60);
-      optionsBox.innerHTML = "";
-      optionsBox.hidden = false;
-      if (!state.visible.length) {
-        const tip = document.createElement("span");
-        tip.className = "im-spam-tags-empty";
-        tip.textContent = state.options.length ? "没有匹配项" : "暂无可用选项";
-        optionsBox.appendChild(tip);
-        return;
-      }
-      for (const option of state.visible) {
-        const selected = form[key].some((value) => value.toLowerCase() === option.value);
-        const row = document.createElement("button");
-        row.type = "button";
-        row.className = `im-hl-option${selected ? " is-selected" : ""}`;
-        row.innerHTML = `<span class="im-hl-check">${selected ? "✓" : ""}</span><span>${escapeHtml(option.label)}</span>`;
-        row.addEventListener("click", () => {
-          const index = form[key].findIndex((value) => value.toLowerCase() === option.value);
-          if (index >= 0) form[key].splice(index, 1);
-          if (index < 0) {
-            form[key].push(option.value);
-            filterLabels.set(`${key}:${option.value}`, option.label);
-          }
-          renderPills();
-          renderOptions(input.value.trim());
-          input.focus();
-          applyLive();
-        });
-        optionsBox.appendChild(row);
-      }
-    }
-
-    input.addEventListener("focus", async () => {
-      renderOptions(input.value.trim());
-      if (state.options.length) return;
-      try {
-        state.options = await loadOptions("");
-        renderOptions(input.value.trim());
-      } catch {
-        optionsBox.innerHTML = "<span class=\"im-spam-tags-empty\">加载失败，改关键词可重试</span>";
-      }
-    });
-    input.addEventListener("input", () => {
-      renderOptions(input.value.trim());
-      if (!search) return;
-      clearTimeout(state.timer);
-      state.timer = setTimeout(async () => {
-        const query = input.value.trim();
-        if (!query) return;
-        const seq = ++state.seq;
-        try {
-          const results = await loadOptions(query);
-          if (seq !== state.seq || input.value.trim() !== query) return;
-          const merged = new Map(state.options.map((option) => [option.value, option]));
-          for (const option of results) {
-            merged.set(option.value, option);
-            filterLabels.set(`${key}:${option.value}`, option.label);
-          }
-          state.options = [...merged.values()];
-          renderOptions(query);
-        } catch { /* 搜索失败保留现有结果 */ }
-      }, 200);
-    });
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        const first = state.visible[0];
-        if (first) input.value = first.label;
-      }
-    });
-
-    renderPills();
-    // 预载选项：已保存的规则也能显示原名（否则分类会显示成 id）
-    loadOptions("").then((options) => {
-      state.options = options;
-      for (const option of options) {
-        if (form[key].some((value) => value.toLowerCase() === option.value)) {
-          filterLabels.set(`${key}:${option.value}`, option.label);
-        }
-      }
-      renderPills();
-    }).catch(() => { /* 加载失败保持原样 */ });
-
-    return { renderPills };
-  }
-
-  const fcatPicker = setupFilterPicker({
-    key: "filterCategories",
-    input: panel.querySelector("#input-hl-fcat"),
-    optionsBox: panel.querySelector("#options-hl-fcat"),
-    containerEl: panel.querySelector("#container-hl-fcat"),
-    countEl: panel.querySelector("#count-hl-fcat"),
-    emptyTip: "暂无屏蔽分类",
-    loadOptions: async () => categoryFilterOptions(await loadCategories())
-  });
-
-  const ftagPicker = setupFilterPicker({
-    key: "filterTags",
-    input: panel.querySelector("#input-hl-ftag"),
-    optionsBox: panel.querySelector("#options-hl-ftag"),
-    containerEl: panel.querySelector("#container-hl-ftag"),
-    countEl: panel.querySelector("#count-hl-ftag"),
-    emptyTip: "暂无屏蔽标签",
-    search: true,
-    loadOptions: async (query) => {
-      if (query) {
-        const data = await api(`/tags/filter/search?${new URLSearchParams({ q: query, limit: "50" })}`);
-        return tagFilterOptions(data.results || []);
-      }
-      const data = await api("/tags.json");
-      const groups = data.extras?.tag_groups || [];
-      const categories = data.extras?.categories || [];
-      return tagFilterOptions([
-        ...(data.tags || []),
-        ...groups.flatMap((group) => group.tags || []),
-        ...categories.flatMap((category) => category.tags || [])
-      ]);
-    }
-  });
-
   renderAllTags();
   liveReady = true;
 
@@ -468,18 +285,13 @@ export function openHighlightConfigDialog() {
 
   // 清空词库
   panel.querySelector("#hl-cfg-btn-clear").addEventListener("click", () => {
-    const total = form.keywords.length + form.filterKeywords.length +
-      form.filterUsers.length + form.filterCategories.length + form.filterTags.length;
+    const total = form.keywords.length + form.filterKeywords.length + form.filterUsers.length;
     if (total && confirm("确定清空所有高亮关键词和屏蔽规则吗？")) {
       form.keywords = [];
       form.filterKeywords = [];
       form.filterUsers = [];
-      form.filterCategories = [];
-      form.filterTags = [];
       renderAllTags();
       renderFilterUsers();
-      fcatPicker.renderPills();
-      ftagPicker.renderPills();
       applyLive();
     }
   });
@@ -493,17 +305,14 @@ export function openHighlightConfigDialog() {
       keywords: form.keywords,
       filterEnabled: chkFilter.checked,
       filterKeywords: form.filterKeywords,
-      filterUsers: form.filterUsers,
-      filterCategories: form.filterCategories,
-      filterTags: form.filterTags
+      filterUsers: form.filterUsers
     };
 
     saveHighlightConfig(newConfig);
     // 显式通知列表重绘：不依赖 save 回调里的去重判断
     document.dispatchEvent(new CustomEvent("im:highlight-config-changed"));
     closeHighlightConfigDialog();
-    const filterTotal = newConfig.filterKeywords.length + newConfig.filterUsers.length +
-      newConfig.filterCategories.length + newConfig.filterTags.length;
+    const filterTotal = newConfig.filterKeywords.length + newConfig.filterUsers.length;
     chatHooks.toast?.(
       `高亮 ${newConfig.enabled ? "开" : "关"} · 过滤 ${newConfig.filterEnabled ? `开（${filterTotal} 条规则）` : "关"}`
     );

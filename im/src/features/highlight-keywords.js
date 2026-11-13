@@ -7,9 +7,7 @@ export const DEFAULT_HIGHLIGHT_CONFIG = {
   keywords: [],
   filterEnabled: false,
   filterKeywords: [],
-  filterUsers: [],
-  filterCategories: [],
-  filterTags: []
+  filterUsers: []
 };
 
 /** 验证并规整配置 */
@@ -30,7 +28,7 @@ export function validateHighlightConfig(config) {
 
   valid.filterEnabled = typeof config.filterEnabled === "boolean" ? config.filterEnabled : false;
 
-  for (const key of ["filterKeywords", "filterUsers", "filterCategories", "filterTags"]) {
+  for (const key of ["filterKeywords", "filterUsers"]) {
     valid[key] = Array.isArray(config[key])
       ? config[key]
           .filter((k) => typeof k === "string" && k.trim().length > 0)
@@ -147,30 +145,8 @@ export function isFilteredTopic(topic, usersById = {}) {
       if (username && blocked.has(username.toLowerCase())) return true;
     }
   }
-  if (cfg.filterCategories.length && cfg.filterCategories.includes(String(topic.category_id))) return true;
-  if (cfg.filterTags.length) {
-    const blocked = new Set(cfg.filterTags.map((tag) => tag.toLowerCase()));
-    if ((topic.tags || []).some((tag) => blocked.has(String(tag).toLowerCase()))) return true;
-  }
   return false;
 }
-
-/** 分类选项（id 为值，名称显示），供过滤配置下拉使用 */
-export function categoryFilterOptions(categories) {
-  return categories.map((category) => ({
-    value: String(category.id),
-    label: category.name
-  }));
-}
-
-/** 标签选项（名称小写为值），tags 来自 /tags.json 或 /tags/filter/search */
-export function tagFilterOptions(tags) {
-  return tags.map((tag) => {
-    const name = tag.name || tag.text;
-    return { value: String(name).toLowerCase(), label: tag.text || name, count: tag.count || 0 };
-  });
-}
-
 
 /**
  * 对标题文本进行安全转义并对关键词包裹高亮标签 <mark class="im-list-hl">...</mark>
