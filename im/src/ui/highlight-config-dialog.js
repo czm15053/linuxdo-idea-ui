@@ -36,7 +36,9 @@ export function openHighlightConfigDialog() {
   const current = loadHighlightConfig();
   const form = {
     enabled: current.enabled,
-    keywords: [...current.keywords]
+    keywords: [...current.keywords],
+    filterEnabled: current.filterEnabled,
+    filterKeywords: [...current.filterKeywords]
   };
 
   const overlay = document.createElement("div");
@@ -89,6 +91,34 @@ export function openHighlightConfigDialog() {
           <div class="im-spam-unit" style="margin-top: 6px;">💡 不区分大小写；最多支持 500 个关键词，单词最长 40 字符。</div>
         </div>
       </div>
+
+      <!-- 屏蔽词过滤 -->
+      <div class="im-spam-sec" id="sec-hl-filter">
+        <div class="im-spam-sec-head">
+          <span class="im-spam-sec-title">屏蔽词过滤</span>
+        </div>
+        <div class="im-spam-sec-body">
+          <div class="im-spam-row">
+            <label class="im-switch">
+              <input type="checkbox" id="hl-cfg-filter-switch" ${form.filterEnabled ? "checked" : ""}>
+              <span class="im-switch-slider"></span>
+            </label>
+            <div class="im-spam-label-group">
+              <span class="im-spam-label-title">开启屏蔽词过滤</span>
+              <span class="im-spam-label-desc">中栏列表隐藏标题含屏蔽词的话题（如抽奖、收号），底部状态栏提示已过滤条数</span>
+            </div>
+          </div>
+          <div class="im-spam-tags-header" style="margin-top: 10px;">
+            <span>屏蔽词列表:</span>
+            <span class="im-spam-tags-count" id="count-hl-filter"></span>
+          </div>
+          <div class="im-spam-tags-container" id="container-hl-filter"></div>
+          <div class="im-spam-tag-add-row">
+            <input type="text" class="im-spam-input" id="input-hl-filter" placeholder="输入屏蔽词（如 抽奖、羊毛、合租），回车添加..." maxlength="40">
+            <button type="button" class="im-spam-btn im-spam-add-btn" id="btn-add-hl-filter">添加</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="im-modal-footer">
       <button type="button" class="im-spam-btn im-spam-btn-reset" id="hl-cfg-btn-clear">清空词库</button>
@@ -109,57 +139,71 @@ export function openHighlightConfigDialog() {
   const countEl = panel.querySelector("#count-hl-kw");
   const inputEl = panel.querySelector("#input-hl-kw");
   const addBtn = panel.querySelector("#btn-add-hl-kw");
+  const filterContainer = panel.querySelector("#container-hl-filter");
+  const filterCountEl = panel.querySelector("#count-hl-filter");
+  const filterInputEl = panel.querySelector("#input-hl-filter");
+  const filterAddBtn = panel.querySelector("#btn-add-hl-filter");
 
-  function renderTags() {
-    container.innerHTML = "";
-    countEl.textContent = `(${form.keywords.length}/500)`;
+  function renderTagsInto(list, box, count, emptyTipText) {
+    box.innerHTML = "";
+    count.textContent = `(${list.length}/500)`;
 
-    if (!form.keywords.length) {
+    if (!list.length) {
       const emptyTip = document.createElement("span");
       emptyTip.className = "im-spam-tags-empty";
-      emptyTip.textContent = "暂无关键词，请在下方输入并添加";
-      container.appendChild(emptyTip);
+      emptyTip.textContent = emptyTipText;
+      box.appendChild(emptyTip);
       return;
     }
 
-    for (let i = 0; i < form.keywords.length; i++) {
-      const kw = form.keywords[i];
+    for (let i = 0; i < list.length; i++) {
+      const kw = list[i];
       const tag = document.createElement("span");
       tag.className = "im-spam-tag-pill im-hl-tag-pill";
       tag.innerHTML = `<span>${escapeHtml(kw)}</span><button type="button" class="im-spam-tag-del" title="删除">×</button>`;
       tag.querySelector(".im-spam-tag-del").addEventListener("click", () => {
-        form.keywords.splice(i, 1);
-        renderTags();
+        list.splice(i, 1);
+        renderAllTags();
       });
-      container.appendChild(tag);
+      box.appendChild(tag);
     }
   }
 
-  function doAdd() {
-    const val = inputEl.value.trim();
-    if (!val) return;
-    if (form.keywords.length >= 500) {
-      alert("已达到 500 个关键词上限");
-      return;
-    }
-    // 防重复（大小写不敏感）
-    if (!form.keywords.some((k) => k.toLowerCase() === val.toLowerCase())) {
-      form.keywords.push(val.substring(0, 40));
-      renderTags();
-    }
-    inputEl.value = "";
-    inputEl.focus();
+  function renderAllTags() {
+    renderTagsInto(form.keywords, container, countEl, "暂无关键词，请在下方输入并添加");
+    renderTagsInto(form.filterKeywords, filterContainer, filterCountEl, "暂无屏蔽词，请在下方输入并添加");
   }
 
-  addBtn.addEventListener("click", doAdd);
-  inputEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      doAdd();
+  function bindAdd(input, btn, list) {
+    function doAdd() {
+      const val = input.value.trim();
+      if (!val) return;
+      if (list.length >= 500) {
+        alert("已达到 500 个关键词上限");
+        return;
+      }
+      // 防重复（大小写不敏感）
+      if (!list.some((k) => k.toLowerCase() === val.toLowerCase())) {
+        list.push(val.substring(0, 40));
+        renderAllTags();
+      }
+      input.value = "";
+      input.focus();
     }
-  });
 
-  renderTags();
+    btn.addEventListener("click", doAdd);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        doAdd();
+      }
+    });
+  }
+
+  bindAdd(inputEl, addBtn, form.keywords);
+  bindAdd(filterInputEl, filterAddBtn, form.filterKeywords);
+
+  renderAllTags();
 
   // 遮罩点击关闭
   overlay.addEventListener("mousedown", (e) => {
@@ -170,26 +214,29 @@ export function openHighlightConfigDialog() {
 
   // 清空词库
   panel.querySelector("#hl-cfg-btn-clear").addEventListener("click", () => {
-    if (form.keywords.length && confirm("确定清空所有高亮关键词吗？")) {
+    if ((form.keywords.length || form.filterKeywords.length) &&
+        confirm("确定清空所有高亮关键词和屏蔽词吗？")) {
       form.keywords = [];
-      renderTags();
+      form.filterKeywords = [];
+      renderAllTags();
     }
   });
 
   // 保存
   panel.querySelector("#hl-cfg-btn-save").addEventListener("click", () => {
     const chkMain = panel.querySelector("#hl-cfg-main-switch");
+    const chkFilter = panel.querySelector("#hl-cfg-filter-switch");
     const newConfig = {
       enabled: chkMain.checked,
-      keywords: form.keywords
+      keywords: form.keywords,
+      filterEnabled: chkFilter.checked,
+      filterKeywords: form.filterKeywords
     };
 
     saveHighlightConfig(newConfig);
     closeHighlightConfigDialog();
     chatHooks.toast?.(
-      newConfig.enabled
-        ? `关键词高亮已生效（共 ${newConfig.keywords.length} 个词）`
-        : "关键词高亮已关闭"
+      `高亮 ${newConfig.enabled ? "开" : "关"} · 过滤 ${newConfig.filterEnabled ? `开（${newConfig.filterKeywords.length} 词）` : "关"}`
     );
   });
 }

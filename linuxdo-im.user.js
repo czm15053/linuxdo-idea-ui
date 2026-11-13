@@ -2,7 +2,7 @@
 // @name         Linux DO · IM 外观（钉钉 / 飞书 / 企业微信）
 // @namespace    https://linux.do/
 // @author       czm15053
-// @version      1.3.1
+// @version      1.3.2
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，列表按钮一键切换。公共内核：投票、小火箭、图片灯箱、引用跳转、实时刷新、三态深色、伪装模式。
 // @match        https://linux.do/*
 // @exclude-match https://linux.do/pub/*
@@ -10686,7 +10686,6 @@ body.im-detail-open #reply-control {
     rememberTopicPost(chatState.topicId, postNumber);
     const metrics = document.querySelector(".im-chat-metrics");
     if (metrics && (chatState.highestPostNumber || chatState.totalPosts)) {
-      // 分母跟楼层号走（含删楼空号），与原生 UI 的 x / Y 一致
       metrics.innerHTML = `${ICONS.chat}${postNumber}<span class="im-metrics-sep">/</span>${chatState.highestPostNumber || chatState.totalPosts}`;
     }
   }, 220);
@@ -10827,9 +10826,7 @@ body.im-detail-open #reply-control {
       chatState.op = posts.find((p) => p.post_number === 1) || posts[0] || null;
       chatState.title = data.title || "";
       chatState.totalPosts = Number(data.posts_count) || chatState.stream.length || posts.length || 0;
-      // 楼层上限用 highest_post_number（含删楼空号），否则集中贴（如 any 帖）的大楼层号会被 posts_count 卡死
-      chatState.highestPostNumber = Number(data.highest_post_number) ||
-        posts.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), 0);
+      chatState.highestPostNumber = Number(data.highest_post_number) || posts.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), 0);
       const panel = document.querySelector(".im-chat-panel");
       if (panel) panel.dataset.empty = "0";
       const sub = document.querySelector(".im-chat-sub");
@@ -10846,9 +10843,7 @@ body.im-detail-open #reply-control {
         }
       }
       const replyTotal = data.posts_count || posts.length;
-      // 楼层号口径（含删楼空号），用于「当前 / 总楼数」显示与选层上限
-      const floorTotal = Number(data.highest_post_number) ||
-        posts.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), 0) || replyTotal;
+      const floorTotal = Number(data.highest_post_number) || posts.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), 0) || replyTotal;
       if (sub) sub.textContent = `归属于 linux.do · ${replyTotal} 条回复`;
       const metrics = document.querySelector(".im-chat-metrics");
       if (metrics) {
@@ -10976,8 +10971,7 @@ body.im-detail-open #reply-control {
       if (!posts.length) return false;
       chatState.stream = data.post_stream && data.post_stream.stream || posts.map((p) => p.id);
       chatState.totalPosts = Number(data.posts_count) || chatState.stream.length || chatState.totalPosts;
-      chatState.highestPostNumber = Number(data.highest_post_number) ||
-        posts.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), chatState.highestPostNumber || 0);
+      chatState.highestPostNumber = Number(data.highest_post_number) || posts.reduce((m, p) => Math.max(m, Number(p.post_number) || 0), chatState.highestPostNumber || 0);
       chatState.renderedFirstIdx = chatState.stream.indexOf(posts[0].id);
       if (chatState.renderedFirstIdx < 0) chatState.renderedFirstIdx = 0;
       const lastId = posts[posts.length - 1].id;
@@ -11004,7 +10998,6 @@ body.im-detail-open #reply-control {
     }
   }
   function floorPickerMax() {
-    // 上限跟楼层号走（含删楼空号）：posts_count 不含已删帖，集中贴的大楼层号会被卡死
     return chatState.highestPostNumber || chatState.totalPosts || chatState.renderedLastNumber || 0;
   }
   function ensureFloorPicker(panel) {
@@ -14346,7 +14339,9 @@ ${data.raw}
   }
   const DEFAULT_HIGHLIGHT_CONFIG = {
     enabled: true,
-    keywords: []
+    keywords: [],
+    filterEnabled: false,
+    filterKeywords: []
   };
   function validateHighlightConfig(config) {
     if (!config || typeof config !== "object") return { ...DEFAULT_HIGHLIGHT_CONFIG };
@@ -14356,6 +14351,12 @@ ${data.raw}
       valid.keywords = config.keywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
     } else {
       valid.keywords = [];
+    }
+    valid.filterEnabled = typeof config.filterEnabled === "boolean" ? config.filterEnabled : false;
+    if (Array.isArray(config.filterKeywords)) {
+      valid.filterKeywords = config.filterKeywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
+    } else {
+      valid.filterKeywords = [];
     }
     return valid;
   }
@@ -14396,6 +14397,8 @@ ${data.raw}
   }
   let cachedPattern = null;
   let cachedKeywordsSig = null;
+  let cachedFilterPattern = null;
+  let cachedFilterSig = null;
   function getSearchRegex(keywords) {
     const sig = keywords.join("\0");
     if (cachedKeywordsSig === sig && cachedPattern !== null) {
@@ -14419,6 +14422,21 @@ ${data.raw}
     if (!regex) return false;
     regex.lastIndex = 0;
     return regex.test(text);
+  }
+  function isFilteredTopicTitle(text) {
+    if (!text || typeof text !== "string") return false;
+    const cfg = loadHighlightConfig();
+    if (!cfg.filterEnabled || !cfg.filterKeywords.length) return false;
+    const sig = cfg.filterKeywords.join("\0");
+    if (cachedFilterSig !== sig) {
+      cachedFilterSig = sig;
+      const sorted = [...cfg.filterKeywords].sort((a, b) => b.length - a.length);
+      const pattern = sorted.map(escapeRegExp).filter(Boolean).join("|");
+      cachedFilterPattern = pattern ? new RegExp(pattern, "gi") : null;
+    }
+    if (!cachedFilterPattern) return false;
+    cachedFilterPattern.lastIndex = 0;
+    return cachedFilterPattern.test(text);
   }
   function highlightTitleText(text) {
     if (!text || typeof text !== "string") return "";
@@ -14468,7 +14486,9 @@ ${data.raw}
     const current = loadHighlightConfig();
     const form = {
       enabled: current.enabled,
-      keywords: [...current.keywords]
+      keywords: [...current.keywords],
+      filterEnabled: current.filterEnabled,
+      filterKeywords: [...current.filterKeywords]
     };
     const overlay = document.createElement("div");
     overlay.className = "im-modal-overlay im-highlight-dialog-overlay";
@@ -14518,6 +14538,34 @@ ${data.raw}
           <div class="im-spam-unit" style="margin-top: 6px;">💡 不区分大小写；最多支持 500 个关键词，单词最长 40 字符。</div>
         </div>
       </div>
+
+      <!-- 屏蔽词过滤 -->
+      <div class="im-spam-sec" id="sec-hl-filter">
+        <div class="im-spam-sec-head">
+          <span class="im-spam-sec-title">屏蔽词过滤</span>
+        </div>
+        <div class="im-spam-sec-body">
+          <div class="im-spam-row">
+            <label class="im-switch">
+              <input type="checkbox" id="hl-cfg-filter-switch" ${form.filterEnabled ? "checked" : ""}>
+              <span class="im-switch-slider"></span>
+            </label>
+            <div class="im-spam-label-group">
+              <span class="im-spam-label-title">开启屏蔽词过滤</span>
+              <span class="im-spam-label-desc">中栏列表隐藏标题含屏蔽词的话题（如抽奖、收号），底部状态栏提示已过滤条数</span>
+            </div>
+          </div>
+          <div class="im-spam-tags-header" style="margin-top: 10px;">
+            <span>屏蔽词列表:</span>
+            <span class="im-spam-tags-count" id="count-hl-filter"></span>
+          </div>
+          <div class="im-spam-tags-container" id="container-hl-filter"></div>
+          <div class="im-spam-tag-add-row">
+            <input type="text" class="im-spam-input" id="input-hl-filter" placeholder="输入屏蔽词（如 抽奖、羊毛、合租），回车添加..." maxlength="40">
+            <button type="button" class="im-spam-btn im-spam-add-btn" id="btn-add-hl-filter">添加</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="im-modal-footer">
       <button type="button" class="im-spam-btn im-spam-btn-reset" id="hl-cfg-btn-clear">清空词库</button>
@@ -14535,73 +14583,89 @@ ${data.raw}
     const countEl = panel.querySelector("#count-hl-kw");
     const inputEl2 = panel.querySelector("#input-hl-kw");
     const addBtn = panel.querySelector("#btn-add-hl-kw");
-    function renderTags() {
-      container.innerHTML = "";
-      countEl.textContent = `(${form.keywords.length}/500)`;
-      if (!form.keywords.length) {
+    const filterContainer = panel.querySelector("#container-hl-filter");
+    const filterCountEl = panel.querySelector("#count-hl-filter");
+    const filterInputEl = panel.querySelector("#input-hl-filter");
+    const filterAddBtn = panel.querySelector("#btn-add-hl-filter");
+    function renderTagsInto(list, box, count, emptyTipText) {
+      box.innerHTML = "";
+      count.textContent = `(${list.length}/500)`;
+      if (!list.length) {
         const emptyTip = document.createElement("span");
         emptyTip.className = "im-spam-tags-empty";
-        emptyTip.textContent = "暂无关键词，请在下方输入并添加";
-        container.appendChild(emptyTip);
+        emptyTip.textContent = emptyTipText;
+        box.appendChild(emptyTip);
         return;
       }
-      for (let i = 0; i < form.keywords.length; i++) {
-        const kw = form.keywords[i];
+      for (let i = 0; i < list.length; i++) {
+        const kw = list[i];
         const tag = document.createElement("span");
         tag.className = "im-spam-tag-pill im-hl-tag-pill";
         tag.innerHTML = `<span>${escapeHtml(kw)}</span><button type="button" class="im-spam-tag-del" title="删除">×</button>`;
         tag.querySelector(".im-spam-tag-del").addEventListener("click", () => {
-          form.keywords.splice(i, 1);
-          renderTags();
+          list.splice(i, 1);
+          renderAllTags();
         });
-        container.appendChild(tag);
+        box.appendChild(tag);
       }
     }
-    function doAdd() {
-      const val = inputEl2.value.trim();
-      if (!val) return;
-      if (form.keywords.length >= 500) {
-        alert("已达到 500 个关键词上限");
-        return;
-      }
-      if (!form.keywords.some((k) => k.toLowerCase() === val.toLowerCase())) {
-        form.keywords.push(val.substring(0, 40));
-        renderTags();
-      }
-      inputEl2.value = "";
-      inputEl2.focus();
+    function renderAllTags() {
+      renderTagsInto(form.keywords, container, countEl, "暂无关键词，请在下方输入并添加");
+      renderTagsInto(form.filterKeywords, filterContainer, filterCountEl, "暂无屏蔽词，请在下方输入并添加");
     }
-    addBtn.addEventListener("click", doAdd);
-    inputEl2.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        doAdd();
+    function bindAdd(input, btn, list) {
+      function doAdd() {
+        const val = input.value.trim();
+        if (!val) return;
+        if (list.length >= 500) {
+          alert("已达到 500 个关键词上限");
+          return;
+        }
+        if (!list.some((k) => k.toLowerCase() === val.toLowerCase())) {
+          list.push(val.substring(0, 40));
+          renderAllTags();
+        }
+        input.value = "";
+        input.focus();
       }
-    });
-    renderTags();
+      btn.addEventListener("click", doAdd);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          doAdd();
+        }
+      });
+    }
+    bindAdd(inputEl2, addBtn, form.keywords);
+    bindAdd(filterInputEl, filterAddBtn, form.filterKeywords);
+    renderAllTags();
     overlay.addEventListener("mousedown", (e) => {
       if (e.target === overlay) closeHighlightConfigDialog();
     });
     panel.querySelector(".im-modal-close").addEventListener("click", closeHighlightConfigDialog);
     panel.querySelector("#hl-cfg-btn-cancel").addEventListener("click", closeHighlightConfigDialog);
     panel.querySelector("#hl-cfg-btn-clear").addEventListener("click", () => {
-      if (form.keywords.length && confirm("确定清空所有高亮关键词吗？")) {
+      if ((form.keywords.length || form.filterKeywords.length) && confirm("确定清空所有高亮关键词和屏蔽词吗？")) {
         form.keywords = [];
-        renderTags();
+        form.filterKeywords = [];
+        renderAllTags();
       }
     });
     panel.querySelector("#hl-cfg-btn-save").addEventListener("click", () => {
       var _a2;
       const chkMain = panel.querySelector("#hl-cfg-main-switch");
+      const chkFilter = panel.querySelector("#hl-cfg-filter-switch");
       const newConfig = {
         enabled: chkMain.checked,
-        keywords: form.keywords
+        keywords: form.keywords,
+        filterEnabled: chkFilter.checked,
+        filterKeywords: form.filterKeywords
       };
       saveHighlightConfig(newConfig);
       closeHighlightConfigDialog();
       (_a2 = chatHooks.toast) == null ? void 0 : _a2.call(
         chatHooks,
-        newConfig.enabled ? `关键词高亮已生效（共 ${newConfig.keywords.length} 个词）` : "关键词高亮已关闭"
+        `高亮 ${newConfig.enabled ? "开" : "关"} · 过滤 ${newConfig.filterEnabled ? `开（${newConfig.filterKeywords.length} 词）` : "关"}`
       );
     });
   }
@@ -14974,8 +15038,11 @@ ${data.raw}
     const body = panel.querySelector(".im-list-body");
     if (!body) return;
     const q = "".trim().toLowerCase();
-    const topics = q ? listState.topics.filter((t) => `${t.title || ""} ${t.slug || ""}`.toLowerCase().includes(q)) : listState.topics;
-    const status = q && !topics.length ? "没有匹配的话题" : listState.moreUrl ? "下拉加载更多…" : listState.topics.length ? "没有更多了" : "";
+    let topics = q ? listState.topics.filter((t) => `${t.title || ""} ${t.slug || ""}`.toLowerCase().includes(q)) : listState.topics;
+    const filteredCount = topics.reduce((n, t) => isFilteredTopicTitle(t.title || "") ? n + 1 : n, 0);
+    if (filteredCount) topics = topics.filter((t) => !isFilteredTopicTitle(t.title || ""));
+    const baseStatus = q && !topics.length ? "没有匹配的话题" : listState.moreUrl ? "下拉加载更多…" : listState.topics.length ? "没有更多了" : "";
+    const status = (filteredCount ? `已过滤 ${filteredCount} 条${baseStatus ? " · " : ""}` : "") + baseStatus;
     renderTopicListRows(topics, listState.usersById, status);
     syncListChips();
     (_a2 = skinHooks.renderPins) == null ? void 0 : _a2.call(skinHooks);
@@ -18921,7 +18988,7 @@ ${data.raw}
       }
     }
     function bootstrap() {
-      console.info(`[linuxdo-im] v${"1.3.0"} loaded, skin=${SKIN_ID}`);
+      console.info(`[linuxdo-im] v${"1.3.2"} loaded, skin=${SKIN_ID}`);
       if (!document.documentElement) {
         setTimeout(bootstrap, 0);
         return;

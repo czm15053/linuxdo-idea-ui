@@ -4,7 +4,9 @@ import { escapeHtml } from "../utils/html.js";
 
 export const DEFAULT_HIGHLIGHT_CONFIG = {
   enabled: true,
-  keywords: []
+  keywords: [],
+  filterEnabled: false,
+  filterKeywords: []
 };
 
 /** 验证并规整配置 */
@@ -21,6 +23,17 @@ export function validateHighlightConfig(config) {
       .map((k) => k.trim().substring(0, 40));
   } else {
     valid.keywords = [];
+  }
+
+  valid.filterEnabled = typeof config.filterEnabled === "boolean" ? config.filterEnabled : false;
+
+  if (Array.isArray(config.filterKeywords)) {
+    valid.filterKeywords = config.filterKeywords
+      .filter((k) => typeof k === "string" && k.trim().length > 0)
+      .slice(0, 500)
+      .map((k) => k.trim().substring(0, 40));
+  } else {
+    valid.filterKeywords = [];
   }
 
   return valid;
@@ -65,6 +78,8 @@ function escapeRegExp(string) {
 /** 缓存当前正则，避免列表渲染时每一行重复编译 */
 let cachedPattern = null;
 let cachedKeywordsSig = null;
+let cachedFilterPattern = null;
+let cachedFilterSig = null;
 
 function getSearchRegex(keywords) {
   const sig = keywords.join("\0");
@@ -94,6 +109,25 @@ export function hasHighlightedKeyword(text) {
   if (!regex) return false;
   regex.lastIndex = 0;
   return regex.test(text);
+}
+
+/**
+ * 判断话题标题是否命中屏蔽词（过滤功能）：命中则该话题从中栏列表隐藏
+ */
+export function isFilteredTopicTitle(text) {
+  if (!text || typeof text !== "string") return false;
+  const cfg = loadHighlightConfig();
+  if (!cfg.filterEnabled || !cfg.filterKeywords.length) return false;
+  const sig = cfg.filterKeywords.join("\0");
+  if (cachedFilterSig !== sig) {
+    cachedFilterSig = sig;
+    const sorted = [...cfg.filterKeywords].sort((a, b) => b.length - a.length);
+    const pattern = sorted.map(escapeRegExp).filter(Boolean).join("|");
+    cachedFilterPattern = pattern ? new RegExp(pattern, "gi") : null;
+  }
+  if (!cachedFilterPattern) return false;
+  cachedFilterPattern.lastIndex = 0;
+  return cachedFilterPattern.test(text);
 }
 
 /**

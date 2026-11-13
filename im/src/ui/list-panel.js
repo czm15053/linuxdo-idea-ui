@@ -32,6 +32,7 @@ import {
   loadHighlightConfig,
   highlightTitleText,
   hasHighlightedKeyword,
+  isFilteredTopicTitle,
   onHighlightConfigChange
 } from "../features/highlight-keywords.js";
 import { openHighlightConfigDialog } from "./highlight-config-dialog.js";
@@ -448,12 +449,16 @@ export function renderListRows() {
   if (!body) return;
   // 本地搜索：按标题过滤当前已加载话题（不重新请求）
   const q = (listState.query || "").trim().toLowerCase();
-  const topics = q
+  let topics = q
     ? listState.topics.filter((t) => `${t.title || ""} ${t.slug || ""}`.toLowerCase().includes(q))
     : listState.topics;
-  const status = q && !topics.length
+  // 关键词过滤：命中屏蔽词的话题直接从列表隐藏
+  const filteredCount = topics.reduce((n, t) => (isFilteredTopicTitle(t.title || "") ? n + 1 : n), 0);
+  if (filteredCount) topics = topics.filter((t) => !isFilteredTopicTitle(t.title || ""));
+  const baseStatus = q && !topics.length
     ? "没有匹配的话题"
     : listState.moreUrl ? "下拉加载更多…" : (listState.topics.length ? "没有更多了" : "");
+  const status = (filteredCount ? `已过滤 ${filteredCount} 条${baseStatus ? " · " : ""}` : "") + baseStatus;
   renderTopicListRows(topics, listState.usersById, status);
   syncListChips();
   skinHooks.renderPins?.();
