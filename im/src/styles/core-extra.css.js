@@ -2687,4 +2687,35 @@ color: #7AA3D6;
       padding: 10px 4px;
       display: inline-block;
     }
+    .im-hl-options {
+      max-height: 200px;
+      overflow: auto;
+      overscroll-behavior: contain;
+      margin-top: 6px;
+      border: 1px solid var(--im-border);
+      border-radius: 6px;
+      background: var(--im-bg);
+    }
+    .im-hl-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      padding: 6px 10px;
+      border: 0;
+      background: transparent;
+      color: var(--im-text);
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .im-hl-option:hover { background: var(--im-hover); }
+    .im-hl-option.is-selected { color: var(--im-accent); }
+    .im-hl-check { flex: none; width: 12px; }
+    .im-hl-pillbox {
+      min-height: 32px;
+      max-height: 96px;
+      padding: 5px 8px;
+      gap: 5px;
+    }
 `

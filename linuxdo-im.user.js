@@ -2,7 +2,7 @@
 // @name         Linux DO · IM 外观（钉钉 / 飞书 / 企业微信）
 // @namespace    https://linux.do/
 // @author       czm15053
-// @version      1.3.2
+// @version      1.3.4
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，列表按钮一键切换。公共内核：投票、小火箭、图片灯箱、引用跳转、实时刷新、三态深色、伪装模式。
 // @match        https://linux.do/*
 // @exclude-match https://linux.do/pub/*
@@ -5618,6 +5618,37 @@ color: #7AA3D6;
       color: var(--im-text-3);
       padding: 10px 4px;
       display: inline-block;
+    }
+    .im-hl-options {
+      max-height: 200px;
+      overflow: auto;
+      overscroll-behavior: contain;
+      margin-top: 6px;
+      border: 1px solid var(--im-border);
+      border-radius: 6px;
+      background: var(--im-bg);
+    }
+    .im-hl-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      padding: 6px 10px;
+      border: 0;
+      background: transparent;
+      color: var(--im-text);
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .im-hl-option:hover { background: var(--im-hover); }
+    .im-hl-option.is-selected { color: var(--im-accent); }
+    .im-hl-check { flex: none; width: 12px; }
+    .im-hl-pillbox {
+      min-height: 32px;
+      max-height: 96px;
+      padding: 5px 8px;
+      gap: 5px;
     }
 `;
   const CSS_WECOM = String.raw`
@@ -14341,7 +14372,10 @@ ${data.raw}
     enabled: true,
     keywords: [],
     filterEnabled: false,
-    filterKeywords: []
+    filterKeywords: [],
+    filterUsers: [],
+    filterCategories: [],
+    filterTags: []
   };
   function validateHighlightConfig(config) {
     if (!config || typeof config !== "object") return { ...DEFAULT_HIGHLIGHT_CONFIG };
@@ -14353,10 +14387,8 @@ ${data.raw}
       valid.keywords = [];
     }
     valid.filterEnabled = typeof config.filterEnabled === "boolean" ? config.filterEnabled : false;
-    if (Array.isArray(config.filterKeywords)) {
-      valid.filterKeywords = config.filterKeywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
-    } else {
-      valid.filterKeywords = [];
+    for (const key of ["filterKeywords", "filterUsers", "filterCategories", "filterTags"]) {
+      valid[key] = Array.isArray(config[key]) ? config[key].filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40)) : [];
     }
     return valid;
   }
@@ -14438,6 +14470,38 @@ ${data.raw}
     cachedFilterPattern.lastIndex = 0;
     return cachedFilterPattern.test(text);
   }
+  function isFilteredTopic(topic, usersById = {}) {
+    var _a2;
+    const cfg = loadHighlightConfig();
+    if (!cfg.filterEnabled || !topic) return false;
+    if (cfg.filterKeywords.length && isFilteredTopicTitle(topic.title || "")) return true;
+    if (cfg.filterUsers.length) {
+      const blocked = new Set(cfg.filterUsers.map((name) => name.replace(/^@/, "").toLowerCase()));
+      if (blocked.has((topic.last_poster_username || "").toLowerCase())) return true;
+      for (const poster of topic.posters || []) {
+        const username = (_a2 = usersById[poster.user_id]) == null ? void 0 : _a2.username;
+        if (username && blocked.has(username.toLowerCase())) return true;
+      }
+    }
+    if (cfg.filterCategories.length && cfg.filterCategories.includes(String(topic.category_id))) return true;
+    if (cfg.filterTags.length) {
+      const blocked = new Set(cfg.filterTags.map((tag) => tag.toLowerCase()));
+      if ((topic.tags || []).some((tag) => blocked.has(String(tag).toLowerCase()))) return true;
+    }
+    return false;
+  }
+  function categoryFilterOptions(categories) {
+    return categories.map((category) => ({
+      value: String(category.id),
+      label: category.name
+    }));
+  }
+  function tagFilterOptions(tags) {
+    return tags.map((tag) => {
+      const name = tag.name || tag.text;
+      return { value: String(name).toLowerCase(), label: tag.text || name, count: tag.count || 0 };
+    });
+  }
   function highlightTitleText(text) {
     if (!text || typeof text !== "string") return "";
     const cfg = loadHighlightConfig();
@@ -14488,7 +14552,10 @@ ${data.raw}
       enabled: current.enabled,
       keywords: [...current.keywords],
       filterEnabled: current.filterEnabled,
-      filterKeywords: [...current.filterKeywords]
+      filterKeywords: [...current.filterKeywords],
+      filterUsers: [...current.filterUsers],
+      filterCategories: [...current.filterCategories],
+      filterTags: [...current.filterTags]
     };
     const overlay = document.createElement("div");
     overlay.className = "im-modal-overlay im-highlight-dialog-overlay";
@@ -14559,11 +14626,41 @@ ${data.raw}
             <span>屏蔽词列表:</span>
             <span class="im-spam-tags-count" id="count-hl-filter"></span>
           </div>
-          <div class="im-spam-tags-container" id="container-hl-filter"></div>
+          <div class="im-spam-tags-container im-hl-pillbox" id="container-hl-filter"></div>
           <div class="im-spam-tag-add-row">
             <input type="text" class="im-spam-input" id="input-hl-filter" placeholder="输入屏蔽词（如 抽奖、羊毛、合租），回车添加..." maxlength="40">
             <button type="button" class="im-spam-btn im-spam-add-btn" id="btn-add-hl-filter">添加</button>
           </div>
+
+          <div class="im-spam-tags-header" style="margin-top: 12px;">
+            <span>屏蔽用户:</span>
+            <span class="im-spam-tags-count" id="count-hl-fuser"></span>
+          </div>
+          <div class="im-spam-tags-container im-hl-pillbox" id="container-hl-fuser"></div>
+          <div class="im-spam-tag-add-row">
+            <input type="text" class="im-spam-input" id="input-hl-fuser" placeholder="输入用户名（可带 @），回车添加..." maxlength="40">
+            <button type="button" class="im-spam-btn im-spam-add-btn" id="btn-add-hl-fuser">添加</button>
+          </div>
+
+          <div class="im-spam-tags-header" style="margin-top: 12px;">
+            <span>屏蔽分类:</span>
+            <span class="im-spam-tags-count" id="count-hl-fcat"></span>
+          </div>
+          <div class="im-spam-tags-container im-hl-pillbox" id="container-hl-fcat"></div>
+          <div class="im-spam-tag-add-row">
+            <input type="text" class="im-spam-input" id="input-hl-fcat" placeholder="搜索分类…" autocomplete="off">
+          </div>
+          <div class="im-hl-options" id="options-hl-fcat" hidden></div>
+
+          <div class="im-spam-tags-header" style="margin-top: 12px;">
+            <span>屏蔽标签:</span>
+            <span class="im-spam-tags-count" id="count-hl-ftag"></span>
+          </div>
+          <div class="im-spam-tags-container im-hl-pillbox" id="container-hl-ftag"></div>
+          <div class="im-spam-tag-add-row">
+            <input type="text" class="im-spam-input" id="input-hl-ftag" placeholder="搜索标签（如 集中帖、快问快答）…" autocomplete="off">
+          </div>
+          <div class="im-hl-options" id="options-hl-ftag" hidden></div>
         </div>
       </div>
     </div>
@@ -14587,6 +14684,24 @@ ${data.raw}
     const filterCountEl = panel.querySelector("#count-hl-filter");
     const filterInputEl = panel.querySelector("#input-hl-filter");
     const filterAddBtn = panel.querySelector("#btn-add-hl-filter");
+    const filterLabels = /* @__PURE__ */ new Map();
+    let liveReady = false;
+    function currentConfig() {
+      return {
+        enabled: panel.querySelector("#hl-cfg-main-switch").checked,
+        keywords: form.keywords,
+        filterEnabled: panel.querySelector("#hl-cfg-filter-switch").checked,
+        filterKeywords: form.filterKeywords,
+        filterUsers: form.filterUsers,
+        filterCategories: form.filterCategories,
+        filterTags: form.filterTags
+      };
+    }
+    function applyLive() {
+      if (!liveReady) return;
+      saveHighlightConfig(currentConfig());
+      document.dispatchEvent(new CustomEvent("im:highlight-config-changed"));
+    }
     function renderTagsInto(list, box, count, emptyTipText) {
       box.innerHTML = "";
       count.textContent = `(${list.length}/500)`;
@@ -14605,6 +14720,7 @@ ${data.raw}
         tag.querySelector(".im-spam-tag-del").addEventListener("click", () => {
           list.splice(i, 1);
           renderAllTags();
+          applyLive();
         });
         box.appendChild(tag);
       }
@@ -14624,6 +14740,7 @@ ${data.raw}
         if (!list.some((k) => k.toLowerCase() === val.toLowerCase())) {
           list.push(val.substring(0, 40));
           renderAllTags();
+          applyLive();
         }
         input.value = "";
         input.focus();
@@ -14638,17 +14755,202 @@ ${data.raw}
     }
     bindAdd(inputEl2, addBtn, form.keywords);
     bindAdd(filterInputEl, filterAddBtn, form.filterKeywords);
+    const fuserContainer = panel.querySelector("#container-hl-fuser");
+    const fuserCountEl = panel.querySelector("#count-hl-fuser");
+    const fuserInputEl = panel.querySelector("#input-hl-fuser");
+    function renderFilterUsers() {
+      fuserContainer.innerHTML = "";
+      fuserCountEl.textContent = `(${form.filterUsers.length}/500)`;
+      if (!form.filterUsers.length) {
+        const tip = document.createElement("span");
+        tip.className = "im-spam-tags-empty";
+        tip.textContent = "暂无屏蔽用户";
+        fuserContainer.appendChild(tip);
+        return;
+      }
+      for (let i = 0; i < form.filterUsers.length; i++) {
+        const name = form.filterUsers[i];
+        const pill = document.createElement("span");
+        pill.className = "im-spam-tag-pill im-hl-tag-pill";
+        pill.innerHTML = `<span>@${escapeHtml(name)}</span><button type="button" class="im-spam-tag-del" title="删除">×</button>`;
+        pill.querySelector(".im-spam-tag-del").addEventListener("click", () => {
+          form.filterUsers.splice(i, 1);
+          renderFilterUsers();
+          applyLive();
+        });
+        fuserContainer.appendChild(pill);
+      }
+    }
+    bindAdd(fuserInputEl, panel.querySelector("#btn-add-hl-fuser"), form.filterUsers);
+    renderFilterUsers();
+    function setupFilterPicker({ key, input, optionsBox, containerEl, countEl: countEl2, loadOptions, search, emptyTip }) {
+      const state2 = { options: [], visible: [], timer: null, seq: 0 };
+      function renderPills() {
+        containerEl.innerHTML = "";
+        countEl2.textContent = `(${form[key].length}/500)`;
+        if (!form[key].length) {
+          const tip = document.createElement("span");
+          tip.className = "im-spam-tags-empty";
+          tip.textContent = emptyTip;
+          containerEl.appendChild(tip);
+          return;
+        }
+        for (let i = 0; i < form[key].length; i++) {
+          const value = form[key][i];
+          const label = filterLabels.get(`${key}:${value}`) || value;
+          const pill = document.createElement("span");
+          pill.className = "im-spam-tag-pill im-hl-tag-pill";
+          pill.innerHTML = `<span>${escapeHtml(label)}</span><button type="button" class="im-spam-tag-del" title="删除">×</button>`;
+          pill.querySelector(".im-spam-tag-del").addEventListener("click", () => {
+            form[key].splice(i, 1);
+            renderPills();
+            renderOptions(input.value.trim());
+            applyLive();
+          });
+          containerEl.appendChild(pill);
+        }
+      }
+      function renderOptions(query) {
+        const q = query.toLowerCase();
+        state2.visible = state2.options.filter((option) => !q || option.label.toLowerCase().includes(q) || option.value.includes(q)).slice(0, 60);
+        optionsBox.innerHTML = "";
+        optionsBox.hidden = false;
+        if (!state2.visible.length) {
+          const tip = document.createElement("span");
+          tip.className = "im-spam-tags-empty";
+          tip.textContent = state2.options.length ? "没有匹配项" : "暂无可用选项";
+          optionsBox.appendChild(tip);
+          return;
+        }
+        for (const option of state2.visible) {
+          const selected = form[key].some((value) => value.toLowerCase() === option.value);
+          const row = document.createElement("button");
+          row.type = "button";
+          row.className = `im-hl-option${selected ? " is-selected" : ""}`;
+          row.innerHTML = `<span class="im-hl-check">${selected ? "✓" : ""}</span><span>${escapeHtml(option.label)}</span>`;
+          row.addEventListener("click", () => {
+            const index = form[key].findIndex((value) => value.toLowerCase() === option.value);
+            if (index >= 0) form[key].splice(index, 1);
+            if (index < 0) {
+              form[key].push(option.value);
+              filterLabels.set(`${key}:${option.value}`, option.label);
+            }
+            renderPills();
+            renderOptions(input.value.trim());
+            input.focus();
+            applyLive();
+          });
+          optionsBox.appendChild(row);
+        }
+      }
+      input.addEventListener("focus", async () => {
+        renderOptions(input.value.trim());
+        if (state2.options.length) return;
+        try {
+          state2.options = await loadOptions("");
+          renderOptions(input.value.trim());
+        } catch {
+          optionsBox.innerHTML = '<span class="im-spam-tags-empty">加载失败，改关键词可重试</span>';
+        }
+      });
+      input.addEventListener("input", () => {
+        renderOptions(input.value.trim());
+        if (!search) return;
+        clearTimeout(state2.timer);
+        state2.timer = setTimeout(async () => {
+          const query = input.value.trim();
+          if (!query) return;
+          const seq2 = ++state2.seq;
+          try {
+            const results = await loadOptions(query);
+            if (seq2 !== state2.seq || input.value.trim() !== query) return;
+            const merged = new Map(state2.options.map((option) => [option.value, option]));
+            for (const option of results) {
+              merged.set(option.value, option);
+              filterLabels.set(`${key}:${option.value}`, option.label);
+            }
+            state2.options = [...merged.values()];
+            renderOptions(query);
+          } catch {
+          }
+        }, 200);
+      });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const first = state2.visible[0];
+          if (first) input.value = first.label;
+        }
+      });
+      renderPills();
+      loadOptions("").then((options) => {
+        state2.options = options;
+        for (const option of options) {
+          if (form[key].some((value) => value.toLowerCase() === option.value)) {
+            filterLabels.set(`${key}:${option.value}`, option.label);
+          }
+        }
+        renderPills();
+      }).catch(() => {
+      });
+      return { renderPills };
+    }
+    const fcatPicker = setupFilterPicker({
+      key: "filterCategories",
+      input: panel.querySelector("#input-hl-fcat"),
+      optionsBox: panel.querySelector("#options-hl-fcat"),
+      containerEl: panel.querySelector("#container-hl-fcat"),
+      countEl: panel.querySelector("#count-hl-fcat"),
+      emptyTip: "暂无屏蔽分类",
+      loadOptions: async () => categoryFilterOptions(await loadCategories())
+    });
+    const ftagPicker = setupFilterPicker({
+      key: "filterTags",
+      input: panel.querySelector("#input-hl-ftag"),
+      optionsBox: panel.querySelector("#options-hl-ftag"),
+      containerEl: panel.querySelector("#container-hl-ftag"),
+      countEl: panel.querySelector("#count-hl-ftag"),
+      emptyTip: "暂无屏蔽标签",
+      search: true,
+      loadOptions: async (query) => {
+        var _a2, _b2;
+        if (query) {
+          const data2 = await api(`/tags/filter/search?${new URLSearchParams({ q: query, limit: "50" })}`);
+          return tagFilterOptions(data2.results || []);
+        }
+        const data = await api("/tags.json");
+        const groups = ((_a2 = data.extras) == null ? void 0 : _a2.tag_groups) || [];
+        const categories = ((_b2 = data.extras) == null ? void 0 : _b2.categories) || [];
+        return tagFilterOptions([
+          ...data.tags || [],
+          ...groups.flatMap((group) => group.tags || []),
+          ...categories.flatMap((category) => category.tags || [])
+        ]);
+      }
+    });
     renderAllTags();
+    liveReady = true;
+    for (const id of ["#hl-cfg-main-switch", "#hl-cfg-filter-switch"]) {
+      panel.querySelector(id).addEventListener("change", applyLive);
+    }
     overlay.addEventListener("mousedown", (e) => {
       if (e.target === overlay) closeHighlightConfigDialog();
     });
     panel.querySelector(".im-modal-close").addEventListener("click", closeHighlightConfigDialog);
     panel.querySelector("#hl-cfg-btn-cancel").addEventListener("click", closeHighlightConfigDialog);
     panel.querySelector("#hl-cfg-btn-clear").addEventListener("click", () => {
-      if ((form.keywords.length || form.filterKeywords.length) && confirm("确定清空所有高亮关键词和屏蔽词吗？")) {
+      const total = form.keywords.length + form.filterKeywords.length + form.filterUsers.length + form.filterCategories.length + form.filterTags.length;
+      if (total && confirm("确定清空所有高亮关键词和屏蔽规则吗？")) {
         form.keywords = [];
         form.filterKeywords = [];
+        form.filterUsers = [];
+        form.filterCategories = [];
+        form.filterTags = [];
         renderAllTags();
+        renderFilterUsers();
+        fcatPicker.renderPills();
+        ftagPicker.renderPills();
+        applyLive();
       }
     });
     panel.querySelector("#hl-cfg-btn-save").addEventListener("click", () => {
@@ -14659,13 +14961,18 @@ ${data.raw}
         enabled: chkMain.checked,
         keywords: form.keywords,
         filterEnabled: chkFilter.checked,
-        filterKeywords: form.filterKeywords
+        filterKeywords: form.filterKeywords,
+        filterUsers: form.filterUsers,
+        filterCategories: form.filterCategories,
+        filterTags: form.filterTags
       };
       saveHighlightConfig(newConfig);
+      document.dispatchEvent(new CustomEvent("im:highlight-config-changed"));
       closeHighlightConfigDialog();
+      const filterTotal = newConfig.filterKeywords.length + newConfig.filterUsers.length + newConfig.filterCategories.length + newConfig.filterTags.length;
       (_a2 = chatHooks.toast) == null ? void 0 : _a2.call(
         chatHooks,
-        `高亮 ${newConfig.enabled ? "开" : "关"} · 过滤 ${newConfig.filterEnabled ? `开（${newConfig.filterKeywords.length} 词）` : "关"}`
+        `高亮 ${newConfig.enabled ? "开" : "关"} · 过滤 ${newConfig.filterEnabled ? `开（${filterTotal} 条规则）` : "关"}`
       );
     });
   }
@@ -15031,16 +15338,17 @@ ${data.raw}
     }
     return `<span class="im-conv-avatar is-group" style="grid-template-columns: repeat(${n}, 1fr); grid-template-rows: repeat(${n}, 1fr);">${cells.join("")}</span>`;
   }
-  function renderListRows() {
+  function renderListRows(force = false) {
     var _a2;
     const panel = document.querySelector(".im-list-panel");
     if (!panel || panel.dataset.railKey && panel.dataset.railKey !== "chat") return;
     const body = panel.querySelector(".im-list-body");
     if (!body) return;
+    if (force) bodySigs.delete(body);
     const q = "".trim().toLowerCase();
     let topics = q ? listState.topics.filter((t) => `${t.title || ""} ${t.slug || ""}`.toLowerCase().includes(q)) : listState.topics;
-    const filteredCount = topics.reduce((n, t) => isFilteredTopicTitle(t.title || "") ? n + 1 : n, 0);
-    if (filteredCount) topics = topics.filter((t) => !isFilteredTopicTitle(t.title || ""));
+    const filteredCount = topics.reduce((n, t) => isFilteredTopic(t, listState.usersById) ? n + 1 : n, 0);
+    if (filteredCount) topics = topics.filter((t) => !isFilteredTopic(t, listState.usersById));
     const baseStatus = q && !topics.length ? "没有匹配的话题" : listState.moreUrl ? "下拉加载更多…" : listState.topics.length ? "没有更多了" : "";
     const status = (filteredCount ? `已过滤 ${filteredCount} 条${baseStatus ? " · " : ""}` : "") + baseStatus;
     renderTopicListRows(topics, listState.usersById, status);
@@ -15158,6 +15466,9 @@ ${data.raw}
     const panel = document.querySelector(".im-list-panel");
     if (panel) ensureHighlightToggle(panel);
     renderListRows();
+  });
+  document.addEventListener("im:highlight-config-changed", () => {
+    if (document.querySelector(".im-list-panel")) renderListRows(true);
   });
   const TTL = 3e4;
   const TABS = [
@@ -18988,7 +19299,7 @@ ${data.raw}
       }
     }
     function bootstrap() {
-      console.info(`[linuxdo-im] v${"1.3.2"} loaded, skin=${SKIN_ID}`);
+      console.info(`[linuxdo-im] v${"1.3.4"} loaded, skin=${SKIN_ID}`);
       if (!document.documentElement) {
         setTimeout(bootstrap, 0);
         return;

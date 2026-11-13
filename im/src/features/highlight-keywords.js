@@ -6,7 +6,10 @@ export const DEFAULT_HIGHLIGHT_CONFIG = {
   enabled: true,
   keywords: [],
   filterEnabled: false,
-  filterKeywords: []
+  filterKeywords: [],
+  filterUsers: [],
+  filterCategories: [],
+  filterTags: []
 };
 
 /** 验证并规整配置 */
@@ -27,13 +30,13 @@ export function validateHighlightConfig(config) {
 
   valid.filterEnabled = typeof config.filterEnabled === "boolean" ? config.filterEnabled : false;
 
-  if (Array.isArray(config.filterKeywords)) {
-    valid.filterKeywords = config.filterKeywords
-      .filter((k) => typeof k === "string" && k.trim().length > 0)
-      .slice(0, 500)
-      .map((k) => k.trim().substring(0, 40));
-  } else {
-    valid.filterKeywords = [];
+  for (const key of ["filterKeywords", "filterUsers", "filterCategories", "filterTags"]) {
+    valid[key] = Array.isArray(config[key])
+      ? config[key]
+          .filter((k) => typeof k === "string" && k.trim().length > 0)
+          .slice(0, 500)
+          .map((k) => k.trim().substring(0, 40))
+      : [];
   }
 
   return valid;
@@ -129,6 +132,45 @@ export function isFilteredTopicTitle(text) {
   cachedFilterPattern.lastIndex = 0;
   return cachedFilterPattern.test(text);
 }
+
+/** 话题是否命中任一屏蔽规则：标题词 / 用户 / 分类 / 标签 */
+export function isFilteredTopic(topic, usersById = {}) {
+  const cfg = loadHighlightConfig();
+  if (!cfg.filterEnabled || !topic) return false;
+  if (cfg.filterKeywords.length && isFilteredTopicTitle(topic.title || "")) return true;
+
+  if (cfg.filterUsers.length) {
+    const blocked = new Set(cfg.filterUsers.map((name) => name.replace(/^@/, "").toLowerCase()));
+    if (blocked.has((topic.last_poster_username || "").toLowerCase())) return true;
+    for (const poster of topic.posters || []) {
+      const username = usersById[poster.user_id]?.username;
+      if (username && blocked.has(username.toLowerCase())) return true;
+    }
+  }
+  if (cfg.filterCategories.length && cfg.filterCategories.includes(String(topic.category_id))) return true;
+  if (cfg.filterTags.length) {
+    const blocked = new Set(cfg.filterTags.map((tag) => tag.toLowerCase()));
+    if ((topic.tags || []).some((tag) => blocked.has(String(tag).toLowerCase()))) return true;
+  }
+  return false;
+}
+
+/** 分类选项（id 为值，名称显示），供过滤配置下拉使用 */
+export function categoryFilterOptions(categories) {
+  return categories.map((category) => ({
+    value: String(category.id),
+    label: category.name
+  }));
+}
+
+/** 标签选项（名称小写为值），tags 来自 /tags.json 或 /tags/filter/search */
+export function tagFilterOptions(tags) {
+  return tags.map((tag) => {
+    const name = tag.name || tag.text;
+    return { value: String(name).toLowerCase(), label: tag.text || name, count: tag.count || 0 };
+  });
+}
+
 
 /**
  * 对标题文本进行安全转义并对关键词包裹高亮标签 <mark class="im-list-hl">...</mark>

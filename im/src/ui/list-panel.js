@@ -32,7 +32,7 @@ import {
   loadHighlightConfig,
   highlightTitleText,
   hasHighlightedKeyword,
-  isFilteredTopicTitle,
+  isFilteredTopic,
   onHighlightConfigChange
 } from "../features/highlight-keywords.js";
 import { openHighlightConfigDialog } from "./highlight-config-dialog.js";
@@ -442,19 +442,21 @@ function groupAvatarHtml(topic, usersById) {
   }
   return `<span class="im-conv-avatar is-group" style="grid-template-columns: repeat(${n}, 1fr); grid-template-rows: repeat(${n}, 1fr);">${cells.join("")}</span>`;
 }
-export function renderListRows() {
+export function renderListRows(force = false) {
   const panel = document.querySelector(".im-list-panel");
   if (!panel || (panel.dataset.railKey && panel.dataset.railKey !== "chat")) return;
   const body = panel.querySelector(".im-list-body");
   if (!body) return;
+  // force：过滤配置刚保存时跳过了内容去重，确保行立刻重绘
+  if (force) bodySigs.delete(body);
   // 本地搜索：按标题过滤当前已加载话题（不重新请求）
   const q = (listState.query || "").trim().toLowerCase();
   let topics = q
     ? listState.topics.filter((t) => `${t.title || ""} ${t.slug || ""}`.toLowerCase().includes(q))
     : listState.topics;
-  // 关键词过滤：命中屏蔽词的话题直接从列表隐藏
-  const filteredCount = topics.reduce((n, t) => (isFilteredTopicTitle(t.title || "") ? n + 1 : n), 0);
-  if (filteredCount) topics = topics.filter((t) => !isFilteredTopicTitle(t.title || ""));
+  // 屏蔽规则：标题词 / 用户 / 分类 / 标签命中即从列表隐藏
+  const filteredCount = topics.reduce((n, t) => (isFilteredTopic(t, listState.usersById) ? n + 1 : n), 0);
+  if (filteredCount) topics = topics.filter((t) => !isFilteredTopic(t, listState.usersById));
   const baseStatus = q && !topics.length
     ? "没有匹配的话题"
     : listState.moreUrl ? "下拉加载更多…" : (listState.topics.length ? "没有更多了" : "");
@@ -591,5 +593,10 @@ onHighlightConfigChange(() => {
   const panel = document.querySelector(".im-list-panel");
   if (panel) ensureHighlightToggle(panel);
   renderListRows();
+});
+
+// 配置弹窗保存后强制重绘：绕过内容去重，保证过滤结果立刻可见
+document.addEventListener("im:highlight-config-changed", () => {
+  if (document.querySelector(".im-list-panel")) renderListRows(true);
 });
 
