@@ -266,7 +266,7 @@ export function ensureChatPanel() {
 }
 
 function composerText(box) {
-  return String(box?.innerText || "").replace(/ /g, " ").trim();
+  return String(box?.innerText || "").replace(/\u00a0/g, " ").trim();
 }
 
 function syncComposeState(panel) {
@@ -852,18 +852,13 @@ function applyCommentBatch(noteId, replies) {
   if (!detail.pin && lastThreadDetail?.detail?.pin) detail.pin = lastThreadDetail.detail.pin;
   const prevList = detail.replies || [];
 
-  // 检测是否有新评论加入 或 已有评论成功解析出真实头像
-  let hasAvatarUpdate = false;
-  if (replies.length === prevList.length) {
-    for (let i = 0; i < replies.length; i++) {
-      if (replies[i].avatar && !prevList[i]?.avatar) {
-        hasAvatarUpdate = true;
-        break;
-      }
-    }
-  }
-
-  if (replies.length <= prevList.length && !hasAvatarUpdate) return prevList.length;
+  if (replies.length < prevList.length) return prevList.length;
+  // 只比较采集字段，排除渲染时补充的 replyRef/threadIdx，避免自身重绘触发循环。
+  const signature = (list) => JSON.stringify(list.map((c) => [
+    c.id, c.name, c.handle, c.profileHref, c.avatar, c.text, c.time,
+    c.likeCount, c.liked, c.photos, c.replyTo, c.repliedTo, c.isSub,
+  ]));
+  if (signature(replies) === signature(prevList)) return prevList.length;
   detail.replies = replies;
   lastThreadDetail = { id: noteId, detail };
   renderDetailThread(detail);
@@ -992,14 +987,27 @@ function renderDetailThread(detail) {
   } else {
     html += `<div class="im-detail-loadmore">${detail.commentsPaging ? "正在加载更多评论…" : "下滑加载更多评论"}</div>`;
   }
-  const keepTop = dbody.dataset.pinId && pt && dbody.dataset.pinId === pt.id ? dbody.scrollTop : 0;
+  const sameNote = dbody.dataset.pinId && pt && dbody.dataset.pinId === pt.id;
+  const keepTop = sameNote ? dbody.scrollTop : 0;
+  const bodyTop = dbody.getBoundingClientRect().top;
+  const anchor = sameNote && keepTop > 0
+    ? Array.from(dbody.querySelectorAll(".im-msg[data-id]")).find((node) => node.getBoundingClientRect().bottom > bodyTop)
+    : null;
+  const anchorId = anchor?.dataset.id;
+  const anchorOffset = anchor ? anchor.getBoundingClientRect().top - bodyTop : 0;
   dbody.dataset.sig = pt ? pt.id : html;
   dbody.innerHTML = html;
   if (pt) {
     dbody.dataset.pinId = pt.id;
     dbody.querySelector(".im-thread-pin")?.setAttribute("data-pin-id", pt.id);
   }
-  if (keepTop) dbody.scrollTop = keepTop;
+  if (sameNote) {
+    dbody.scrollTop = keepTop;
+    const restored = anchorId
+      ? Array.from(dbody.querySelectorAll(".im-msg[data-id]")).find((node) => node.dataset.id === anchorId)
+      : null;
+    if (restored) dbody.scrollTop += restored.getBoundingClientRect().top - bodyTop - anchorOffset;
+  }
 }
 
 /**
@@ -1827,7 +1835,12 @@ function ensureDetailView() {
 
 /** 详情抽屉保持：openTweetDetail 已打开则维持（URL 保持列表路由，不因无 status 误关）；否则 false（中栏渲染） */
 export function syncDetailDrawer() {
-  if (detailView?.classList.contains("is-open") && detailRenderedHref) return true;
+  if (detailView?.classList.contains("is-open") && detailRenderedHref) {
+    if (lastThreadDetail && detailRenderedHref.includes(lastThreadDetail.id)) {
+      applyCommentBatch(lastThreadDetail.id, collectNoteComments(lastThreadDetail.id));
+    }
+    return true;
+  }
   const status = statusInfo();
   if (!status) {
     if (detailView?.classList.contains("is-open")) console.info(`[xhs-im:drawer] closing: path=${location.pathname} statusInfo=null detailHref=${detailRenderedHref}`);

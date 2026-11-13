@@ -339,40 +339,42 @@ export function harvestCommentsFromState(noteId) {
 export function collectNoteComments(noteId, container = noteContainer()) {
   const fromDom = harvestNoteComments(container);
   const fromState = harvestCommentsFromState(noteId);
-
-  const map = new Map();
-  // 先置入 state 的接口纯净数据（100% 自带真实头像）
-  for (const c of fromState) {
-    const k = c.id && !c.id.startsWith("0.") ? c.id : `${c.name}|${c.text}`;
-    map.set(k, { ...c });
-  }
-
-  // 再用 DOM 渲染的评论更新（若 DOM 评论尚未加载出头像，保留 state 中的真实头像）
+  const keyOf = (c) => c.id && !c.id.startsWith("0.") ? c.id : `${c.name}|${c.text}`;
+  const map = new Map(fromState.map((c) => [keyOf(c), c]));
+  const order = [];
+  const ordered = new Set();
+  // 以原生 DOM 树为顺序依据，state 仅补充尚未挂载的评论。
   for (const c of fromDom) {
-    const k = c.id && !c.id.startsWith("0.") ? c.id : `${c.name}|${c.text}`;
-    if (map.has(k)) {
-      const existing = map.get(k);
-      map.set(k, {
-        ...existing,
-        ...c,
-        avatar: c.avatar || existing.avatar || "",
-      });
-    } else {
-      map.set(k, c);
+    const key = keyOf(c);
+    const existing = map.get(key);
+    map.set(key, { ...existing, ...c, avatar: c.avatar || existing?.avatar || "" });
+    if (!ordered.has(key)) {
+      order.push(key);
+      ordered.add(key);
     }
   }
-
-  return Array.from(map.values());
+  let nextKey = null;
+  for (let i = fromState.length - 1; i >= 0; i--) {
+    const key = keyOf(fromState[i]);
+    if (!ordered.has(key)) {
+      const nextIndex = nextKey === null ? order.length : order.indexOf(nextKey);
+      order.splice(nextIndex, 0, key);
+      ordered.add(key);
+    }
+    nextKey = key;
+  }
+  return order.map((key) => map.get(key));
 }
 
 function kickCommentScroller() {
   const c = noteContainer();
   if (!c) return;
-  const scroller = c.querySelector(".comments-container, .list-container, .note-scroller, .interaction-container, .note-content") || c;
-  try {
-    scroller.scrollTop = scroller.scrollHeight;
-    scroller.dispatchEvent(new Event("scroll", { bubbles: true }));
-  } catch { /* ignore */ }
+  const scroller = [...c.querySelectorAll(".comments-container, .list-container, .note-scroller, .interaction-container, .note-content"), c].find((node) =>
+    node.clientHeight > 0 && node.scrollHeight > node.clientHeight && /^(auto|scroll)$/.test(getComputedStyle(node).overflowY)
+  );
+  if (!scroller) return;
+  scroller.scrollTop = scroller.scrollHeight;
+  scroller.dispatchEvent(new Event("scroll", { bubbles: true }));
 }
 
 function commentMoreButtons() {
