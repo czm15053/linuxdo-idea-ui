@@ -1,4 +1,4 @@
-import { MASK_AVATAR_KEY, MASK_TITLE_KEY, HIDE_CAT_TAGS_KEY } from "../../config/constants.js";
+import { MASK_AVATAR_KEY, MASK_TITLE_KEY, HIDE_CAT_TAGS_KEY, BLUR_IMG_KEY } from "../../config/constants.js";
 import { listState } from "../../state/list-state.js";
 import { ICONS } from "../../config/icons.js";
 import { chatHooks } from "../hooks.js";
@@ -17,6 +17,19 @@ export function isMaskTitle() {
 }
 export function isHideCatTags() {
   try { return localStorage.getItem(HIDE_CAT_TAGS_KEY) === "1"; } catch { return false; }
+}
+export function isBlurImg() {
+  try { return localStorage.getItem(BLUR_IMG_KEY) === "1"; } catch { return false; }
+}
+export function setBlurImg(on) {
+  try { localStorage.setItem(BLUR_IMG_KEY, on ? "1" : "0"); } catch { /* ignore */ }
+  document.documentElement.classList.toggle("im-blur-imgs", on);
+  if (on) {
+    // 重新开启时清掉上次「点击显示」的状态，全部回到模糊
+    document.querySelectorAll(".im-msg-bubble img.im-img-revealed")
+      .forEach((img) => img.classList.remove("im-img-revealed"));
+  }
+  ensureBlurImgToggle(document.querySelector(".im-chat-panel"));
 }
 export function setMaskAvatar(on) {
   try { localStorage.setItem(MASK_AVATAR_KEY, on ? "1" : "0"); } catch { /* ignore */ }
@@ -127,6 +140,35 @@ export function ensureCatTagToggle(panel) {
   }
   const on = isHideCatTags();
   btn.title = on ? "隐藏分类标签：开（点击显示）" : "隐藏分类标签：关（点击隐藏）";
+  btn.setAttribute("aria-pressed", on ? "true" : "false");
+  btn.classList.toggle("is-on", on);
+}
+export function ensureBlurImgToggle(panel) {
+  if (!panel) return;
+  const actions = panel.querySelector(".im-chat-actions");
+  if (!actions) return;
+  let btn = actions.querySelector(".im-blur-img-toggle");
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "im-icon-btn im-blur-img-toggle";
+    btn.innerHTML = ICONS.eyeOff;
+    // 插在「水贴过滤」前，与头部按钮组保持一致
+    const spamBtn = actions.querySelector(".im-chat-spam-toggle");
+    if (spamBtn) actions.insertBefore(btn, spamBtn);
+    else actions.appendChild(btn);
+  }
+  if (btn.dataset.bound !== "1") {
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+      setBlurImg(!isBlurImg());
+    });
+  }
+  const on = isBlurImg();
+  btn.title = on ? "图片防剧透：开（点击关闭模糊）" : "图片防剧透：关（点击开启模糊，点图显示）";
   btn.setAttribute("aria-pressed", on ? "true" : "false");
   btn.classList.toggle("is-on", on);
 }

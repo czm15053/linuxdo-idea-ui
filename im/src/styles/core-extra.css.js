@@ -1214,6 +1214,15 @@ color: #7AA3D6;
 }
 
 
+    /* ---------- 图片防剧透：模糊默认，点击显示 ---------- */
+    .__ROOT_CLASS__ .im-msg-bubble img {
+      transition: filter 0.25s ease;
+    }
+    .__ROOT_CLASS__.im-blur-imgs .im-msg-bubble img:not(.emoji):not(.im-img-revealed) {
+      filter: blur(14px) saturate(0.7);
+      cursor: pointer;
+    }
+
     /* ---------- 钉钉式图片浮窗灯箱 ---------- */
     .__ROOT_CLASS__ .im-img-modal {
       position: fixed !important;

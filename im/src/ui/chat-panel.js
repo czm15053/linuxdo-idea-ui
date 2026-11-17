@@ -17,7 +17,7 @@ import { chatHooks } from "./hooks.js";
 import { likedPosts } from "../features/liked-posts.js";
 import { formatTime, formatClock } from "./shared/time.js";
 import { avatarColor, avatarLetter, userDisplayName, fullAvatarUrl, convDisplayTitle } from "./shared/avatars.js";
-import { isMaskAvatar } from "./shared/toggles.js";
+import { isMaskAvatar, isBlurImg, ensureBlurImgToggle } from "./shared/toggles.js";
 import { syncListActive } from "./list-panel.js";
 import { showUserCard } from "./user-card.js";
 import {
@@ -80,6 +80,7 @@ export function ensureChatPanel() {
       bindChatPanelEvents(panel);
     }
     ensureSpamToggleButton(panel);
+    ensureBlurImgToggle(panel);
     chatHooks.wireComposer?.(panel);
     chatHooks.ensureAiSummaryButton?.(panel);
     return panel;
@@ -149,6 +150,7 @@ export function ensureChatPanel() {
   document.body.appendChild(panel);
   bindChatPanelEvents(panel);
   ensureSpamToggleButton(panel);
+  ensureBlurImgToggle(panel);
   chatHooks.wireComposer?.(panel);
   chatHooks.ensureAiSummaryButton?.(panel);
   return panel;
@@ -167,6 +169,18 @@ document.addEventListener("click", (e) => {
   const isEmoji = e.target.classList.contains("emoji") || e.target.closest(".emoji, .im-quick-emoji, .im-emoji-item");
   const isUiIcon = e.target.closest("button, .im-icon-btn, .im-rocket-chip, .im-like-badge");
   if (isAvatar || isEmoji || isUiIcon) return;
+  // 图片防剧透：模糊状态下首次点击先「显示」原图，再点才进灯箱
+  if (isBlurImg()) {
+    const blurTarget = clickedImg || clickedLightbox?.querySelector("img");
+    if (blurTarget && !blurTarget.classList.contains("im-img-revealed") &&
+        blurTarget.closest(".im-msg-bubble")) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+      blurTarget.classList.add("im-img-revealed");
+      return;
+    }
+  }
   const link = e.target.closest("a.lightbox, a[href*='/uploads/'], a[href*='.jpg'], a[href*='.jpeg'], a[href*='.png'], a[href*='.gif'], a[href*='.webp']");
   const highResSrc = (link && link.href) ||
     (clickedImg && (clickedImg.dataset.origSrc || clickedImg.dataset.largeUrl || clickedImg.src)) ||

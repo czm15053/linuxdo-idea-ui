@@ -14,6 +14,7 @@ export const COMPOSE_PREVIEW_KEY = "linuxdo-im-compose-preview"; // "1" = 预览
 export const MASK_AVATAR_KEY = "linuxdo-im-mask-avatar"; // "1" = 开
 export const MASK_TITLE_KEY = "linuxdo-im-mask-title";   // "1" = 开
 export const HIDE_CAT_TAGS_KEY = "linuxdo-im-hide-cat-tags"; // "1" = 开
+export const BLUR_IMG_KEY = "linuxdo-im-blur-img"; // "1" = 聊天气泡图片默认模糊（点击显示）
 
 export const NAV2_KEY = "linuxdo-im-nav2"; // "1" = 展开原生侧栏
 export const ORG_NAME_KEY = "linuxdo-im-org-name";

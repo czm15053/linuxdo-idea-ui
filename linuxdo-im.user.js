@@ -2,7 +2,7 @@
 // @name         Linux DO · IM 外观（钉钉 / 飞书 / 企业微信）
 // @namespace    https://linux.do/
 // @author       czm15053
-// @version      1.3.5
+// @version      1.3.6
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，列表按钮一键切换。公共内核：投票、小火箭、图片灯箱、引用跳转、实时刷新、三态深色、伪装模式。
 // @match        https://linux.do/*
 // @exclude-match https://linux.do/pub/*
@@ -195,6 +195,7 @@
   const MASK_AVATAR_KEY = "linuxdo-im-mask-avatar";
   const MASK_TITLE_KEY = "linuxdo-im-mask-title";
   const HIDE_CAT_TAGS_KEY = "linuxdo-im-hide-cat-tags";
+  const BLUR_IMG_KEY = "linuxdo-im-blur-img";
   const NAV2_KEY = "linuxdo-im-nav2";
   const ORG_NAME_KEY = "linuxdo-im-org-name";
   const ORG_ICON_KEY = "linuxdo-im-org-icon";
@@ -823,6 +824,9 @@
       color: #fff; font-size: 7px; font-weight: 700; line-height: 1;
     }
     .im-mask-avatar-toggle.is-on {
+      color: var(--im-accent); background: var(--im-accent-soft);
+    }
+    .im-blur-img-toggle.is-on {
       color: var(--im-accent); background: var(--im-accent-soft);
     }
     .im-conv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
@@ -2500,6 +2504,9 @@
     .im-mask-avatar-toggle.is-on {
       color: var(--im-accent); background: var(--im-accent-soft);
     }
+    .im-blur-img-toggle.is-on {
+      color: var(--im-accent); background: var(--im-accent-soft);
+    }
     .im-conv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
     .im-conv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
     /* 标题行 flex 化：无它 .im-conv-name 省略号与小蓝点宽高均不生效（inline 上下文） */
@@ -4145,6 +4152,15 @@ color: #4AA2FF;
 color: #7AA3D6;
 }
 
+
+    /* ---------- 图片防剧透：模糊默认，点击显示 ---------- */
+    .__ROOT_CLASS__ .im-msg-bubble img {
+      transition: filter 0.25s ease;
+    }
+    .__ROOT_CLASS__.im-blur-imgs .im-msg-bubble img:not(.emoji):not(.im-img-revealed) {
+      filter: blur(14px) saturate(0.7);
+      cursor: pointer;
+    }
 
     /* ---------- 钉钉式图片浮窗灯箱 ---------- */
     .__ROOT_CLASS__ .im-img-modal {
@@ -6367,6 +6383,9 @@ color: #7AA3D6;
     .im-mask-avatar-toggle.is-on {
       color: var(--wc-accent); background: var(--wc-accent-soft);
     }
+    .im-blur-img-toggle.is-on {
+      color: var(--wc-accent); background: var(--wc-accent-soft);
+    }
     .im-conv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
     .im-conv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
     .im-conv-avatar.is-group {
@@ -8337,7 +8356,8 @@ body.im-detail-open #reply-control {
     scrollTop: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     bookmarkFill: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3.5h10A1.2 1.2 0 0 1 18.2 4.7v14.8c0 .9-1 1.4-1.7.9L12 16.9l-4.5 3.5c-.7.5-1.7 0-1.7-.9V4.7A1.2 1.2 0 0 1 7 3.5Z"/></svg>`,
     shield: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3L4 6.5V11c0 5.25 3.4 10.15 8 11.5 4.6-1.35 8-6.25 8-11.5V6.5L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`,
-    highlighter: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 19l7-7 3 3-7 7-3-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M2 22h20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`
+    highlighter: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 19l7-7 3 3-7 7-3-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M2 22h20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+    eyeOff: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.6"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`
   };
   ICONS.chat = ICONS.msg;
   ICONS.list = ICONS.msg;
@@ -8445,6 +8465,24 @@ body.im-detail-open #reply-control {
       return false;
     }
   }
+  function isBlurImg() {
+    try {
+      return localStorage.getItem(BLUR_IMG_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }
+  function setBlurImg(on) {
+    try {
+      localStorage.setItem(BLUR_IMG_KEY, on ? "1" : "0");
+    } catch {
+    }
+    document.documentElement.classList.toggle("im-blur-imgs", on);
+    if (on) {
+      document.querySelectorAll(".im-msg-bubble img.im-img-revealed").forEach((img) => img.classList.remove("im-img-revealed"));
+    }
+    ensureBlurImgToggle(document.querySelector(".im-chat-panel"));
+  }
   function setMaskAvatar(on) {
     var _a2;
     try {
@@ -8524,6 +8562,34 @@ body.im-detail-open #reply-control {
     }
     const on = isMaskTitle();
     btn.title = on ? "伪装标题：开（点击恢复真实标题）" : "伪装标题：关（点击开启）";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.classList.toggle("is-on", on);
+  }
+  function ensureBlurImgToggle(panel) {
+    if (!panel) return;
+    const actions = panel.querySelector(".im-chat-actions");
+    if (!actions) return;
+    let btn = actions.querySelector(".im-blur-img-toggle");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "im-icon-btn im-blur-img-toggle";
+      btn.innerHTML = ICONS.eyeOff;
+      const spamBtn = actions.querySelector(".im-chat-spam-toggle");
+      if (spamBtn) actions.insertBefore(btn, spamBtn);
+      else actions.appendChild(btn);
+    }
+    if (btn.dataset.bound !== "1") {
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+        setBlurImg(!isBlurImg());
+      });
+    }
+    const on = isBlurImg();
+    btn.title = on ? "图片防剧透：开（点击关闭模糊）" : "图片防剧透：关（点击开启模糊，点图显示）";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.classList.toggle("is-on", on);
   }
@@ -9980,6 +10046,7 @@ body.im-detail-open #reply-control {
         bindChatPanelEvents(panel);
       }
       ensureSpamToggleButton(panel);
+      ensureBlurImgToggle(panel);
       (_a2 = chatHooks.wireComposer) == null ? void 0 : _a2.call(chatHooks, panel);
       (_b2 = chatHooks.ensureAiSummaryButton) == null ? void 0 : _b2.call(chatHooks, panel);
       return panel;
@@ -10046,6 +10113,7 @@ body.im-detail-open #reply-control {
     document.body.appendChild(panel);
     bindChatPanelEvents(panel);
     ensureSpamToggleButton(panel);
+    ensureBlurImgToggle(panel);
     (_c = chatHooks.wireComposer) == null ? void 0 : _c.call(chatHooks, panel);
     (_d = chatHooks.ensureAiSummaryButton) == null ? void 0 : _d.call(chatHooks, panel);
     return panel;
@@ -10062,6 +10130,16 @@ body.im-detail-open #reply-control {
     const isEmoji = e.target.classList.contains("emoji") || e.target.closest(".emoji, .im-quick-emoji, .im-emoji-item");
     const isUiIcon = e.target.closest("button, .im-icon-btn, .im-rocket-chip, .im-like-badge");
     if (isAvatar || isEmoji || isUiIcon) return;
+    if (isBlurImg()) {
+      const blurTarget = clickedImg || (clickedLightbox == null ? void 0 : clickedLightbox.querySelector("img"));
+      if (blurTarget && !blurTarget.classList.contains("im-img-revealed") && blurTarget.closest(".im-msg-bubble")) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+        blurTarget.classList.add("im-img-revealed");
+        return;
+      }
+    }
     const link = e.target.closest("a.lightbox, a[href*='/uploads/'], a[href*='.jpg'], a[href*='.jpeg'], a[href*='.png'], a[href*='.gif'], a[href*='.webp']");
     const highResSrc = link && link.href || clickedImg && (clickedImg.dataset.origSrc || clickedImg.dataset.largeUrl || clickedImg.src) || clickedLightbox && ((_a2 = clickedLightbox.querySelector("a.lightbox")) == null ? void 0 : _a2.href);
     if (!highResSrc) return;
@@ -19038,6 +19116,7 @@ ${data.raw}
       applyColorMode();
       document.documentElement.classList.toggle("im-nav2-open", isNav2Open());
       document.documentElement.classList.toggle("im-hide-cat-tags", isHideCatTags());
+      document.documentElement.classList.toggle("im-blur-imgs", isBlurImg());
       restyleSplash();
       makeFavicon();
       ensureModeFab();
@@ -19105,7 +19184,7 @@ ${data.raw}
       }
     }
     function bootstrap() {
-      console.info(`[linuxdo-im] v${"1.3.5"} loaded, skin=${SKIN_ID}`);
+      console.info(`[linuxdo-im] v${"1.3.6"} loaded, skin=${SKIN_ID}`);
       if (!document.documentElement) {
         setTimeout(bootstrap, 0);
         return;

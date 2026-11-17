@@ -24,7 +24,7 @@ import {
 import {
   ensureRelativeTimeTicker,
 } from "./ui/shared/time.js";
-import { isHideCatTags, onListReload } from "./ui/shared/toggles.js";
+import { isHideCatTags, isBlurImg, onListReload } from "./ui/shared/toggles.js";
 import {
   isTopicPath, isHomePath, topicIdFromPath, listApiForPath,
   onRouteApply,
@@ -246,6 +246,7 @@ export function run() {
     applyColorMode();
     document.documentElement.classList.toggle("im-nav2-open", isNav2Open());
     document.documentElement.classList.toggle("im-hide-cat-tags", isHideCatTags());
+    document.documentElement.classList.toggle("im-blur-imgs", isBlurImg());
     restyleSplash();
     makeFavicon();
     ensureModeFab();

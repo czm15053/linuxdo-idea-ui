@@ -714,6 +714,9 @@ export const CSS_WECOM = String.raw`
     .im-mask-avatar-toggle.is-on {
       color: var(--wc-accent); background: var(--wc-accent-soft);
     }
+    .im-blur-img-toggle.is-on {
+      color: var(--wc-accent); background: var(--wc-accent-soft);
+    }
     .im-conv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
     .im-conv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
     .im-conv-avatar.is-group {
