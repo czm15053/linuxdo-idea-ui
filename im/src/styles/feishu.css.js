@@ -623,6 +623,9 @@ export const CSS_FS = String.raw`
     .im-blur-img-toggle.is-on {
       color: var(--im-accent); background: var(--im-accent-soft);
     }
+    .im-watermark-btn.is-on {
+      color: var(--im-accent); background: var(--im-accent-soft);
+    }
     .im-conv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
     .im-conv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
     /* 标题行 flex 化：无它 .im-conv-name 省略号与小蓝点宽高均不生效（inline 上下文） */

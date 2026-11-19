@@ -25,6 +25,7 @@ import {
   ensureRelativeTimeTicker,
 } from "./ui/shared/time.js";
 import { isHideCatTags, isBlurImg, onListReload } from "./ui/shared/toggles.js";
+import { applyWatermark } from "./features/watermark.js";
 import {
   isTopicPath, isHomePath, topicIdFromPath, listApiForPath,
   onRouteApply,
@@ -247,6 +248,7 @@ export function run() {
     document.documentElement.classList.toggle("im-nav2-open", isNav2Open());
     document.documentElement.classList.toggle("im-hide-cat-tags", isHideCatTags());
     document.documentElement.classList.toggle("im-blur-imgs", isBlurImg());
+    applyWatermark();
     restyleSplash();
     makeFavicon();
     ensureModeFab();

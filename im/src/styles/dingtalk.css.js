@@ -615,6 +615,9 @@ export const CSS_DD = String.raw`
     .im-blur-img-toggle.is-on {
       color: var(--im-accent); background: var(--im-accent-soft);
     }
+    .im-watermark-btn.is-on {
+      color: var(--im-accent); background: var(--im-accent-soft);
+    }
     .im-conv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
     .im-conv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
     .im-conv-avatar.is-group {

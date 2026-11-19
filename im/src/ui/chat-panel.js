@@ -18,6 +18,7 @@ import { likedPosts } from "../features/liked-posts.js";
 import { formatTime, formatClock } from "./shared/time.js";
 import { avatarColor, avatarLetter, userDisplayName, fullAvatarUrl, convDisplayTitle } from "./shared/avatars.js";
 import { isMaskAvatar, isBlurImg, ensureBlurImgToggle } from "./shared/toggles.js";
+import { ensureWatermarkButton } from "../features/watermark.js";
 import { syncListActive } from "./list-panel.js";
 import { showUserCard } from "./user-card.js";
 import {
@@ -81,6 +82,7 @@ export function ensureChatPanel() {
     }
     ensureSpamToggleButton(panel);
     ensureBlurImgToggle(panel);
+    ensureWatermarkButton(panel);
     chatHooks.wireComposer?.(panel);
     chatHooks.ensureAiSummaryButton?.(panel);
     return panel;
@@ -151,6 +153,7 @@ export function ensureChatPanel() {
   bindChatPanelEvents(panel);
   ensureSpamToggleButton(panel);
   ensureBlurImgToggle(panel);
+  ensureWatermarkButton(panel);
   chatHooks.wireComposer?.(panel);
   chatHooks.ensureAiSummaryButton?.(panel);
   return panel;

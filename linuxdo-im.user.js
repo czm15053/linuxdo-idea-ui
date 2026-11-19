@@ -2,7 +2,7 @@
 // @name         Linux DO · IM 外观（钉钉 / 飞书 / 企业微信）
 // @namespace    https://linux.do/
 // @author       czm15053
-// @version      1.3.6
+// @version      1.3.7
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，列表按钮一键切换。公共内核：投票、小火箭、图片灯箱、引用跳转、实时刷新、三态深色、伪装模式。
 // @match        https://linux.do/*
 // @exclude-match https://linux.do/pub/*
@@ -196,6 +196,7 @@
   const MASK_TITLE_KEY = "linuxdo-im-mask-title";
   const HIDE_CAT_TAGS_KEY = "linuxdo-im-hide-cat-tags";
   const BLUR_IMG_KEY = "linuxdo-im-blur-img";
+  const WATERMARK_KEY = "linuxdo-im-watermark";
   const NAV2_KEY = "linuxdo-im-nav2";
   const ORG_NAME_KEY = "linuxdo-im-org-name";
   const ORG_ICON_KEY = "linuxdo-im-org-icon";
@@ -827,6 +828,9 @@
       color: var(--im-accent); background: var(--im-accent-soft);
     }
     .im-blur-img-toggle.is-on {
+      color: var(--im-accent); background: var(--im-accent-soft);
+    }
+    .im-watermark-btn.is-on {
       color: var(--im-accent); background: var(--im-accent-soft);
     }
     .im-conv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
@@ -2507,6 +2511,9 @@
     .im-blur-img-toggle.is-on {
       color: var(--im-accent); background: var(--im-accent-soft);
     }
+    .im-watermark-btn.is-on {
+      color: var(--im-accent); background: var(--im-accent-soft);
+    }
     .im-conv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
     .im-conv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
     /* 标题行 flex 化：无它 .im-conv-name 省略号与小蓝点宽高均不生效（inline 上下文） */
@@ -4152,6 +4159,43 @@ color: #4AA2FF;
 color: #7AA3D6;
 }
 
+
+    /* ---------- 聊天水印：背景平铺斜排文字（文字/间距/透明度可调） ---------- */
+    .__ROOT_CLASS__.im-watermark-on .im-chat-body {
+      background-image: var(--im-wm-image);
+      background-repeat: repeat;
+      background-size: var(--im-wm-size);
+    }
+    .__ROOT_CLASS__ .im-wm-pop {
+      position: fixed; z-index: 1300; width: 260px;
+      border-radius: 12px; background: var(--im-bg); border: 1px solid var(--im-border);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18); padding: 12px 14px;
+      color: var(--im-text); font-size: 12.5px; font-family: var(--im-font);
+    }
+    .__ROOT_CLASS__ .im-wm-row { display: flex; align-items: center; justify-content: space-between; }
+    .__ROOT_CLASS__ .im-wm-label { font-weight: 600; }
+    .__ROOT_CLASS__ .im-wm-switch { position: relative; width: 34px; height: 18px; flex: none; }
+    .__ROOT_CLASS__ .im-wm-switch input { position: absolute; opacity: 0; }
+    .__ROOT_CLASS__ .im-wm-switch span {
+      display: block; width: 34px; height: 18px; border-radius: 10px;
+      background: var(--im-border); cursor: pointer; transition: background 0.15s;
+    }
+    .__ROOT_CLASS__ .im-wm-switch span::after {
+      content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px;
+      border-radius: 50%; background: #fff; transition: transform 0.15s;
+    }
+    .__ROOT_CLASS__ .im-wm-switch input:checked + span { background: var(--im-accent); }
+    .__ROOT_CLASS__ .im-wm-switch input:checked + span::after { transform: translateX(16px); }
+    .__ROOT_CLASS__ .im-wm-field { display: flex; flex-direction: column; gap: 5px; margin-top: 12px; }
+    .__ROOT_CLASS__ .im-wm-field > span { color: var(--im-text-2); font-size: 11.5px; }
+    .__ROOT_CLASS__ .im-wm-field b { color: var(--im-accent); font-weight: 600; }
+    .__ROOT_CLASS__ .im-wm-field input[type="text"] {
+      height: 28px; padding: 3px 8px; border-radius: 6px;
+      border: 1px solid var(--im-border); background: var(--im-bg); color: var(--im-text);
+      font-size: 12.5px; font-family: var(--im-font); outline: none;
+    }
+    .__ROOT_CLASS__ .im-wm-field input[type="text"]:focus { border-color: var(--im-accent); }
+    .__ROOT_CLASS__ .im-wm-field input[type="range"] { width: 100%; accent-color: var(--im-accent); }
 
     /* ---------- 图片防剧透：模糊默认，点击显示 ---------- */
     .__ROOT_CLASS__ .im-msg-bubble img {
@@ -6401,6 +6445,9 @@ color: #7AA3D6;
     .im-blur-img-toggle.is-on {
       color: var(--wc-accent); background: var(--wc-accent-soft);
     }
+    .im-watermark-btn.is-on {
+      color: var(--wc-accent); background: var(--wc-accent-soft);
+    }
     .im-conv-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
     .im-conv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
     .im-conv-avatar.is-group {
@@ -8372,7 +8419,8 @@ body.im-detail-open #reply-control {
     bookmarkFill: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3.5h10A1.2 1.2 0 0 1 18.2 4.7v14.8c0 .9-1 1.4-1.7.9L12 16.9l-4.5 3.5c-.7.5-1.7 0-1.7-.9V4.7A1.2 1.2 0 0 1 7 3.5Z"/></svg>`,
     shield: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3L4 6.5V11c0 5.25 3.4 10.15 8 11.5 4.6-1.35 8-6.25 8-11.5V6.5L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`,
     highlighter: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 19l7-7 3 3-7 7-3-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M2 22h20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
-    eyeOff: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.6"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`
+    eyeOff: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.6"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+    watermark: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3.5c3.4 4 5.4 6.6 5.4 9.2a5.4 5.4 0 0 1-10.8 0c0-2.6 2-5.2 5.4-9.2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.6 13.2c.3 1.2 1.2 2 2.4 2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`
   };
   ICONS.chat = ICONS.msg;
   ICONS.list = ICONS.msg;
@@ -8608,6 +8656,173 @@ body.im-detail-open #reply-control {
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.classList.toggle("is-on", on);
   }
+  function escapeHtml(text) {
+    return String(text ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[c]);
+  }
+  function stripHtml(html) {
+    if (!html) return "";
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return (div.textContent || "").replace(/\s+/g, " ").trim();
+  }
+  const DEFAULT_CONFIG = {
+    enabled: false,
+    text: "linux.do · 内部资料",
+    gap: 220,
+    opacity: 0.08
+  };
+  let config = loadConfig();
+  let pop = null;
+  function clamp(value, min, max, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+  }
+  function normalizeWatermarkConfig(raw) {
+    const merged = { ...DEFAULT_CONFIG, ...raw || {} };
+    return {
+      enabled: !!merged.enabled,
+      text: String(merged.text || DEFAULT_CONFIG.text).slice(0, 40),
+      gap: clamp(merged.gap, 120, 480, DEFAULT_CONFIG.gap),
+      opacity: clamp(merged.opacity, 0.02, 0.4, DEFAULT_CONFIG.opacity)
+    };
+  }
+  function loadConfig() {
+    try {
+      return normalizeWatermarkConfig(JSON.parse(localStorage.getItem(WATERMARK_KEY) || "null"));
+    } catch {
+      return { ...DEFAULT_CONFIG };
+    }
+  }
+  function saveConfig() {
+    localStorage.setItem(WATERMARK_KEY, JSON.stringify(config));
+    applyWatermark();
+  }
+  function tileUrl() {
+    const size = config.gap;
+    const text = config.text.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" })[c]);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="system-ui, -apple-system, sans-serif" font-size="15" fill="#8A8F99" fill-opacity="${config.opacity}" transform="rotate(-30 ${size / 2} ${size / 2})">${text}</text></svg>`;
+    return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+  }
+  function applyWatermark() {
+    const html = document.documentElement;
+    html.classList.toggle("im-watermark-on", config.enabled);
+    if (!config.enabled) return;
+    html.style.setProperty("--im-wm-image", tileUrl());
+    html.style.setProperty("--im-wm-size", `${config.gap}px ${config.gap}px`);
+  }
+  function closePop$1() {
+    if (!pop) return;
+    pop.remove();
+    pop = null;
+    document.removeEventListener("click", onOutside$1, true);
+    document.removeEventListener("keydown", onKey$1, true);
+  }
+  function onOutside$1(e) {
+    var _a2, _b2;
+    if (pop && !pop.contains(e.target) && !((_b2 = (_a2 = e.target).closest) == null ? void 0 : _b2.call(_a2, ".im-watermark-btn"))) closePop$1();
+  }
+  function onKey$1(e) {
+    if (e.key === "Escape") closePop$1();
+  }
+  function openPop$1(anchor) {
+    closePop$1();
+    pop = document.createElement("div");
+    pop.className = "im-wm-pop";
+    pop.innerHTML = `
+    <div class="im-wm-row">
+      <span class="im-wm-label">水印</span>
+      <label class="im-wm-switch">
+        <input type="checkbox" data-wm-switch ${config.enabled ? "checked" : ""}>
+        <span></span>
+      </label>
+    </div>
+    <label class="im-wm-field">
+      <span>文字</span>
+      <input type="text" data-wm-text maxlength="40" value="${escapeHtml(config.text)}">
+    </label>
+    <label class="im-wm-field">
+      <span>间距 <b data-wm-gap-val>${config.gap}</b>px</span>
+      <input type="range" data-wm-gap min="120" max="480" step="10" value="${config.gap}">
+    </label>
+    <label class="im-wm-field">
+      <span>透明度 <b data-wm-op-val>${Math.round(config.opacity * 100)}</b>%</span>
+      <input type="range" data-wm-op min="2" max="40" step="1" value="${Math.round(config.opacity * 100)}">
+    </label>`;
+    document.body.appendChild(pop);
+    const r = anchor.getBoundingClientRect();
+    const w = pop.offsetWidth;
+    pop.style.left = `${Math.max(8, Math.min(r.right - w, innerWidth - w - 8))}px`;
+    pop.style.top = `${r.bottom + 6}px`;
+    const switchEl = pop.querySelector("[data-wm-switch]");
+    const textEl = pop.querySelector("[data-wm-text]");
+    const gapEl = pop.querySelector("[data-wm-gap]");
+    const opEl = pop.querySelector("[data-wm-op]");
+    switchEl.addEventListener("change", () => {
+      config.enabled = switchEl.checked;
+      saveConfig();
+      syncButton$1();
+    });
+    textEl.addEventListener("input", () => {
+      config.text = textEl.value.slice(0, 40) || DEFAULT_CONFIG.text;
+      saveConfig();
+    });
+    gapEl.addEventListener("input", () => {
+      config.gap = Number(gapEl.value);
+      pop.querySelector("[data-wm-gap-val]").textContent = config.gap;
+      saveConfig();
+    });
+    opEl.addEventListener("input", () => {
+      config.opacity = Number(opEl.value) / 100;
+      pop.querySelector("[data-wm-op-val]").textContent = opEl.value;
+      saveConfig();
+    });
+    setTimeout(() => {
+      document.addEventListener("click", onOutside$1, true);
+      document.addEventListener("keydown", onKey$1, true);
+    });
+  }
+  function syncButton$1() {
+    const btn = document.querySelector(".im-watermark-btn");
+    if (!btn) return;
+    btn.title = config.enabled ? "水印：开（点击调整）" : "水印：关（点击开启）";
+    btn.setAttribute("aria-pressed", config.enabled ? "true" : "false");
+    btn.classList.toggle("is-on", config.enabled);
+  }
+  function ensureWatermarkButton(panel) {
+    if (!panel) return;
+    const actions = panel.querySelector(".im-chat-actions");
+    if (!actions) return;
+    let btn = actions.querySelector(".im-watermark-btn");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "im-icon-btn im-watermark-btn";
+      btn.innerHTML = ICONS.watermark;
+      const spamBtn = actions.querySelector(".im-chat-spam-toggle");
+      if (spamBtn) actions.insertBefore(btn, spamBtn);
+      else actions.appendChild(btn);
+    }
+    if (btn.dataset.bound !== "1") {
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+        if (pop) {
+          closePop$1();
+          return;
+        }
+        openPop$1(btn);
+      });
+    }
+    syncButton$1();
+  }
   const pg = globalThis.unsafeWindow || window;
   function discourseRequire(moduleId) {
     try {
@@ -8796,21 +9011,6 @@ body.im-detail-open #reply-control {
     }
     history.pushState({}, "", path);
     applyHook == null ? void 0 : applyHook();
-  }
-  function escapeHtml(text) {
-    return String(text ?? "").replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[c]);
-  }
-  function stripHtml(html) {
-    if (!html) return "";
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    return (div.textContent || "").replace(/\s+/g, " ").trim();
   }
   async function api(path, extraHeaders, { timeout = 2e4 } = {}) {
     const ctrl = new AbortController();
@@ -9528,21 +9728,21 @@ body.im-detail-open #reply-control {
     // 'exact' | 'contains'
     keywords: DEFAULT_KEYWORDS
   };
-  function validateSpamConfig(config) {
-    if (!config || typeof config !== "object") return { ...DEFAULT_SPAM_CONFIG };
+  function validateSpamConfig(config2) {
+    if (!config2 || typeof config2 !== "object") return { ...DEFAULT_SPAM_CONFIG };
     const valid = { ...DEFAULT_SPAM_CONFIG };
-    valid.enabled = typeof config.enabled === "boolean" ? config.enabled : true;
-    valid.enableShortReply = typeof config.enableShortReply === "boolean" ? config.enableShortReply : true;
-    valid.requireShortKeyword = typeof config.requireShortKeyword === "boolean" ? config.requireShortKeyword : true;
-    valid.enableKeywordBlock = typeof config.enableKeywordBlock === "boolean" ? config.enableKeywordBlock : true;
-    const threshold = parseInt(config.shortReplyThreshold, 10);
+    valid.enabled = typeof config2.enabled === "boolean" ? config2.enabled : true;
+    valid.enableShortReply = typeof config2.enableShortReply === "boolean" ? config2.enableShortReply : true;
+    valid.requireShortKeyword = typeof config2.requireShortKeyword === "boolean" ? config2.requireShortKeyword : true;
+    valid.enableKeywordBlock = typeof config2.enableKeywordBlock === "boolean" ? config2.enableKeywordBlock : true;
+    const threshold = parseInt(config2.shortReplyThreshold, 10);
     valid.shortReplyThreshold = isNaN(threshold) || threshold < 1 || threshold > 30 ? 12 : threshold;
-    valid.keywordMatchMode = config.keywordMatchMode === "contains" ? "contains" : "exact";
-    if (Array.isArray(config.shortKeywords)) {
-      valid.shortKeywords = config.shortKeywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
+    valid.keywordMatchMode = config2.keywordMatchMode === "contains" ? "contains" : "exact";
+    if (Array.isArray(config2.shortKeywords)) {
+      valid.shortKeywords = config2.shortKeywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
     }
-    if (Array.isArray(config.keywords)) {
-      valid.keywords = config.keywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
+    if (Array.isArray(config2.keywords)) {
+      valid.keywords = config2.keywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
     }
     return valid;
   }
@@ -9565,8 +9765,8 @@ body.im-detail-open #reply-control {
     listeners$1.add(fn);
     return () => listeners$1.delete(fn);
   }
-  function saveSpamConfig(config) {
-    activeConfig$1 = validateSpamConfig(config);
+  function saveSpamConfig(config2) {
+    activeConfig$1 = validateSpamConfig(config2);
     try {
       localStorage.setItem(SPAM_FILTER_KEY, JSON.stringify(activeConfig$1));
     } catch {
@@ -9620,8 +9820,8 @@ body.im-detail-open #reply-control {
     expandedPostNumbers.clear();
   }
   function isSpamPost(post) {
-    const config = loadSpamConfig();
-    if (!config.enabled) return { isSpam: false };
+    const config2 = loadSpamConfig();
+    if (!config2.enabled) return { isSpam: false };
     if (!post || isExemptPost(post)) return { isSpam: false };
     const rawText = extractPlainText(post.cooked);
     if (!rawText) return { isSpam: false };
@@ -9629,26 +9829,26 @@ body.im-detail-open #reply-control {
     const cleanText = rawText.trim();
     const lowerText = cleanText.toLowerCase();
     const noSpaceText = cleanText.replace(/\s+/g, "").toLowerCase();
-    if (config.enableShortReply) {
-      if (cleanText.length <= config.shortReplyThreshold) {
-        if (!config.requireShortKeyword) {
+    if (config2.enableShortReply) {
+      if (cleanText.length <= config2.shortReplyThreshold) {
+        if (!config2.requireShortKeyword) {
           return { isSpam: true, preview: sanitizePreview(cleanText) };
         }
-        for (const kw of config.shortKeywords) {
+        for (const kw of config2.shortKeywords) {
           if (lowerText.includes(kw.toLowerCase())) {
             return { isSpam: true, preview: sanitizePreview(cleanText) };
           }
         }
       }
     }
-    if (config.enableKeywordBlock) {
-      if (config.keywordMatchMode === "exact") {
-        const keywordSet = new Set(config.keywords.map((k) => k.toLowerCase()));
+    if (config2.enableKeywordBlock) {
+      if (config2.keywordMatchMode === "exact") {
+        const keywordSet = new Set(config2.keywords.map((k) => k.toLowerCase()));
         if (keywordSet.has(lowerText) || keywordSet.has(noSpaceText)) {
           return { isSpam: true, preview: sanitizePreview(cleanText) };
         }
       } else {
-        for (const kw of config.keywords) {
+        for (const kw of config2.keywords) {
           if (lowerText.includes(kw.toLowerCase())) {
             return { isSpam: true, preview: sanitizePreview(cleanText) };
           }
@@ -10066,6 +10266,7 @@ body.im-detail-open #reply-control {
       }
       ensureSpamToggleButton(panel);
       ensureBlurImgToggle(panel);
+      ensureWatermarkButton(panel);
       (_a2 = chatHooks.wireComposer) == null ? void 0 : _a2.call(chatHooks, panel);
       (_b2 = chatHooks.ensureAiSummaryButton) == null ? void 0 : _b2.call(chatHooks, panel);
       return panel;
@@ -10133,6 +10334,7 @@ body.im-detail-open #reply-control {
     bindChatPanelEvents(panel);
     ensureSpamToggleButton(panel);
     ensureBlurImgToggle(panel);
+    ensureWatermarkButton(panel);
     (_c = chatHooks.wireComposer) == null ? void 0 : _c.call(chatHooks, panel);
     (_d = chatHooks.ensureAiSummaryButton) == null ? void 0 : _d.call(chatHooks, panel);
     return panel;
@@ -11129,11 +11331,11 @@ body.im-detail-open #reply-control {
     return chatState.highestPostNumber || chatState.totalPosts || chatState.renderedLastNumber || 0;
   }
   function ensureFloorPicker(panel) {
-    let pop = panel.querySelector(".im-floor-pop");
-    if (pop) return pop;
-    pop = document.createElement("div");
-    pop.className = "im-floor-pop";
-    pop.innerHTML = `
+    let pop2 = panel.querySelector(".im-floor-pop");
+    if (pop2) return pop2;
+    pop2 = document.createElement("div");
+    pop2.className = "im-floor-pop";
+    pop2.innerHTML = `
     <div class="im-floor-pop-card" role="dialog" aria-label="选择楼层">
       <div class="im-floor-pop-title">跳转到楼层</div>
       <div class="im-floor-pop-row">
@@ -11145,31 +11347,31 @@ body.im-detail-open #reply-control {
         <button type="button" class="im-floor-pop-go">跳转</button>
       </div>
     </div>`;
-    panel.appendChild(pop);
-    pop.querySelector(".im-floor-pop-cancel").addEventListener("click", closeFloorPicker);
-    pop.querySelector(".im-floor-pop-go").addEventListener("click", submitFloorPicker);
-    pop.addEventListener("click", (e) => {
-      if (e.target === pop) closeFloorPicker();
+    panel.appendChild(pop2);
+    pop2.querySelector(".im-floor-pop-cancel").addEventListener("click", closeFloorPicker);
+    pop2.querySelector(".im-floor-pop-go").addEventListener("click", submitFloorPicker);
+    pop2.addEventListener("click", (e) => {
+      if (e.target === pop2) closeFloorPicker();
     });
-    const input = pop.querySelector(".im-floor-pop-input");
+    const input = pop2.querySelector(".im-floor-pop-input");
     input.addEventListener("keydown", (e) => {
       e.stopPropagation();
       if (e.key === "Enter") submitFloorPicker();
       if (e.key === "Escape") closeFloorPicker();
     });
     input.addEventListener("input", () => input.classList.remove("error"));
-    return pop;
+    return pop2;
   }
   function openFloorPicker() {
     const panel = document.querySelector(".im-chat-panel");
     if (!panel || panel.dataset.empty === "1" || !chatState.topicId) return;
-    const pop = ensureFloorPicker(panel);
+    const pop2 = ensureFloorPicker(panel);
     const max = floorPickerMax();
-    pop.querySelector(".im-floor-pop-total").textContent = max ? `共 ${max} 楼` : "";
-    const input = pop.querySelector(".im-floor-pop-input");
+    pop2.querySelector(".im-floor-pop-total").textContent = max ? `共 ${max} 楼` : "";
+    const input = pop2.querySelector(".im-floor-pop-input");
     input.max = max || "";
     input.classList.remove("error");
-    pop.classList.add("open");
+    pop2.classList.add("open");
     const body = document.querySelector(".im-chat-panel .im-chat-body");
     const current = visibleTopicPosts(body)[0] || 0;
     input.value = current > 0 ? String(current) : "";
@@ -11183,9 +11385,9 @@ body.im-detail-open #reply-control {
     (_a2 = document.querySelector(".im-chat-panel .im-floor-pop")) == null ? void 0 : _a2.classList.remove("open");
   }
   function submitFloorPicker() {
-    const pop = document.querySelector(".im-chat-panel .im-floor-pop");
-    if (!pop) return;
-    const input = pop.querySelector(".im-floor-pop-input");
+    const pop2 = document.querySelector(".im-chat-panel .im-floor-pop");
+    if (!pop2) return;
+    const input = pop2.querySelector(".im-floor-pop-input");
     const max = floorPickerMax();
     const n = Math.floor(Number(input.value));
     if (!n || n < 1 || max && n > max) {
@@ -14472,18 +14674,18 @@ ${data.raw}
     filterKeywords: [],
     filterUsers: []
   };
-  function validateHighlightConfig(config) {
-    if (!config || typeof config !== "object") return { ...DEFAULT_HIGHLIGHT_CONFIG };
+  function validateHighlightConfig(config2) {
+    if (!config2 || typeof config2 !== "object") return { ...DEFAULT_HIGHLIGHT_CONFIG };
     const valid = { ...DEFAULT_HIGHLIGHT_CONFIG };
-    valid.enabled = typeof config.enabled === "boolean" ? config.enabled : true;
-    if (Array.isArray(config.keywords)) {
-      valid.keywords = config.keywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
+    valid.enabled = typeof config2.enabled === "boolean" ? config2.enabled : true;
+    if (Array.isArray(config2.keywords)) {
+      valid.keywords = config2.keywords.filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40));
     } else {
       valid.keywords = [];
     }
-    valid.filterEnabled = typeof config.filterEnabled === "boolean" ? config.filterEnabled : false;
+    valid.filterEnabled = typeof config2.filterEnabled === "boolean" ? config2.filterEnabled : false;
     for (const key of ["filterKeywords", "filterUsers"]) {
-      valid[key] = Array.isArray(config[key]) ? config[key].filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40)) : [];
+      valid[key] = Array.isArray(config2[key]) ? config2[key].filter((k) => typeof k === "string" && k.trim().length > 0).slice(0, 500).map((k) => k.trim().substring(0, 40)) : [];
     }
     return valid;
   }
@@ -14506,8 +14708,8 @@ ${data.raw}
     listeners.add(fn);
     return () => listeners.delete(fn);
   }
-  function saveHighlightConfig(config) {
-    activeConfig = validateHighlightConfig(config);
+  function saveHighlightConfig(config2) {
+    activeConfig = validateHighlightConfig(config2);
     try {
       localStorage.setItem(HIGHLIGHT_KEY, JSON.stringify(activeConfig));
     } catch {
@@ -17241,23 +17443,23 @@ ${data.raw}
   function openIdentityPop(anchor) {
     closeIdentityPop();
     const { name, avatar } = getIdentity();
-    const pop = document.createElement("div");
-    pop.className = "im-ai-id-pop";
-    pop.innerHTML = `<div class="im-ai-id-row"><button type="button" class="im-ai-id-preview" title="点击或拖入图片更换头像">${avatarMarkup(avatar)}</button><div class="im-ai-id-fields"><label>昵称</label><input class="im-ai-id-name" type="text" maxlength="${AI_NAME_MAX}" value="${escapeHtml(name)}" spellcheck="false"><input class="im-ai-id-url" type="url" placeholder="或粘贴图片 URL" spellcheck="false"></div></div><div class="im-ai-id-actions"><button type="button" class="im-ai-id-reset">恢复默认</button></div><input type="file" class="im-ai-id-file" accept="image/*" hidden>`;
-    document.body.appendChild(pop);
+    const pop2 = document.createElement("div");
+    pop2.className = "im-ai-id-pop";
+    pop2.innerHTML = `<div class="im-ai-id-row"><button type="button" class="im-ai-id-preview" title="点击或拖入图片更换头像">${avatarMarkup(avatar)}</button><div class="im-ai-id-fields"><label>昵称</label><input class="im-ai-id-name" type="text" maxlength="${AI_NAME_MAX}" value="${escapeHtml(name)}" spellcheck="false"><input class="im-ai-id-url" type="url" placeholder="或粘贴图片 URL" spellcheck="false"></div></div><div class="im-ai-id-actions"><button type="button" class="im-ai-id-reset">恢复默认</button></div><input type="file" class="im-ai-id-file" accept="image/*" hidden>`;
+    document.body.appendChild(pop2);
     const r = anchor.getBoundingClientRect();
-    const mw = pop.offsetWidth;
-    const mh = pop.offsetHeight;
+    const mw = pop2.offsetWidth;
+    const mh = pop2.offsetHeight;
     let left = Math.max(8, Math.min(r.left, innerWidth - mw - 8));
     let top = r.bottom + 8;
     if (top + mh > innerHeight - 8) top = Math.max(8, r.top - mh - 8);
-    pop.style.left = `${left}px`;
-    pop.style.top = `${top}px`;
-    idPop = pop;
-    const nameInput = pop.querySelector(".im-ai-id-name");
-    const urlInput = pop.querySelector(".im-ai-id-url");
-    const fileInput = pop.querySelector(".im-ai-id-file");
-    const preview = pop.querySelector(".im-ai-id-preview");
+    pop2.style.left = `${left}px`;
+    pop2.style.top = `${top}px`;
+    idPop = pop2;
+    const nameInput = pop2.querySelector(".im-ai-id-name");
+    const urlInput = pop2.querySelector(".im-ai-id-url");
+    const fileInput = pop2.querySelector(".im-ai-id-file");
+    const preview = pop2.querySelector(".im-ai-id-preview");
     const saveName = () => {
       if (setIdentity({ name: nameInput.value })) paintIdentity();
     };
@@ -17321,7 +17523,7 @@ ${data.raw}
       }
     });
     urlInput.addEventListener("change", saveUrl);
-    pop.querySelector(".im-ai-id-reset").addEventListener("click", () => {
+    pop2.querySelector(".im-ai-id-reset").addEventListener("click", () => {
       setIdentity({ name: AI_DEFAULT_NAME, avatar: "" });
       paintIdentity();
       closeIdentityPop();
@@ -19136,6 +19338,7 @@ ${data.raw}
       document.documentElement.classList.toggle("im-nav2-open", isNav2Open());
       document.documentElement.classList.toggle("im-hide-cat-tags", isHideCatTags());
       document.documentElement.classList.toggle("im-blur-imgs", isBlurImg());
+      applyWatermark();
       restyleSplash();
       makeFavicon();
       ensureModeFab();
@@ -19203,7 +19406,7 @@ ${data.raw}
       }
     }
     function bootstrap() {
-      console.info(`[linuxdo-im] v${"1.3.6"} loaded, skin=${SKIN_ID}`);
+      console.info(`[linuxdo-im] v${"1.3.7"} loaded, skin=${SKIN_ID}`);
       if (!document.documentElement) {
         setTimeout(bootstrap, 0);
         return;
