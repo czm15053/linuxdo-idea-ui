@@ -1223,6 +1223,21 @@ color: #7AA3D6;
       cursor: pointer;
     }
 
+    /* ---------- 超长代码块兜底：气泡内滚动，禁止撑出面板 ---------- */
+    .__ROOT_CLASS__ .im-msg-bubble { min-width: 0; }
+    .__ROOT_CLASS__ .im-msg-bubble pre,
+    .__ROOT_CLASS__ .im-msg-bubble [data-code-wrap] {
+      /* 气泡是收缩宽度，百分比行不通：按聊天面板可用宽度（视口宽 - 导航/侧栏/中栏 - 头像与内边距）封顶 */
+      max-width: calc(100vw - var(--im-nav, 0px) - var(--im-nav2w, 0px) - var(--im-strip, 0px) - var(--im-list, 0px) - 140px);
+      overflow-x: auto;
+    }
+    .__ROOT_CLASS__ .im-msg-bubble table {
+      display: block;
+      max-width: calc(100vw - var(--im-nav, 0px) - var(--im-nav2w, 0px) - var(--im-strip, 0px) - var(--im-list, 0px) - 140px);
+      overflow-x: auto;
+    }
+    .__ROOT_CLASS__ .im-chat-body { overflow-x: hidden; }
+
     /* ---------- 钉钉式图片浮窗灯箱 ---------- */
     .__ROOT_CLASS__ .im-img-modal {
       position: fixed !important;

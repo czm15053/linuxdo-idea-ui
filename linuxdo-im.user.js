@@ -4162,6 +4162,21 @@ color: #7AA3D6;
       cursor: pointer;
     }
 
+    /* ---------- 超长代码块兜底：气泡内滚动，禁止撑出面板 ---------- */
+    .__ROOT_CLASS__ .im-msg-bubble { min-width: 0; }
+    .__ROOT_CLASS__ .im-msg-bubble pre,
+    .__ROOT_CLASS__ .im-msg-bubble [data-code-wrap] {
+      /* 气泡是收缩宽度，百分比行不通：按聊天面板可用宽度（视口宽 - 导航/侧栏/中栏 - 头像与内边距）封顶 */
+      max-width: calc(100vw - var(--im-nav, 0px) - var(--im-nav2w, 0px) - var(--im-strip, 0px) - var(--im-list, 0px) - 140px);
+      overflow-x: auto;
+    }
+    .__ROOT_CLASS__ .im-msg-bubble table {
+      display: block;
+      max-width: calc(100vw - var(--im-nav, 0px) - var(--im-nav2w, 0px) - var(--im-strip, 0px) - var(--im-list, 0px) - 140px);
+      overflow-x: auto;
+    }
+    .__ROOT_CLASS__ .im-chat-body { overflow-x: hidden; }
+
     /* ---------- 钉钉式图片浮窗灯箱 ---------- */
     .__ROOT_CLASS__ .im-img-modal {
       position: fixed !important;
@@ -8616,26 +8631,30 @@ body.im-detail-open #reply-control {
       const Ember = pg.Ember;
       const namespaces = (_b2 = Ember == null ? void 0 : Ember.Namespace) == null ? void 0 : _b2.NAMESPACES;
       if (Array.isArray(namespaces)) {
-        const app = namespaces.find(
+        const app2 = namespaces.find(
           (n) => n && (n.name === "Discourse" || n.modulePrefix === "discourse" || n.NAMESPACE === "Discourse")
         );
-        if (app == null ? void 0 : app.__container__) return app.__container__;
-        if (typeof (app == null ? void 0 : app.lookup) === "function") return app;
+        if (app2 == null ? void 0 : app2.__container__) return app2.__container__;
+        if (typeof (app2 == null ? void 0 : app2.lookup) === "function") return app2;
       }
-      const mod = discourseRequire("discourse-common/lib/get-owner") || discourseRequire("discourse/lib/get-owner");
+      const app = pg.Discourse;
+      const mod = app && (discourseRequire("discourse-common/lib/get-owner") || discourseRequire("discourse/lib/get-owner"));
       if (mod) {
-        const owner = typeof mod.getOwnerWithFallback === "function" && mod.getOwnerWithFallback(pg.Discourse) || typeof mod.getOwner === "function" && mod.getOwner(pg.Discourse) || null;
+        const owner = typeof mod.getOwnerWithFallback === "function" && mod.getOwnerWithFallback(app) || typeof mod.getOwner === "function" && mod.getOwner(app) || null;
         if (owner) return owner;
       }
       try {
         const appMod = discourseRequire("discourse/app");
-        const app = (appMod == null ? void 0 : appMod.default) || appMod;
-        if (app == null ? void 0 : app.__container__) return app.__container__;
-        if (typeof (app == null ? void 0 : app.lookup) === "function") return app;
+        const app2 = (appMod == null ? void 0 : appMod.default) || appMod;
+        if (app2 == null ? void 0 : app2.__container__) return app2.__container__;
+        if (typeof (app2 == null ? void 0 : app2.lookup) === "function") return app2;
       } catch {
       }
     } catch (err) {
-      console.warn("[linuxdo-im] getEmberOwner failed", err);
+      if (!getEmberOwner.warned) {
+        getEmberOwner.warned = true;
+        console.warn("[linuxdo-im] getEmberOwner failed", err);
+      }
     }
     return null;
   }

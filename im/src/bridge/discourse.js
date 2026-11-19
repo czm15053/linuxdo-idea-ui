@@ -31,13 +31,15 @@ export function getEmberOwner() {
       if (typeof app?.lookup === "function") return app;
     }
 
-    const mod =
-      discourseRequire("discourse-common/lib/get-owner") ||
-      discourseRequire("discourse/lib/get-owner");
+    // Ember getOwner 不接受 undefined（会抛 Symbol(OWNER) 读取错误），无 Discourse 时直接跳过
+    const app = pg.Discourse;
+    const mod = app &&
+      (discourseRequire("discourse-common/lib/get-owner") ||
+        discourseRequire("discourse/lib/get-owner"));
     if (mod) {
       const owner =
-        (typeof mod.getOwnerWithFallback === "function" && mod.getOwnerWithFallback(pg.Discourse)) ||
-        (typeof mod.getOwner === "function" && mod.getOwner(pg.Discourse)) ||
+        (typeof mod.getOwnerWithFallback === "function" && mod.getOwnerWithFallback(app)) ||
+        (typeof mod.getOwner === "function" && mod.getOwner(app)) ||
         null;
       if (owner) return owner;
     }
@@ -49,7 +51,11 @@ export function getEmberOwner() {
       if (typeof app?.lookup === "function") return app;
     } catch { /* ignore */ }
   } catch (err) {
-    console.warn("[linuxdo-im] getEmberOwner failed", err);
+    // applyTheme 每帧都会走到这里，失败只汇报一次，避免刷屏
+    if (!getEmberOwner.warned) {
+      getEmberOwner.warned = true;
+      console.warn("[linuxdo-im] getEmberOwner failed", err);
+    }
   }
   return null;
 }
