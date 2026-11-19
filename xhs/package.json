@@ -1,6 +1,6 @@
 {
   "name": "xhs-im-ui",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "小红书 · IM 三合一外观脚本（钉钉 / 飞书 / 企业微信）",
   "type": "module",
   "private": true,

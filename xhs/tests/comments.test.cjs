@@ -27,7 +27,8 @@ function merge(domIds, stateIds) {
 }
 
 test("late child stays before the next root comment", () => {
-  assert.equal(merge(["A", "A1", "A2", "B"], ["A", "A1", "B"]), "A,A1,A2,B");
+  assert.equal(merge(["A", "A1", "A2", "B"], ["A", "A1", "B"]), "A,A1,B");
+  assert.equal(merge(["A", "A1", "A2", "B"], ["A", "A1", "A2", "B"]), "A,A1,A2,B");
 });
 test("partially mounted DOM retains unseen state entries in order", () => {
   assert.equal(merge(["B", "B1"], ["A", "A1", "B", "B1", "C"]), "A,A1,B,B1,C");
@@ -35,8 +36,9 @@ test("partially mounted DOM retains unseen state entries in order", () => {
 test("state-only comments retain their order", () => {
   assert.equal(merge([], ["A", "A1", "B"]), "A,A1,B");
 });
-test("DOM-only comments retain their order and are deduplicated", () => {
-  assert.equal(merge(["A", "A1", "A1", "B"], []), "A,A1,B");
+test("DOM comments require scoped cache membership and are deduplicated", () => {
+  assert.equal(merge(["A", "A1", "A1", "B"], []), "");
+  assert.equal(merge(["A", "A1", "A1", "B"], ["A", "A1", "B"]), "A,A1,B");
 });
 
 function applyBatch(incoming) {
@@ -45,6 +47,7 @@ function applyBatch(incoming) {
     lastThreadDetail: { id: "note", detail: { pin: { id: "note" }, replies: ["A", "B"].map(comment) } },
     renderDetailThread: () => renders++,
     incoming,
+    isCurrentThread: (thread) => !!thread,
   });
   vm.runInContext(extract("applyCommentBatch", "async function fillCommentsLater"), context);
   vm.runInContext("applyCommentBatch('note', incoming)", context);
@@ -64,8 +67,8 @@ for (const [field, value] of [["text", "edited"], ["avatar", "new"], ["likeCount
 test("unchanged snapshot does not cause repeated observer-driven rendering", () => {
   assert.equal(applyBatch(["A", "B"].map(comment)).renders, 0);
 });
-test("shorter loading snapshot does not discard previously collected comments", () => {
-  assert.equal(applyBatch([comment("A")]).renders, 0);
+test("smaller authoritative snapshot replaces previously collected comments", () => {
+  assert.equal(applyBatch([comment("A")]).renders, 1);
 });
 test("the mutation observer's sync path collects comments in an open drawer", () => {
   let reads = 0;
@@ -73,6 +76,7 @@ test("the mutation observer's sync path collects comments in an open drawer", ()
   const context = vm.createContext({
     detailView: { classList: { contains: () => true } },
     detailRenderedHref: "/explore/note",
+    detailNavigation: null,
     lastThreadDetail: { id: "note" },
     collectNoteComments: () => { reads++; return [comment("A")]; },
     applyCommentBatch: () => applies++,

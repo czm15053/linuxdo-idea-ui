@@ -2,7 +2,7 @@
 // @name         小红书 · IM 三合一样式（钉钉 / 飞书 / 企业微信）
 // @namespace    https://github.com/linuxdo-community/xhs-im
 // @author       linuxdo
-// @version      0.1.1
+// @version      0.1.2
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，把小红书换成三栏 IM 办公聊天壳。只换皮不碰数据：中栏笔记列表（推荐/搜索/频道）＋ 右栏笔记详情与树状评论收成聊天抽屉，点赞/收藏/关注走原生代理。支持纯文本摸鱼模式、深浅色跟随、百家姓脱敏、皮肤一键切换。
 // @match        https://www.xiaohongshu.com/*
 // @match        https://xiaohongshu.com/*
@@ -7685,31 +7685,31 @@ html.im-theme .im-me-btn { cursor: pointer; }
       source: "note"
     };
   }
+  function getNoteState() {
+    var _a, _b, _c, _d, _e, _f, _g;
+    const app = (_a = document.getElementById("app")) == null ? void 0 : _a.__vue_app__;
+    return ((_f = (_e = (_d = (_c = (_b = app == null ? void 0 : app.config) == null ? void 0 : _b.globalProperties) == null ? void 0 : _c.$pinia) == null ? void 0 : _d.state) == null ? void 0 : _e.value) == null ? void 0 : _f.note) || ((_g = getInitialState()) == null ? void 0 : _g.note);
+  }
   function getCachedNoteFromState(noteId) {
-    var _a, _b, _c;
-    const state = getInitialState();
-    if (!state) return null;
-    const direct = unwrap((_b = (_a = state.noteData) == null ? void 0 : _a.data) == null ? void 0 : _b.noteData);
-    if (direct && (!noteId || direct.id === noteId || direct.noteId === noteId)) {
-      return direct;
-    }
-    const detailMap = unwrap((_c = state.note) == null ? void 0 : _c.noteDetailMap);
+    var _a, _b, _c, _d;
+    const detailMap = unwrap((_a = getNoteState()) == null ? void 0 : _a.noteDetailMap);
     if (detailMap) {
       const pickNote = (entry) => {
         var _a2;
         return unwrap((_a2 = unwrap(entry)) == null ? void 0 : _a2.note);
       };
       if (noteId) {
-        const n = pickNote(detailMap[noteId]);
-        if (n) return n;
+        const note = pickNote(detailMap[noteId]);
+        if (note) return note;
       }
-      const items = Object.entries(detailMap).filter(([k]) => k && k !== "undefined");
+      const items = Object.entries(detailMap).filter(([key]) => key && key !== "undefined");
       for (let i = items.length - 1; i >= 0; i--) {
-        const n = pickNote(items[i][1]);
-        if (n && (!noteId || n.id === noteId || n.noteId === noteId)) return n;
+        const note = pickNote(items[i][1]);
+        if (note && (!noteId || note.id === noteId || note.noteId === noteId)) return note;
       }
     }
-    return null;
+    const direct = unwrap((_d = (_c = (_b = getInitialState()) == null ? void 0 : _b.noteData) == null ? void 0 : _c.data) == null ? void 0 : _d.noteData);
+    return direct && (!noteId || direct.id === noteId || direct.noteId === noteId) ? direct : null;
   }
   function noteContainer() {
     return document.getElementById("noteContainer") || document.querySelector(".note-container");
@@ -7833,51 +7833,53 @@ html.im-theme .im-me-btn { cursor: pointer; }
     }
     return replies;
   }
-  function flattenRawComments(list, repliedTo, out) {
+  function flattenRawComments(list, repliedTo, out, noteId) {
     if (!Array.isArray(list)) return;
     for (const raw of list) {
       const item = unwrap(raw);
+      const owner = String(unwrap(item == null ? void 0 : item.noteId) || unwrap(item == null ? void 0 : item.note_id) || noteId);
+      if (owner !== noteId) continue;
       const parsed = commentFromRaw(item, repliedTo);
-      if (parsed) out.push(parsed);
+      if (parsed) out.push({ ...parsed, noteId });
       const subs = unwrap(item == null ? void 0 : item.subComments) || unwrap(item == null ? void 0 : item.subCommentList) || unwrap(item == null ? void 0 : item.sub_comments) || [];
-      if (Array.isArray(subs) && subs.length) flattenRawComments(subs, (parsed == null ? void 0 : parsed.name) || repliedTo, out);
+      if (Array.isArray(subs) && subs.length) flattenRawComments(subs, (parsed == null ? void 0 : parsed.name) || repliedTo, out, noteId);
     }
   }
   function harvestCommentsFromState(noteId) {
     var _a, _b, _c, _d;
     const out = [];
     try {
-      const state = getInitialState();
-      if (!state) return out;
-      const map = unwrap((_a = state.note) == null ? void 0 : _a.noteDetailMap) || {};
+      if (!noteId) return null;
+      const map = unwrap((_a = getNoteState()) == null ? void 0 : _a.noteDetailMap) || {};
       const entry = unwrap(noteId ? map[noteId] : null) || {};
       const buckets = [
         unwrap(entry.comments),
         unwrap(entry.comment),
         unwrap(entry.commentList),
-        unwrap((_b = state.note) == null ? void 0 : _b.comments),
-        unwrap((_d = (_c = state.comment) == null ? void 0 : _c.commentMap) == null ? void 0 : _d[noteId])
+        unwrap((_d = (_c = (_b = getInitialState()) == null ? void 0 : _b.comment) == null ? void 0 : _c.commentMap) == null ? void 0 : _d[noteId])
       ];
       for (const b of buckets) {
-        const list = Array.isArray(b) ? b : Array.isArray(b == null ? void 0 : b.list) ? b.list : [];
-        if (list.length) flattenRawComments(list, "", out);
-        if (out.length) break;
+        const list = Array.isArray(b) ? b : unwrap(b == null ? void 0 : b.list);
+        if (!Array.isArray(list) || unwrap(b == null ? void 0 : b.firstRequestFinish) === false) continue;
+        flattenRawComments(list, "", out, noteId);
+        return out;
       }
     } catch {
     }
-    return out;
+    return null;
   }
   function collectNoteComments(noteId, container = noteContainer()) {
-    const fromDom = harvestNoteComments(container);
     const fromState = harvestCommentsFromState(noteId);
+    if (fromState === null) return null;
     const keyOf = (c) => c.id && !c.id.startsWith("0.") ? c.id : `${c.name}|${c.text}`;
     const map = new Map(fromState.map((c) => [keyOf(c), c]));
+    const fromDom = harvestNoteComments(container).filter((c) => map.has(keyOf(c)));
     const order = [];
     const ordered = /* @__PURE__ */ new Set();
     for (const c of fromDom) {
       const key = keyOf(c);
       const existing = map.get(key);
-      map.set(key, { ...existing, ...c, avatar: c.avatar || (existing == null ? void 0 : existing.avatar) || "" });
+      map.set(key, { ...existing, ...c, noteId, avatar: c.avatar || (existing == null ? void 0 : existing.avatar) || "" });
       if (!ordered.has(key)) {
         order.push(key);
         ordered.add(key);
@@ -7917,7 +7919,9 @@ html.im-theme .im-me-btn { cursor: pointer; }
       return /展开|更多(评论|回复)|查看全部|加载更多/.test(t);
     });
   }
-  function expandCommentRound() {
+  function expandCommentRound(noteId) {
+    var _a;
+    if (String(unwrap((_a = getNoteState()) == null ? void 0 : _a.currentNoteId) || "") !== noteId) return 0;
     kickCommentScroller();
     let n = 0;
     for (const b of commentMoreButtons()) {
@@ -7929,11 +7933,12 @@ html.im-theme .im-me-btn { cursor: pointer; }
     }
     return n;
   }
-  async function expandAllComments(_container) {
+  async function expandAllComments(noteId, isCurrent = () => true) {
     let clicked = 0;
     let idle = 0;
     for (let round = 0; round < 20; round++) {
-      const n = expandCommentRound();
+      if (!isCurrent()) break;
+      const n = expandCommentRound(noteId);
       clicked += n;
       if (!n) {
         idle++;
@@ -7943,10 +7948,12 @@ html.im-theme .im-me-btn { cursor: pointer; }
     }
     return clicked;
   }
-  async function loadMoreComments(noteId) {
-    expandCommentRound();
+  async function loadMoreComments(noteId, isCurrent = () => true) {
+    if (!isCurrent()) return null;
+    expandCommentRound(noteId);
     await new Promise((r) => setTimeout(r, 400));
-    expandCommentRound();
+    if (!isCurrent()) return null;
+    expandCommentRound(noteId);
     return collectNoteComments(noteId);
   }
   function downloadNoteCommentsAsTxt(pin, replies) {
@@ -7995,119 +8002,6 @@ ${pin.text || "无"}
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }, 100);
-  }
-  function collectNotePhotos(container) {
-    const photos = [];
-    const push = (src) => {
-      if (src && !photos.includes(src) && !src.includes("avatar") && !src.includes("emoji")) photos.push(src);
-    };
-    container.querySelectorAll(".media-container .swiper-slide:not(.swiper-slide-duplicate) img, .note-slider-img img").forEach((img) => push(img.getAttribute("src")));
-    if (!photos.length) {
-      container.querySelectorAll(".media-container img").forEach((img) => push(img.getAttribute("src")));
-    }
-    return photos;
-  }
-  function extractNoteFromVueComp(container) {
-    if (!container) return null;
-    const nodes = [
-      container,
-      container.querySelector(".note-content"),
-      container.querySelector(".interaction-container"),
-      container.querySelector(".author-container"),
-      container.querySelector(".media-container"),
-      container.querySelector(".note-scroller"),
-      ...Array.from(container.querySelectorAll("[class*='note'], [class*='content'], [class*='author']")).slice(0, 15)
-    ];
-    for (const el of nodes) {
-      if (!el) continue;
-      let comp = el.__vueParentComponent || el.__vue_app__;
-      for (let i = 0; i < 16 && comp; i++) {
-        const bags = [comp.props, comp.setupState, comp.ctx];
-        for (const bag of bags) {
-          if (!bag || typeof bag !== "object") continue;
-          const note = unwrap(bag.note) || unwrap(bag.noteData) || unwrap(bag.noteInfo) || unwrap(bag.item);
-          if (note && typeof note === "object" && (note.title || note.desc || note.displayTitle || note.user)) {
-            return note;
-          }
-        }
-        comp = comp.parent;
-      }
-    }
-    return null;
-  }
-  function pinFromNoteContainer(container, noteId) {
-    var _a, _b, _c, _d, _e, _f, _g;
-    const vueNote = extractNoteFromVueComp(container);
-    if (vueNote) {
-      const pin = pinFromNoteObject(vueNote, noteId);
-      if (pin && (pin.text !== "分享了一篇笔记" || pin.name !== "小红书薯友")) {
-        return pin;
-      }
-    }
-    const titleEl = container.querySelector("#detail-title, .title, [class*='detail-title'], .note-content .title, .note-scroller .title");
-    const title = ((titleEl == null ? void 0 : titleEl.innerText) || (titleEl == null ? void 0 : titleEl.textContent) || "").trim();
-    const descEl = container.querySelector("#detail-desc, .desc, [class*='detail-desc'], .note-content .desc, .note-text, .note-scroller .desc");
-    const desc = ((descEl == null ? void 0 : descEl.innerText) || (descEl == null ? void 0 : descEl.textContent) || "").trim();
-    let fullText = [title, desc].filter(Boolean).join("\n\n");
-    if (!fullText) {
-      const contentEl = container.querySelector(".note-content, .note-scroller, .interaction-container");
-      if (contentEl) {
-        const t = (contentEl.innerText || "").trim();
-        if (t && t.length > 5) fullText = t;
-      }
-    }
-    if (!fullText) fullText = "分享了一篇笔记";
-    const authorEl = container.querySelector(".author-container, .author-wrapper, .interaction-container .author-wrapper, .author-info, .author, [class*='author']");
-    const authorLink = container.querySelector("a[href*='/user/profile/']");
-    const authorNameEl = (authorEl == null ? void 0 : authorEl.querySelector(".name, .username, [class*='name']")) || authorLink;
-    const authorName = ((authorNameEl == null ? void 0 : authorNameEl.innerText) || (authorNameEl == null ? void 0 : authorNameEl.textContent) || "").trim() || "小红书薯友";
-    const authorHandle = ((_b = (_a = authorLink == null ? void 0 : authorLink.getAttribute("href")) == null ? void 0 : _a.match(/\/user\/profile\/([^?/]+)/)) == null ? void 0 : _b[1]) || authorName;
-    const authorImg = authorEl == null ? void 0 : authorEl.querySelector("img.avatar-item, img.user-image, .avatar img, img[src*='avatar'], img");
-    const authorAvatar = (authorImg == null ? void 0 : authorImg.currentSrc) || (authorImg == null ? void 0 : authorImg.src) || (authorImg == null ? void 0 : authorImg.getAttribute("src")) || "";
-    const photos = collectNotePhotos(container);
-    const videoEl = container.querySelector(".media-container video, video");
-    const videoSrc = (videoEl == null ? void 0 : videoEl.getAttribute("src")) || "";
-    const video = videoSrc || videoEl ? { src: videoSrc, poster: (videoEl == null ? void 0 : videoEl.getAttribute("poster")) || photos[0] || "" } : null;
-    const bar = container.querySelector(".engage-bar, .buttons.engage-bar-style");
-    const likeEl = (bar == null ? void 0 : bar.querySelector(".like-wrapper")) || container.querySelector(".engage-bar .like-wrapper, [class*='like-wrapper']");
-    const collectEl = (bar == null ? void 0 : bar.querySelector(".collect-wrapper")) || container.querySelector(".engage-bar .collect-wrapper, [class*='collect-wrapper']");
-    const chatEl = (bar == null ? void 0 : bar.querySelector(".chat-wrapper")) || container.querySelector(".engage-bar .chat-wrapper, [class*='chat-wrapper']");
-    const likeCount = countIn(((_c = likeEl == null ? void 0 : likeEl.querySelector(".count")) == null ? void 0 : _c.textContent) || "") || "";
-    const collectCount = countIn(((_d = collectEl == null ? void 0 : collectEl.querySelector(".count")) == null ? void 0 : _d.textContent) || "") || "";
-    const replyCount = countIn(((_e = chatEl == null ? void 0 : chatEl.querySelector(".count")) == null ? void 0 : _e.textContent) || ((_f = container.querySelector(".comments-container .total, .comments-container")) == null ? void 0 : _f.textContent) || "") || "";
-    const isLiked = isLikeActive(likeEl);
-    const isCollected = !!((collectEl == null ? void 0 : collectEl.querySelector(".collect-active, .active")) || (collectEl == null ? void 0 : collectEl.classList.contains("active")));
-    const dateObj = timeFromNoteId(noteId);
-    const noteTime = (((_g = container.querySelector(".date, .info .date, .time, [class*='date']")) == null ? void 0 : _g.textContent) || "").trim() || (dateObj ? fmtStateTime(dateObj) : "") || "刚刚";
-    return {
-      id: noteId,
-      name: authorName,
-      handle: authorHandle,
-      profileHref: (authorLink == null ? void 0 : authorLink.getAttribute("href")) || "",
-      avatar: authorAvatar,
-      text: fullText,
-      photos,
-      images: photos,
-      video,
-      time: noteTime,
-      datetime: dateObj ? dateObj.toISOString() : "",
-      timeIso: dateObj ? dateObj.toISOString() : (/* @__PURE__ */ new Date()).toISOString(),
-      likeCount,
-      rtCount: collectCount,
-      replyCount,
-      liked: isLiked,
-      retweeted: isCollected,
-      bookmarked: isCollected,
-      following: false,
-      author: { name: authorName, handle: authorHandle, avatar: authorAvatar, verified: false },
-      stats: { reply: replyCount, rt: collectCount, like: likeCount, liked: isLiked, retweeted: isCollected, bookmarked: isCollected },
-      source: "note"
-    };
-  }
-  function extractFromNoteContainer(nid) {
-    const box = noteContainer();
-    if (!box) return null;
-    return { pin: pinFromNoteContainer(box, nid), replies: harvestNoteComments(box) };
   }
   function noteXsecToken(nid) {
     var _a, _b;
@@ -8170,39 +8064,23 @@ ${pin.text || "无"}
     } catch {
     }
   }
-  async function fetchTweetDetail(noteId) {
+  async function fetchTweetDetail(noteId, isCurrent = () => true) {
     var _a, _b, _c;
-    if (!noteId) return null;
+    if (!noteId || !isCurrent()) return null;
     let pin = (() => {
-      var _a2;
       const cached = getCachedNoteFromState(noteId);
       if (cached) return pinFromNoteObject(cached, noteId);
-      return ((_a2 = extractFromNoteContainer(noteId)) == null ? void 0 : _a2.pin) || null;
+      return null;
     })();
     clickNativeNoteCard(noteId);
-    let replies = collectNoteComments(noteId);
+    let replies = collectNoteComments(noteId) || [];
     for (let i = 0; i < 15; i++) {
       await sleep$1(80);
-      if (i === 2 || i === 6) kickCommentScroller();
+      if (!isCurrent()) return null;
+      if ((i === 2 || i === 6) && String(unwrap((_a = getNoteState()) == null ? void 0 : _a.currentNoteId) || "") === noteId) kickCommentScroller();
       const cached = getCachedNoteFromState(noteId);
       if (cached) pin = pinFromNoteObject(cached, noteId);
-      const live = extractFromNoteContainer(noteId);
-      if (live == null ? void 0 : live.pin) {
-        if (!pin) {
-          pin = live.pin;
-        } else {
-          if (live.pin.text && live.pin.text !== "分享了一篇笔记") pin.text = live.pin.text;
-          if (live.pin.name && live.pin.name !== "小红书薯友") pin.name = live.pin.name;
-          if (live.pin.avatar) pin.avatar = live.pin.avatar;
-          if (live.pin.handle && live.pin.handle !== "小红书薯友") pin.handle = live.pin.handle;
-          if (live.pin.profileHref) pin.profileHref = live.pin.profileHref;
-          if ((_a = live.pin.photos) == null ? void 0 : _a.length) pin.photos = live.pin.photos;
-          if (live.pin.likeCount) pin.likeCount = live.pin.likeCount;
-          if (live.pin.rtCount) pin.rtCount = live.pin.rtCount;
-          if (live.pin.replyCount) pin.replyCount = live.pin.replyCount;
-        }
-      }
-      replies = collectNoteComments(noteId);
+      replies = collectNoteComments(noteId) || [];
       const hasDetailedPin = pin && (((_b = pin.photos) == null ? void 0 : _b.length) > 1 || pin.text && pin.text.length > 25 || cached);
       if (hasDetailedPin && (replies.length || i >= 4)) {
         break;
@@ -10142,15 +10020,16 @@ ${pin.text || "无"}
     }
   }
   let detailRenderedHref = "";
+  let detailNavigation = null;
   let detailPrevUrl = "";
   let lastThreadDetail = null;
+  function isCurrentThread(thread) {
+    return !!thread && thread === lastThreadDetail && !!(detailView == null ? void 0 : detailView.classList.contains("is-open"));
+  }
   function applyCommentBatch(noteId, replies) {
-    var _a, _b;
-    if (!(replies == null ? void 0 : replies.length)) return 0;
-    const detail = (lastThreadDetail == null ? void 0 : lastThreadDetail.id) === noteId ? lastThreadDetail.detail : { pin: ((_a = lastThreadDetail == null ? void 0 : lastThreadDetail.detail) == null ? void 0 : _a.pin) || null, replies: [] };
-    if (!detail.pin && ((_b = lastThreadDetail == null ? void 0 : lastThreadDetail.detail) == null ? void 0 : _b.pin)) detail.pin = lastThreadDetail.detail.pin;
+    if (!isCurrentThread(lastThreadDetail) || lastThreadDetail.id !== noteId || !Array.isArray(replies)) return 0;
+    const detail = lastThreadDetail.detail;
     const prevList = detail.replies || [];
-    if (replies.length < prevList.length) return prevList.length;
     const signature = (list) => JSON.stringify(list.map((c) => [
       c.id,
       c.name,
@@ -10168,52 +10047,72 @@ ${pin.text || "无"}
     ]));
     if (signature(replies) === signature(prevList)) return prevList.length;
     detail.replies = replies;
-    lastThreadDetail = { id: noteId, detail };
     renderDetailThread(detail);
     return replies.length;
   }
-  async function fillCommentsLater(noteId, el, loadedHref) {
+  async function fillCommentsLater(thread) {
+    const noteId = thread.id;
     for (let i = 0; i < 15; i++) {
       await new Promise((r) => setTimeout(r, 260));
-      if (detailView !== el || !el.classList.contains("is-open") || !(detailRenderedHref == null ? void 0 : detailRenderedHref.includes(noteId))) return;
+      if (!isCurrentThread(thread)) return;
       if (i === 1) expandCommentSoft();
       const replies = collectNoteComments(noteId);
-      if (replies.length) {
+      if (replies == null ? void 0 : replies.length) {
         applyCommentBatch(noteId, replies);
         const allHaveAvatar = replies.every((r) => !!r.avatar);
         if (allHaveAvatar && i >= 2) break;
       }
     }
-    if ((lastThreadDetail == null ? void 0 : lastThreadDetail.id) === noteId) {
+    if (isCurrentThread(thread)) {
       lastThreadDetail.detail.commentsPending = false;
       if (!(lastThreadDetail.detail.replies || []).length) renderDetailThread(lastThreadDetail.detail);
     }
   }
   function expandCommentSoft() {
-    loadMoreComments(lastThreadDetail == null ? void 0 : lastThreadDetail.id).then((replies) => {
-      if (lastThreadDetail == null ? void 0 : lastThreadDetail.id) applyCommentBatch(lastThreadDetail.id, replies);
+    const thread = lastThreadDetail;
+    if (!isCurrentThread(thread)) return;
+    return loadMoreComments(thread.id, () => isCurrentThread(thread)).then((replies) => {
+      if (isCurrentThread(thread)) applyCommentBatch(thread.id, replies);
     }).catch(() => {
     });
   }
-  let commentPaging = false;
   async function pageMoreComments() {
-    const noteId = lastThreadDetail == null ? void 0 : lastThreadDetail.id;
-    if (!noteId || commentPaging) return;
-    commentPaging = true;
-    if (lastThreadDetail.detail) {
-      lastThreadDetail.detail.commentsPaging = true;
-      const hint2 = detailView == null ? void 0 : detailView.querySelector(".im-detail-loadmore");
-      if (hint2) hint2.textContent = "正在加载更多评论…";
-    }
+    const thread = lastThreadDetail;
+    if (!isCurrentThread(thread) || thread.detail.commentsPaging) return;
+    thread.detail.commentsPaging = true;
+    const hint = detailView.querySelector(".im-detail-loadmore");
+    if (hint) hint.textContent = "正在加载更多评论…";
     try {
-      const replies = await loadMoreComments(noteId);
-      applyCommentBatch(noteId, replies);
+      const replies = await loadMoreComments(thread.id, () => isCurrentThread(thread));
+      if (isCurrentThread(thread)) applyCommentBatch(thread.id, replies);
     } catch {
+    } finally {
+      thread.detail.commentsPaging = false;
+      if (isCurrentThread(thread)) {
+        const hint2 = detailView.querySelector(".im-detail-loadmore");
+        if (hint2) hint2.textContent = "下滑加载更多评论";
+      }
     }
-    if (lastThreadDetail == null ? void 0 : lastThreadDetail.detail) lastThreadDetail.detail.commentsPaging = false;
-    const hint = detailView == null ? void 0 : detailView.querySelector(".im-detail-loadmore");
-    if (hint) hint.textContent = "下滑加载更多评论";
-    commentPaging = false;
+  }
+  async function expandDetailComments(e) {
+    e.stopPropagation();
+    const thread = lastThreadDetail;
+    if (!isCurrentThread(thread)) return;
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.title = "展开中…";
+    try {
+      const n = await expandAllComments(thread.id, () => isCurrentThread(thread));
+      if (!isCurrentThread(thread)) return;
+      const replies = collectNoteComments(thread.id);
+      applyCommentBatch(thread.id, replies);
+      toast(n ? `已展开 ${n} 处折叠评论` : (replies == null ? void 0 : replies.length) ? "没有更多折叠评论" : "暂无评论");
+    } finally {
+      if (isCurrentThread(thread)) {
+        btn.disabled = false;
+        btn.title = "展开全部评论";
+      }
+    }
   }
   function onDetailBodyScroll(e) {
     hideQuoteFloat();
@@ -10365,8 +10264,12 @@ ${pin.text || "无"}
         }
       }
     }
+    const thread = { id: statusId, detail: { pin: pt, replies: [], commentsPending: true } };
+    lastThreadDetail = thread;
     setDetailOpen(true);
-    if (!detailPrevUrl) detailPrevUrl = location.pathname + location.search;
+    if (!/\/(?:explore|search_result|discovery\/item)\/[a-f0-9]+/.test(location.pathname)) {
+      detailPrevUrl = location.pathname + location.search;
+    } else if (!detailPrevUrl) detailPrevUrl = "/explore";
     detailRenderedHref = (pt == null ? void 0 : pt.href) || href;
     console.info(`[xhs-im:detail-open] path=${location.pathname} href=${detailRenderedHref} statusId=${statusId} pt=${!!pt}`);
     const dbody = el.querySelector(".im-detail-body");
@@ -10377,8 +10280,8 @@ ${pin.text || "无"}
     dbody.dataset.sig = statusId || href;
     dbody.innerHTML = (pt ? threadPinHtml(pt) : `<div class="im-chat-empty"><p>正在加载笔记…</p></div>`) + `<div class="im-detail-loading">正在加载评论区…</div>`;
     if (statusId) {
-      const loadedHref = (pt == null ? void 0 : pt.href) || href;
       const failView = (what) => {
+        if (!isCurrentThread(thread)) return;
         console.warn(`[xhs-im:detail] 加载失败(${what}) id=${statusId}`);
         const loading = dbody.querySelector(".im-detail-loading");
         if (loading) {
@@ -10388,13 +10291,13 @@ ${pin.text || "无"}
         dbody.innerHTML = `<div class="im-chat-empty"><p>该笔记加载失败（${escapeHtml(what)}）</p>
         <a class="im-native-open" href="${escapeHtml(href || `/explore/${statusId}`)}" target="_blank" rel="noopener">在小红书打开</a></div>`;
       };
-      fetchTweetDetail(statusId).then((detail) => {
-        if (detailView !== el || !el.classList.contains("is-open") || detailRenderedHref !== loadedHref && !detailRenderedHref.includes(statusId)) return;
+      (detailNavigation || Promise.resolve()).then(() => isCurrentThread(thread) ? fetchTweetDetail(statusId, () => isCurrentThread(thread)) : null).then((detail) => {
+        if (!isCurrentThread(thread)) return;
         if (detail) {
           try {
-            lastThreadDetail = { id: statusId, detail };
+            thread.detail = detail;
             renderDetailThread(detail);
-            if (!(detail.replies || []).length) fillCommentsLater(statusId, el, loadedHref);
+            if (!(detail.replies || []).length) fillCommentsLater(thread);
           } catch (err) {
             console.error("[xhs-im:detail] 渲染评论抛异常:", err);
             failView("渲染异常");
@@ -10963,25 +10866,26 @@ ${pin.text || "无"}
   }
   let detailView = null;
   function setDetailOpen(open) {
+    const expand = detailView == null ? void 0 : detailView.querySelector(".im-detail-expand");
+    if (expand) {
+      expand.disabled = false;
+      expand.title = "展开全部评论";
+    }
     detailView == null ? void 0 : detailView.classList.toggle("is-open", open);
     syncComposerPlaceholder();
   }
-  function closeDetailTo() {
+  async function closeDetailTo() {
     const onNoteUrl = /\/(?:explore|search_result|discovery\/item)\/[a-f0-9]+/.test(location.pathname);
     closeDetailDrawer();
-    if (onNoteUrl) {
-      if (detailPrevUrl) {
-        try {
-          history.replaceState(null, "", detailPrevUrl);
-        } catch {
-        }
-      }
-      if (history.length > 1) {
-        try {
-          history.back();
-        } catch {
-        }
-      }
+    if (!onNoteUrl) return;
+    const returnTo = detailPrevUrl || "/explore";
+    const router = findVueRouter();
+    const navigation = Promise.resolve(router ? router.replace(returnTo) : navigateX(returnTo));
+    detailNavigation = navigation;
+    try {
+      await navigation;
+    } finally {
+      if (detailNavigation === navigation) detailNavigation = null;
     }
   }
   function ensureDetailView() {
@@ -11027,26 +10931,12 @@ ${pin.text || "无"}
       dragging = 0;
     });
     (_a = el.querySelector(".im-detail-back")) == null ? void 0 : _a.addEventListener("click", closeDetailTo);
-    (_b = el.querySelector(".im-detail-expand")) == null ? void 0 : _b.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      const btn = e.currentTarget;
-      btn.disabled = true;
-      btn.title = "展开中…";
-      const n = await expandAllComments();
-      const replies = collectNoteComments(lastThreadDetail == null ? void 0 : lastThreadDetail.id);
-      if (lastThreadDetail == null ? void 0 : lastThreadDetail.detail) {
-        lastThreadDetail.detail.replies = replies;
-        renderDetailThread(lastThreadDetail.detail);
-      }
-      toast(n ? `已展开 ${n} 处折叠评论` : replies.length ? "没有更多折叠评论" : "暂无评论");
-      btn.disabled = false;
-      btn.title = "展开全部评论";
-    });
+    (_b = el.querySelector(".im-detail-expand")) == null ? void 0 : _b.addEventListener("click", expandDetailComments);
     (_c = el.querySelector(".im-detail-export")) == null ? void 0 : _c.addEventListener("click", (e) => {
       var _a2, _b2;
       e.stopPropagation();
       const pin = (_a2 = lastThreadDetail == null ? void 0 : lastThreadDetail.detail) == null ? void 0 : _a2.pin;
-      const replies = ((_b2 = lastThreadDetail == null ? void 0 : lastThreadDetail.detail) == null ? void 0 : _b2.replies) || harvestNoteComments();
+      const replies = ((_b2 = lastThreadDetail == null ? void 0 : lastThreadDetail.detail) == null ? void 0 : _b2.replies) || [];
       if (!pin) {
         toast("请先打开一篇笔记");
         return;
@@ -11077,6 +10967,7 @@ ${pin.text || "无"}
       }
       return true;
     }
+    if (detailNavigation) return true;
     const status = statusInfo();
     if (!status) {
       if (detailView == null ? void 0 : detailView.classList.contains("is-open")) console.info(`[xhs-im:drawer] closing: path=${location.pathname} statusInfo=null detailHref=${detailRenderedHref}`);
@@ -11088,6 +10979,8 @@ ${pin.text || "无"}
     if (!host) return true;
     const el = ensureDetailView();
     if (!el) return true;
+    const thread = { id: String(status.id), detail: { pin: null, replies: [], commentsPending: true } };
+    lastThreadDetail = thread;
     setDetailOpen(true);
     const dbody = el.querySelector(".im-detail-body");
     const art = allTweetArticles().find(
@@ -11098,6 +10991,7 @@ ${pin.text || "无"}
       const cached = getCachedNoteFromState(status.id);
       if (cached) pt = pinFromNoteObject(cached, status.id);
     }
+    thread.detail.pin = pt;
     detailRenderedHref = `/explore/${status.id}`;
     const title = el.querySelector(".im-detail-title");
     const sub = el.querySelector(".im-detail-sub");
@@ -11107,12 +11001,11 @@ ${pin.text || "无"}
       dbody.dataset.sig = String(status.id);
       dbody.innerHTML = (pt ? threadPinHtml(pt) : `<div class="im-chat-empty"><p>正在加载笔记…</p></div>`) + `<div class="im-detail-loading">正在加载评论区…</div>`;
       if (pt) (_a = dbody.querySelector(".im-thread-pin")) == null ? void 0 : _a.setAttribute("data-pin-id", status.id);
-      const loadedHref = `/explore/${status.id}`;
-      fetchTweetDetail(status.id).then((detail) => {
-        if (detailView !== el || !el.classList.contains("is-open") || detailRenderedHref !== loadedHref && !detailRenderedHref.includes(status.id)) return;
+      fetchTweetDetail(status.id, () => isCurrentThread(thread)).then((detail) => {
+        if (!isCurrentThread(thread)) return;
         if (detail) {
           try {
-            lastThreadDetail = { id: String(status.id), detail };
+            thread.detail = detail;
             renderDetailThread(detail);
           } catch (err) {
             console.error("[xhs-im:detail] 兜底渲染评论抛异常:", err);
@@ -11124,6 +11017,7 @@ ${pin.text || "无"}
             <a class="im-native-open" href="/explore/${status.id}" target="_blank" rel="noopener">在小红书打开</a></div>`;
         }
       }).catch((err) => {
+        if (!isCurrentThread(thread)) return;
         console.error("[xhs-im:detail] 兜底 fetch 评论抛异常:", err && err.message);
         dbody.innerHTML = `<div class="im-chat-empty"><p>该笔记加载失败（网络/接口错误）</p>
           <a class="im-native-open" href="/explore/${status.id}" target="_blank" rel="noopener">在小红书打开</a></div>`;
@@ -11132,6 +11026,7 @@ ${pin.text || "无"}
     return true;
   }
   function closeDetailDrawer() {
+    lastThreadDetail = null;
     setDetailOpen(false);
     detailRenderedHref = "";
   }
@@ -11674,7 +11569,7 @@ ${pin.text || "无"}
     document.title = `${name} - ${skin.label}`;
   }
   function run() {
-    const version = "0.1.1";
+    const version = "0.1.2";
     console.info(`[xhs-im] v${version} loaded, skin=${currentSkinId()}`);
     installSearchCapture();
     if (typeof window !== "undefined" && window.matchMedia) {
