@@ -5,7 +5,7 @@ import { displayTitle, personAvatarHtml } from "./avatars.js";
 import { escapeHtml, parseCountValue, formatCount } from "../utils/html.js";
 import {
   extractTweet, allTweetArticles, findTweetArticle, nativeProfilePath, loadMoreFeed,
-  extractProfilePage, navigateX, refreshHomeFeed, clickNativeLogin, openUserProfile,
+  extractProfilePage, navigateX, findVueRouter, refreshHomeFeed, clickNativeLogin, openUserProfile,
 } from "../bridge/x-dom.js";
 import { chatIdFromRoute, routeKind } from "../bridge/router.js";
 import {
@@ -15,7 +15,7 @@ import {
 } from "../bridge/tweet.js";
 import {
   fetchTweetDetail, fetchSearchTimeline, posterVideoSrc,
-  requestXTranslation, pinFromNoteObject, getCachedNoteFromState, harvestNoteComments,
+  requestXTranslation, pinFromNoteObject, getCachedNoteFromState,
   expandAllComments, downloadNoteCommentsAsTxt, collectNoteComments, loadMoreComments,
   getCapturedSearch,
 } from "../bridge/feed-api.js";
@@ -266,7 +266,7 @@ export function ensureChatPanel() {
 }
 
 function composerText(box) {
-  return String(box?.innerText || "").replace(/ /g, " ").trim();
+  return String(box?.innerText || "").replace(/\u00a0/g, " ").trim();
 }
 
 function syncComposeState(panel) {
@@ -843,77 +843,96 @@ function onChatWheel(e) {
 }
 
 let detailRenderedHref = "";
+let detailNavigation = null;
 let detailPrevUrl = ""; // 打开详情前的列表 URL，关闭时还原
 let lastThreadDetail = null; // 最近打开详情线程的 { id, detail }，供引用视频零请求复用
 
+function isCurrentThread(thread) {
+  return !!thread && thread === lastThreadDetail && !!detailView?.classList.contains("is-open");
+}
+
 function applyCommentBatch(noteId, replies) {
-  if (!replies?.length) return 0;
-  const detail = lastThreadDetail?.id === noteId ? lastThreadDetail.detail : { pin: lastThreadDetail?.detail?.pin || null, replies: [] };
-  if (!detail.pin && lastThreadDetail?.detail?.pin) detail.pin = lastThreadDetail.detail.pin;
+  if (!isCurrentThread(lastThreadDetail) || lastThreadDetail.id !== noteId || !Array.isArray(replies)) return 0;
+  const detail = lastThreadDetail.detail;
   const prevList = detail.replies || [];
 
-  // 检测是否有新评论加入 或 已有评论成功解析出真实头像
-  let hasAvatarUpdate = false;
-  if (replies.length === prevList.length) {
-    for (let i = 0; i < replies.length; i++) {
-      if (replies[i].avatar && !prevList[i]?.avatar) {
-        hasAvatarUpdate = true;
-        break;
-      }
-    }
-  }
-
-  if (replies.length <= prevList.length && !hasAvatarUpdate) return prevList.length;
+  // 只比较采集字段，排除渲染时补充的 replyRef/threadIdx，避免自身重绘触发循环。
+  const signature = (list) => JSON.stringify(list.map((c) => [
+    c.id, c.name, c.handle, c.profileHref, c.avatar, c.text, c.time,
+    c.likeCount, c.liked, c.photos, c.replyTo, c.repliedTo, c.isSub,
+  ]));
+  if (signature(replies) === signature(prevList)) return prevList.length;
   detail.replies = replies;
-  lastThreadDetail = { id: noteId, detail };
   renderDetailThread(detail);
   return replies.length;
 }
 
-async function fillCommentsLater(noteId, el, loadedHref) {
+async function fillCommentsLater(thread) {
+  const noteId = thread.id;
   for (let i = 0; i < 15; i++) {
     await new Promise((r) => setTimeout(r, 260));
-    if (detailView !== el || !el.classList.contains("is-open") || !detailRenderedHref?.includes(noteId)) return;
+    if (!isCurrentThread(thread)) return;
     if (i === 1) expandCommentSoft();
     const replies = collectNoteComments(noteId);
-    if (replies.length) {
+    if (replies?.length) {
       applyCommentBatch(noteId, replies);
       // 如果所有已解析出来的评论都已持有头像且已至少轮询 2 轮，提前收工
       const allHaveAvatar = replies.every((r) => !!r.avatar);
       if (allHaveAvatar && i >= 2) break;
     }
   }
-  if (lastThreadDetail?.id === noteId) {
+  if (isCurrentThread(thread)) {
     lastThreadDetail.detail.commentsPending = false;
     if (!(lastThreadDetail.detail.replies || []).length) renderDetailThread(lastThreadDetail.detail);
   }
-  void loadedHref;
 }
 
 function expandCommentSoft() {
-  loadMoreComments(lastThreadDetail?.id).then((replies) => {
-    if (lastThreadDetail?.id) applyCommentBatch(lastThreadDetail.id, replies);
+  const thread = lastThreadDetail;
+  if (!isCurrentThread(thread)) return;
+  return loadMoreComments(thread.id, () => isCurrentThread(thread)).then((replies) => {
+    if (isCurrentThread(thread)) applyCommentBatch(thread.id, replies);
   }).catch(() => {});
 }
 
-let commentPaging = false;
 async function pageMoreComments() {
-  const noteId = lastThreadDetail?.id;
-  if (!noteId || commentPaging) return;
-  commentPaging = true;
-  if (lastThreadDetail.detail) {
-    lastThreadDetail.detail.commentsPaging = true;
-    const hint = detailView?.querySelector(".im-detail-loadmore");
-    if (hint) hint.textContent = "正在加载更多评论…";
-  }
+  const thread = lastThreadDetail;
+  if (!isCurrentThread(thread) || thread.detail.commentsPaging) return;
+  thread.detail.commentsPaging = true;
+  const hint = detailView.querySelector(".im-detail-loadmore");
+  if (hint) hint.textContent = "正在加载更多评论…";
   try {
-    const replies = await loadMoreComments(noteId);
-    applyCommentBatch(noteId, replies);
+    const replies = await loadMoreComments(thread.id, () => isCurrentThread(thread));
+    if (isCurrentThread(thread)) applyCommentBatch(thread.id, replies);
   } catch { /* ignore */ }
-  if (lastThreadDetail?.detail) lastThreadDetail.detail.commentsPaging = false;
-  const hint = detailView?.querySelector(".im-detail-loadmore");
-  if (hint) hint.textContent = "下滑加载更多评论";
-  commentPaging = false;
+  finally {
+    thread.detail.commentsPaging = false;
+    if (isCurrentThread(thread)) {
+      const hint = detailView.querySelector(".im-detail-loadmore");
+      if (hint) hint.textContent = "下滑加载更多评论";
+    }
+  }
+}
+
+async function expandDetailComments(e) {
+  e.stopPropagation();
+  const thread = lastThreadDetail;
+  if (!isCurrentThread(thread)) return;
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  btn.title = "展开中…";
+  try {
+    const n = await expandAllComments(thread.id, () => isCurrentThread(thread));
+    if (!isCurrentThread(thread)) return;
+    const replies = collectNoteComments(thread.id);
+    applyCommentBatch(thread.id, replies);
+    toast(n ? `已展开 ${n} 处折叠评论` : (replies?.length ? "没有更多折叠评论" : "暂无评论"));
+  } finally {
+    if (isCurrentThread(thread)) {
+      btn.disabled = false;
+      btn.title = "展开全部评论";
+    }
+  }
 }
 
 function onDetailBodyScroll(e) {
@@ -992,14 +1011,27 @@ function renderDetailThread(detail) {
   } else {
     html += `<div class="im-detail-loadmore">${detail.commentsPaging ? "正在加载更多评论…" : "下滑加载更多评论"}</div>`;
   }
-  const keepTop = dbody.dataset.pinId && pt && dbody.dataset.pinId === pt.id ? dbody.scrollTop : 0;
+  const sameNote = dbody.dataset.pinId && pt && dbody.dataset.pinId === pt.id;
+  const keepTop = sameNote ? dbody.scrollTop : 0;
+  const bodyTop = dbody.getBoundingClientRect().top;
+  const anchor = sameNote && keepTop > 0
+    ? Array.from(dbody.querySelectorAll(".im-msg[data-id]")).find((node) => node.getBoundingClientRect().bottom > bodyTop)
+    : null;
+  const anchorId = anchor?.dataset.id;
+  const anchorOffset = anchor ? anchor.getBoundingClientRect().top - bodyTop : 0;
   dbody.dataset.sig = pt ? pt.id : html;
   dbody.innerHTML = html;
   if (pt) {
     dbody.dataset.pinId = pt.id;
     dbody.querySelector(".im-thread-pin")?.setAttribute("data-pin-id", pt.id);
   }
-  if (keepTop) dbody.scrollTop = keepTop;
+  if (sameNote) {
+    dbody.scrollTop = keepTop;
+    const restored = anchorId
+      ? Array.from(dbody.querySelectorAll(".im-msg[data-id]")).find((node) => node.dataset.id === anchorId)
+      : null;
+    if (restored) dbody.scrollTop += restored.getBoundingClientRect().top - bodyTop - anchorOffset;
+  }
 }
 
 /**
@@ -1074,8 +1106,12 @@ export function openTweetDetail(href, contextEl) {
       }
     }
   }
+  const thread = { id: statusId, detail: { pin: pt, replies: [], commentsPending: true } };
+  lastThreadDetail = thread;
   setDetailOpen(true);
-  if (!detailPrevUrl) detailPrevUrl = location.pathname + location.search;
+  if (!/\/(?:explore|search_result|discovery\/item)\/[a-f0-9]+/.test(location.pathname)) {
+    detailPrevUrl = location.pathname + location.search;
+  } else if (!detailPrevUrl) detailPrevUrl = "/explore";
   detailRenderedHref = pt?.href || href;
   console.info(`[xhs-im:detail-open] path=${location.pathname} href=${detailRenderedHref} statusId=${statusId} pt=${!!pt}`);
   const dbody = el.querySelector(".im-detail-body");
@@ -1088,8 +1124,8 @@ export function openTweetDetail(href, contextEl) {
     (pt ? threadPinHtml(pt) : `<div class="im-chat-empty"><p>正在加载笔记…</p></div>`) +
     `<div class="im-detail-loading">正在加载评论区…</div>`;
   if (statusId) {
-    const loadedHref = pt?.href || href;
     const failView = (what) => {
+      if (!isCurrentThread(thread)) return;
       console.warn(`[xhs-im:detail] 加载失败(${what}) id=${statusId}`);
       // 已有主贴卡片则保留，只把评论区加载区替换为失败提示；否则整页失败视图
       const loading = dbody.querySelector(".im-detail-loading");
@@ -1100,14 +1136,15 @@ export function openTweetDetail(href, contextEl) {
       dbody.innerHTML = `<div class="im-chat-empty"><p>该笔记加载失败（${escapeHtml(what)}）</p>
         <a class="im-native-open" href="${escapeHtml(href || `/explore/${statusId}`)}" target="_blank" rel="noopener">在小红书打开</a></div>`;
     };
-    fetchTweetDetail(statusId)
+    (detailNavigation || Promise.resolve())
+      .then(() => isCurrentThread(thread) ? fetchTweetDetail(statusId, () => isCurrentThread(thread)) : null)
       .then((detail) => {
-        if (detailView !== el || !el.classList.contains("is-open") || (detailRenderedHref !== loadedHref && !detailRenderedHref.includes(statusId))) return;
+        if (!isCurrentThread(thread)) return;
         if (detail) {
           try {
-            lastThreadDetail = { id: statusId, detail };
+            thread.detail = detail;
             renderDetailThread(detail);
-            if (!(detail.replies || []).length) fillCommentsLater(statusId, el, loadedHref);
+            if (!(detail.replies || []).length) fillCommentsLater(thread);
           } catch (err) {
             console.error("[xhs-im:detail] 渲染评论抛异常:", err);
             failView("渲染异常");
@@ -1725,23 +1762,26 @@ let detailView = null;
 
 /** 统一开合详情面板（100% 盖住列表） */
 function setDetailOpen(open) {
+  const expand = detailView?.querySelector(".im-detail-expand");
+  if (expand) { expand.disabled = false; expand.title = "展开全部评论"; }
+
   detailView?.classList.toggle("is-open", open);
   syncComposerPlaceholder();
 }
 
-/** 关闭详情面板：收起抽屉；若原生 overlay 被静默唤起（评论 DOM），用 popstate 关掉并还原 URL */
-function closeDetailTo() {
+/** 关闭详情并交给原生导航返回列表，避免迟到的 history.back 撤销下一次开帖。 */
+async function closeDetailTo() {
   const onNoteUrl = /\/(?:explore|search_result|discovery\/item)\/[a-f0-9]+/.test(location.pathname);
   closeDetailDrawer();
-  if (onNoteUrl) {
-    // 用 router.push 进的详情页没有 overlay：同步把 URL 还原回列表页，
-    // 否则 syncDetailDrawer 检测到 note URL 会兜底重开详情（闪一下又回来）
-    if (detailPrevUrl) {
-      try { history.replaceState(null, "", detailPrevUrl); } catch { /* ignore */ }
-    }
-    if (history.length > 1) {
-      try { history.back(); } catch { /* ignore */ }
-    }
+  if (!onNoteUrl) return;
+  const returnTo = detailPrevUrl || "/explore";
+  const router = findVueRouter();
+  const navigation = Promise.resolve(router ? router.replace(returnTo) : navigateX(returnTo));
+  detailNavigation = navigation;
+  try {
+    await navigation;
+  } finally {
+    if (detailNavigation === navigation) detailNavigation = null;
   }
 }
 
@@ -1786,25 +1826,11 @@ function ensureDetailView() {
   });
   gutter.addEventListener("pointerup", () => { dragging = 0; });
   el.querySelector(".im-detail-back")?.addEventListener("click", closeDetailTo);
-  el.querySelector(".im-detail-expand")?.addEventListener("click", async (e) => {
-    e.stopPropagation();
-    const btn = e.currentTarget;
-    btn.disabled = true;
-    btn.title = "展开中…";
-    const n = await expandAllComments();
-    const replies = collectNoteComments(lastThreadDetail?.id);
-    if (lastThreadDetail?.detail) {
-      lastThreadDetail.detail.replies = replies;
-      renderDetailThread(lastThreadDetail.detail);
-    }
-    toast(n ? `已展开 ${n} 处折叠评论` : (replies.length ? "没有更多折叠评论" : "暂无评论"));
-    btn.disabled = false;
-    btn.title = "展开全部评论";
-  });
+  el.querySelector(".im-detail-expand")?.addEventListener("click", expandDetailComments);
   el.querySelector(".im-detail-export")?.addEventListener("click", (e) => {
     e.stopPropagation();
     const pin = lastThreadDetail?.detail?.pin;
-    const replies = lastThreadDetail?.detail?.replies || harvestNoteComments();
+    const replies = lastThreadDetail?.detail?.replies || [];
     if (!pin) { toast("请先打开一篇笔记"); return; }
     downloadNoteCommentsAsTxt(pin, replies);
     toast("评论已导出");
@@ -1827,7 +1853,13 @@ function ensureDetailView() {
 
 /** 详情抽屉保持：openTweetDetail 已打开则维持（URL 保持列表路由，不因无 status 误关）；否则 false（中栏渲染） */
 export function syncDetailDrawer() {
-  if (detailView?.classList.contains("is-open") && detailRenderedHref) return true;
+  if (detailView?.classList.contains("is-open") && detailRenderedHref) {
+    if (lastThreadDetail && detailRenderedHref.includes(lastThreadDetail.id)) {
+      applyCommentBatch(lastThreadDetail.id, collectNoteComments(lastThreadDetail.id));
+    }
+    return true;
+  }
+  if (detailNavigation) return true;
   const status = statusInfo();
   if (!status) {
     if (detailView?.classList.contains("is-open")) console.info(`[xhs-im:drawer] closing: path=${location.pathname} statusInfo=null detailHref=${detailRenderedHref}`);
@@ -1841,6 +1873,8 @@ export function syncDetailDrawer() {
   if (!host) return true;
   const el = ensureDetailView();
   if (!el) return true;
+  const thread = { id: String(status.id), detail: { pin: null, replies: [], commentsPending: true } };
+  lastThreadDetail = thread;
   setDetailOpen(true);
   const dbody = el.querySelector(".im-detail-body");
   const art = allTweetArticles().find(
@@ -1851,6 +1885,7 @@ export function syncDetailDrawer() {
     const cached = getCachedNoteFromState(status.id);
     if (cached) pt = pinFromNoteObject(cached, status.id);
   }
+  thread.detail.pin = pt;
   detailRenderedHref = `/explore/${status.id}`;
   const title = el.querySelector(".im-detail-title");
   const sub = el.querySelector(".im-detail-sub");
@@ -1862,13 +1897,12 @@ export function syncDetailDrawer() {
       (pt ? threadPinHtml(pt) : `<div class="im-chat-empty"><p>正在加载笔记…</p></div>`) +
       `<div class="im-detail-loading">正在加载评论区…</div>`;
     if (pt) dbody.querySelector(".im-thread-pin")?.setAttribute("data-pin-id", status.id);
-    const loadedHref = `/explore/${status.id}`;
-    fetchTweetDetail(status.id)
+    fetchTweetDetail(status.id, () => isCurrentThread(thread))
       .then((detail) => {
-        if (detailView !== el || !el.classList.contains("is-open") || (detailRenderedHref !== loadedHref && !detailRenderedHref.includes(status.id))) return;
+        if (!isCurrentThread(thread)) return;
         if (detail) {
           try {
-            lastThreadDetail = { id: String(status.id), detail };
+            thread.detail = detail;
             renderDetailThread(detail);
           } catch (err) {
             console.error("[xhs-im:detail] 兜底渲染评论抛异常:", err);
@@ -1881,6 +1915,7 @@ export function syncDetailDrawer() {
         }
       })
       .catch((err) => {
+        if (!isCurrentThread(thread)) return;
         console.error("[xhs-im:detail] 兜底 fetch 评论抛异常:", err && err.message);
         dbody.innerHTML = `<div class="im-chat-empty"><p>该笔记加载失败（网络/接口错误）</p>
           <a class="im-native-open" href="/explore/${status.id}" target="_blank" rel="noopener">在小红书打开</a></div>`;
@@ -1890,6 +1925,7 @@ export function syncDetailDrawer() {
 }
 
 export function closeDetailDrawer() {
+  lastThreadDetail = null;
   setDetailOpen(false);
   detailRenderedHref = "";
 }
