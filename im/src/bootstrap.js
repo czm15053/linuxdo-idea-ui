@@ -286,7 +286,9 @@ export function run() {
     ensureListPanel();
     ensureRailSources();
     // 路由真正变化时才重置回会话列表（通知列是临时覆盖，不应跨路由占住中栏）
-    if (routeChanged) resetRailToChat();
+    // feed 源（关注/回复/点赞/浏览）进帖子时保留当前列表，不重置回「消息」
+    const feedKeys = ["follow", "replies", "likes", "read"];
+    if (routeChanged && !feedKeys.includes(activeRailKey())) resetRailToChat();
     if (!profile) renderActiveSource();
     bindHeaderUserMenuInterception();
     ensureChatPanel();

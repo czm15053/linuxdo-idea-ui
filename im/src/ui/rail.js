@@ -226,7 +226,7 @@ export function ensureRailDingtalk() {
   mineGroup.classList.toggle("is-open", open);
   mineGroup.innerHTML = `
     <div class="im-rail-mine-items"${open ? "" : " hidden"}>
-      <button type="button" class="im-rail-item" data-rail-key="follow">${rIcon("bell")}<span>关注</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="follow">${rIcon("bell")}<span>关注动态</span></button>
       <button type="button" class="im-rail-item" data-rail-key="replies">${rIcon("msg")}<span>我的回复</span></button>
       <button type="button" class="im-rail-item" data-rail-key="likes">${rIcon("heartOutline")}<span>我的点赞</span></button>
       <button type="button" class="im-rail-item" data-rail-key="read">${rIcon("bell")}<span>最近浏览</span></button>

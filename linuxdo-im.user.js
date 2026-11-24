@@ -13704,7 +13704,7 @@ ${data.raw}
       getApiPath: () => `/topics/private-messages/${getCurrentUsername() || ""}.json`
     }));
     registerSource("bookmarks", makeBookmarkSource());
-    registerSource("follow", makeFeedSource({ key: "follow", label: "关注", kind: "follow" }));
+    registerSource("follow", makeFeedSource({ key: "follow", label: "关注动态", kind: "follow" }));
     registerSource("replies", makeFeedSource({ key: "replies", label: "我的回复", kind: "replies" }));
     registerSource("likes", makeFeedSource({ key: "likes", label: "我的点赞", kind: "likes" }));
     registerSource("read", makeFeedSource({ key: "read", label: "最近浏览", kind: "read" }));
@@ -14006,7 +14006,7 @@ ${data.raw}
     mineGroup.classList.toggle("is-open", open);
     mineGroup.innerHTML = `
     <div class="im-rail-mine-items"${open ? "" : " hidden"}>
-      <button type="button" class="im-rail-item" data-rail-key="follow">${rIcon("bell")}<span>关注</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="follow">${rIcon("bell")}<span>关注动态</span></button>
       <button type="button" class="im-rail-item" data-rail-key="replies">${rIcon("msg")}<span>我的回复</span></button>
       <button type="button" class="im-rail-item" data-rail-key="likes">${rIcon("heartOutline")}<span>我的点赞</span></button>
       <button type="button" class="im-rail-item" data-rail-key="read">${rIcon("bell")}<span>最近浏览</span></button>
@@ -18768,7 +18768,7 @@ ${data.raw}
     mineGroup.classList.toggle("is-open", open);
     mineGroup.innerHTML = `
     <div class="im-rail-mine-items"${open ? "" : " hidden"}>
-      <button type="button" class="im-rail-item" data-rail-key="follow">${navIcon("bell")}<span>关注</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="follow">${navIcon("bell")}<span>关注动态</span></button>
       <button type="button" class="im-rail-item" data-rail-key="replies">${navIcon("chat")}<span>我的回复</span></button>
       <button type="button" class="im-rail-item" data-rail-key="likes">${navIcon("heartOutline")}<span>我的点赞</span></button>
       <button type="button" class="im-rail-item" data-rail-key="read">${navIcon("bell")}<span>最近浏览</span></button>
@@ -19570,7 +19570,8 @@ ${data.raw}
       }
       ensureListPanel();
       ensureRailSources();
-      if (routeChanged) resetRailToChat();
+      const feedKeys = ["follow", "replies", "likes", "read"];
+      if (routeChanged && !feedKeys.includes(activeRailKey())) resetRailToChat();
       if (!profile) renderActiveSource();
       bindHeaderUserMenuInterception();
       ensureChatPanel();

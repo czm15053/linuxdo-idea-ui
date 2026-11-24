@@ -334,7 +334,7 @@ export function registerExtraSources() {
     getApiPath: () => `/topics/private-messages/${getCurrentUsername() || ""}.json`
   }));
   registerSource("bookmarks", makeBookmarkSource());
-  registerSource("follow", makeFeedSource({ key: "follow", label: "关注", kind: "follow" }));
+  registerSource("follow", makeFeedSource({ key: "follow", label: "关注动态", kind: "follow" }));
   registerSource("replies", makeFeedSource({ key: "replies", label: "我的回复", kind: "replies" }));
   registerSource("likes", makeFeedSource({ key: "likes", label: "我的点赞", kind: "likes" }));
   registerSource("read", makeFeedSource({ key: "read", label: "最近浏览", kind: "read" }));
