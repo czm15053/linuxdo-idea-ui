@@ -1214,6 +1214,26 @@ color: #7AA3D6;
 }
 
 
+    /* ---------- 左栏「我的」折叠分组 ---------- */
+    .__ROOT_CLASS__ .im-rail-bottom { display: flex; flex-direction: column; align-items: stretch; gap: 2px; }
+    .__ROOT_CLASS__ .im-rail-mine { display: flex; flex-direction: column; }
+    .__ROOT_CLASS__ .im-rail-mine-toggle .im-mine-arrow { margin-left: auto; transition: transform 0.15s; }
+    .__ROOT_CLASS__ .im-rail-mine.is-open .im-mine-arrow { transform: rotate(180deg); }
+    .__ROOT_CLASS__ .im-rail-mine-items { margin-bottom: 2px; }
+    .__ROOT_CLASS__ .im-rail-collapsed .im-rail-mine { display: none; }
+    /* 子项去背景去边框，并向右缩进（与父级「更多」形成层级） */
+    .__ROOT_CLASS__ .im-rail-mine-items .im-rail-item {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding-left: 32px;
+      height: 34px;
+      font-size: 13px;
+      color: var(--im-text-2);
+    }
+    .__ROOT_CLASS__ .im-rail-mine-items .im-rail-item svg { width: 16px; height: 16px; }
+    .__ROOT_CLASS__ .im-rail-mine-items .im-rail-item:hover { background: var(--im-hover); }
+
     /* ---------- 聊天水印：背景平铺斜排文字（文字/间距/透明度可调） ---------- */
     .__ROOT_CLASS__.im-watermark-on .im-chat-body {
       background-image: var(--im-wm-image);

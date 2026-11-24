@@ -1,4 +1,4 @@
-import { NAV2_KEY, ORG_NAME_KEY, ORG_ICON_KEY, RAIL_COLLAPSE_KEY, RAIL_W_KEY } from "../config/constants.js";
+import { NAV2_KEY, ORG_NAME_KEY, ORG_ICON_KEY, RAIL_COLLAPSE_KEY, RAIL_W_KEY, RAIL_MORE_OPEN_KEY } from "../config/constants.js";
 import {
   RAIL_WIDTH, RAIL_W_MIN, RAIL_W_COMPACT, RAIL_W_MAX,
   RAIL_DECO_ITEMS, SKIN_ID, defaultOrgName, otherThemeActive,
@@ -216,6 +216,31 @@ export function ensureRailDingtalk() {
       )
       .join("");
   rail.appendChild(items);
+
+  // 「我的」分组：钉钉挂「添加」、企微挂「高级功能」装饰项下方，点击展开/收起
+  const anchorKey = SKIN_ID === "dingtalk" ? "add" : "advanced";
+  const anchorBtn = items.querySelector(`[data-rail-key="${anchorKey}"]`);
+  const mineGroup = document.createElement("div");
+  mineGroup.className = "im-rail-mine";
+  const open = localStorage.getItem(RAIL_MORE_OPEN_KEY) === "1";
+  mineGroup.classList.toggle("is-open", open);
+  mineGroup.innerHTML = `
+    <div class="im-rail-mine-items"${open ? "" : " hidden"}>
+      <button type="button" class="im-rail-item" data-rail-key="follow">${rIcon("bell")}<span>关注</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="replies">${rIcon("msg")}<span>我的回复</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="likes">${rIcon("heartOutline")}<span>我的点赞</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="read">${rIcon("bell")}<span>最近浏览</span></button>
+    </div>`;
+  anchorBtn?.after(mineGroup);
+  anchorBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const next = !mineGroup.classList.contains("is-open");
+    mineGroup.classList.toggle("is-open", next);
+    mineGroup.querySelector(".im-rail-mine-items").hidden = !next;
+    anchorBtn.classList.toggle("is-on", next);
+    anchorBtn.setAttribute("aria-expanded", String(next));
+    localStorage.setItem(RAIL_MORE_OPEN_KEY, next ? "1" : "0");
+  });
 
   // rail 项点击：注册表内有源的切换中栏内容；「聊天」跳原生 /chat；装饰项暂不响应
   items.addEventListener("click", (e) => {

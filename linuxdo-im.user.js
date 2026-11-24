@@ -197,6 +197,7 @@
   const HIDE_CAT_TAGS_KEY = "linuxdo-im-hide-cat-tags";
   const BLUR_IMG_KEY = "linuxdo-im-blur-img";
   const WATERMARK_KEY = "linuxdo-im-watermark";
+  const RAIL_MORE_OPEN_KEY = "linuxdo-im-rail-more-open";
   const NAV2_KEY = "linuxdo-im-nav2";
   const ORG_NAME_KEY = "linuxdo-im-org-name";
   const ORG_ICON_KEY = "linuxdo-im-org-icon";
@@ -4159,6 +4160,26 @@ color: #4AA2FF;
 color: #7AA3D6;
 }
 
+
+    /* ---------- 左栏「我的」折叠分组 ---------- */
+    .__ROOT_CLASS__ .im-rail-bottom { display: flex; flex-direction: column; align-items: stretch; gap: 2px; }
+    .__ROOT_CLASS__ .im-rail-mine { display: flex; flex-direction: column; }
+    .__ROOT_CLASS__ .im-rail-mine-toggle .im-mine-arrow { margin-left: auto; transition: transform 0.15s; }
+    .__ROOT_CLASS__ .im-rail-mine.is-open .im-mine-arrow { transform: rotate(180deg); }
+    .__ROOT_CLASS__ .im-rail-mine-items { margin-bottom: 2px; }
+    .__ROOT_CLASS__ .im-rail-collapsed .im-rail-mine { display: none; }
+    /* 子项去背景去边框，并向右缩进（与父级「更多」形成层级） */
+    .__ROOT_CLASS__ .im-rail-mine-items .im-rail-item {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding-left: 32px;
+      height: 34px;
+      font-size: 13px;
+      color: var(--im-text-2);
+    }
+    .__ROOT_CLASS__ .im-rail-mine-items .im-rail-item svg { width: 16px; height: 16px; }
+    .__ROOT_CLASS__ .im-rail-mine-items .im-rail-item:hover { background: var(--im-hover); }
 
     /* ---------- 聊天水印：背景平铺斜排文字（文字/间距/透明度可调） ---------- */
     .__ROOT_CLASS__.im-watermark-on .im-chat-body {
@@ -13568,6 +13589,114 @@ ${data.raw}
       }
     };
   }
+  function makeFeedSource({ key, label, kind }) {
+    const state2 = { items: [], usersById: {}, moreCursor: null, hasMore: false, loading: false, loadedAt: 0, error: null };
+    function toRow(item) {
+      const isFollow = kind === "follow";
+      const topic = isFollow ? item.topic || {} : item;
+      const user = isFollow ? item.user || {} : { username: item.username, name: item.name, avatar_template: item.avatar_template };
+      const topicId = Number(topic.id || item.topic_id);
+      const id = topicId * 1e5 + Number(item.post_number || 1);
+      const title = isFollow ? String(topic.title || "") : String(item.title || "");
+      const avatarTemplate = isFollow ? user.avatar_template : item.avatar_template || "";
+      const username = isFollow ? user.username || "" : item.acting_username || item.username || "";
+      return {
+        id,
+        topicId,
+        slug: topic.slug || "topic",
+        title,
+        fancy_title: title,
+        // feed 源行自带摘要：关注者/作者名 + 摘录，不走伪装替换
+        summary: `${user.name || user.username || ""}: ${item.excerpt || ""}`,
+        posts_count: topic.posts_count || 0,
+        bumped_at: item.created_at,
+        // 行内头像优先，usersById 只作兜底
+        avatarUrl: avatarTemplate ? fullAvatarUrl(avatarTemplate) : "",
+        avatarLetter: (user.name || username || "?").slice(0, 1).toUpperCase(),
+        posters: user.id ? [{ user_id: user.id }] : []
+      };
+    }
+    async function loadPage(reset) {
+      var _a2, _b2, _c, _d;
+      if (state2.loading) return;
+      state2.loading = true;
+      try {
+        const me = getCurrentUsername() || "";
+        if (kind === "follow") {
+          const cursor = reset ? "" : state2.moreCursor;
+          const data = await api(`/follow/posts/${me}?limit=20${cursor ? `&created_before=${encodeURIComponent(cursor)}` : ""}`);
+          const rows = (data.posts || []).map(toRow);
+          const known = new Set(state2.items.map((r) => r.id));
+          state2.items = reset ? rows : state2.items.concat(rows.filter((r) => !known.has(r.id)));
+          state2.hasMore = !!(data.has_more ?? ((_a2 = data.extras) == null ? void 0 : _a2.has_more) ?? rows.length === 20);
+          state2.moreCursor = rows.length ? (data.posts || [])[rows.length - 1].created_at : null;
+          for (const p of data.posts || []) {
+            if ((_b2 = p.user) == null ? void 0 : _b2.id) state2.usersById[p.user.id] = p.user;
+          }
+        } else if (kind === "read") {
+          const data = await api(`/read.json${reset ? "" : `?page=${Math.floor(state2.items.length / 30)}`}`);
+          const rows = (((_c = data.topic_list) == null ? void 0 : _c.topics) || []).map((topic) => ({
+            ...topic,
+            id: topic.id * 1e5 + 1,
+            topicId: topic.id,
+            slug: topic.slug || "topic",
+            summary: `${topic.last_poster_username || ""} · ${topic.posts_count || 0} 回复`,
+            avatarUrl: topic.avatar_template ? fullAvatarUrl(topic.avatar_template) : ""
+          }));
+          state2.items = reset ? rows : state2.items.concat(rows);
+          state2.hasMore = !!((_d = data.topic_list) == null ? void 0 : _d.more_topics_url);
+          for (const u of data.users || []) state2.usersById[u.id] = u;
+        } else {
+          const offset = reset ? 0 : state2.items.length;
+          const data = await api(`/user_actions.json?username=${me}&filter=${kind === "replies" ? 5 : 1}&limit=30&offset=${offset}`);
+          const rows = (data.user_actions || []).map(toRow);
+          state2.items = reset ? rows : state2.items.concat(rows);
+          state2.hasMore = rows.length === 30;
+        }
+        state2.loadedAt = Date.now();
+        state2.error = null;
+      } catch (err) {
+        state2.error = (err == null ? void 0 : err.message) || "网络异常";
+      } finally {
+        state2.loading = false;
+        rerenderIfActive();
+      }
+    }
+    function rerenderIfActive() {
+      const panel = document.querySelector(".im-list-panel");
+      if (panel && panel.dataset.railKey === key) render(panel);
+    }
+    function render(panel) {
+      const chips = panel.querySelector(".im-list-chips");
+      if (chips.dataset.src !== label) {
+        chips.dataset.src = label;
+        chips.innerHTML = `<span class="im-chip active im-src-label">${escapeHtml(label)}</span>`;
+      }
+      const body = panel.querySelector(".im-list-body");
+      if (state2.error && !state2.items.length) {
+        body.innerHTML = `<div class="im-list-status">${escapeHtml(label)}加载失败（${escapeHtml(state2.error)}）</div>`;
+        return;
+      }
+      if (!state2.items.length && !state2.loading && Date.now() - state2.loadedAt > TTL$1) {
+        body.innerHTML = `<div class="im-list-status">加载中…</div>`;
+        loadPage(true);
+        return;
+      }
+      renderTopicListRows(
+        state2.items,
+        state2.usersById,
+        state2.hasMore ? "下拉加载更多…" : state2.items.length ? "没有更多了" : `暂无${label}`
+      );
+    }
+    return {
+      render,
+      onScroll(body) {
+        if (!state2.hasMore || state2.loading) return;
+        if (body.scrollTop + body.clientHeight < body.scrollHeight - 120) return;
+        loadPage(false);
+      }
+    };
+  }
   function registerExtraSources() {
     registerSource("messages", makeTopicListSource({
       key: "messages",
@@ -13575,6 +13704,10 @@ ${data.raw}
       getApiPath: () => `/topics/private-messages/${getCurrentUsername() || ""}.json`
     }));
     registerSource("bookmarks", makeBookmarkSource());
+    registerSource("follow", makeFeedSource({ key: "follow", label: "关注", kind: "follow" }));
+    registerSource("replies", makeFeedSource({ key: "replies", label: "我的回复", kind: "replies" }));
+    registerSource("likes", makeFeedSource({ key: "likes", label: "我的点赞", kind: "likes" }));
+    registerSource("read", makeFeedSource({ key: "read", label: "最近浏览", kind: "read" }));
     for (const item of RAIL_DECO_ITEMS) {
       if (item.key === "more") continue;
       registerSource(item.key, makePlaceholderSource(item));
@@ -13865,6 +13998,29 @@ ${data.raw}
       (item) => `<button type="button" class="im-rail-item" data-rail-key="${item.key}">${rIcon(item.icon)}<span>${item.label}</span>${item.dot ? '<i class="im-rail-dot"></i>' : ""}</button>`
     ).join("");
     rail.appendChild(items);
+    const anchorKey = SKIN_ID === "dingtalk" ? "add" : "advanced";
+    const anchorBtn = items.querySelector(`[data-rail-key="${anchorKey}"]`);
+    const mineGroup = document.createElement("div");
+    mineGroup.className = "im-rail-mine";
+    const open = localStorage.getItem(RAIL_MORE_OPEN_KEY) === "1";
+    mineGroup.classList.toggle("is-open", open);
+    mineGroup.innerHTML = `
+    <div class="im-rail-mine-items"${open ? "" : " hidden"}>
+      <button type="button" class="im-rail-item" data-rail-key="follow">${rIcon("bell")}<span>关注</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="replies">${rIcon("msg")}<span>我的回复</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="likes">${rIcon("heartOutline")}<span>我的点赞</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="read">${rIcon("bell")}<span>最近浏览</span></button>
+    </div>`;
+    anchorBtn == null ? void 0 : anchorBtn.after(mineGroup);
+    anchorBtn == null ? void 0 : anchorBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const next = !mineGroup.classList.contains("is-open");
+      mineGroup.classList.toggle("is-open", next);
+      mineGroup.querySelector(".im-rail-mine-items").hidden = !next;
+      anchorBtn.classList.toggle("is-on", next);
+      anchorBtn.setAttribute("aria-expanded", String(next));
+      localStorage.setItem(RAIL_MORE_OPEN_KEY, next ? "1" : "0");
+    });
     items.addEventListener("click", (e) => {
       const btn = e.target.closest(".im-rail-item[data-rail-key]");
       if (!btn || !items.contains(btn)) return;
@@ -15216,7 +15372,7 @@ ${data.raw}
     if (!panel || panel.dataset.linkBound === "2") return;
     panel.dataset.linkBound = "2";
     panel.addEventListener("click", (e) => {
-      var _a2;
+      var _a2, _b2;
       const newTopicBtn = e.target.closest(".im-new-topic-btn");
       if (newTopicBtn && panel.contains(newTopicBtn)) {
         e.preventDefault();
@@ -15272,7 +15428,14 @@ ${data.raw}
       e.stopPropagation();
       if (link.classList.contains("im-notif-row")) markNotificationRead(link);
       const tm = href.match(/^\/t\/(?:[\w-]+\/)?(\d+)(?:\/(\d+))?/);
-      const jumped = tm && Number(tm[1]) === topicIdFromPath(location.pathname) ? (_a2 = chatHooks.jumpToPost) == null ? void 0 : _a2.call(chatHooks, Number(tm[2] || 1)) : null;
+      if (tm && link.closest(".im-list-body") && ((_a2 = document.querySelector(".im-list-panel")) == null ? void 0 : _a2.dataset.railKey) !== "chat") {
+        e.preventDefault();
+        e.stopPropagation();
+        history.pushState({}, "", href);
+        window.dispatchEvent(new Event("popstate"));
+        return;
+      }
+      const jumped = tm && Number(tm[1]) === topicIdFromPath(location.pathname) ? (_b2 = chatHooks.jumpToPost) == null ? void 0 : _b2.call(chatHooks, Number(tm[2] || 1)) : null;
       if (jumped) {
         Promise.resolve(jumped).then((ok) => {
           if (!ok) navigateInApp(href);
@@ -15347,13 +15510,16 @@ ${data.raw}
     return panel;
   }
   function topicHref(topic) {
-    return `/t/${topic.slug || "topic"}/${topic.id}`;
+    return `/t/${topic.slug || "topic"}/${topic.topicId || topic.id}`;
   }
   function convAvatarHtml(topic, usersById) {
     var _a2;
     const skinAvatar = (_a2 = skinHooks.convAvatar) == null ? void 0 : _a2.call(skinHooks, topic);
     if (skinAvatar) return skinAvatar;
-    if (isMaskAvatar()) {
+    if (topic.avatarUrl) {
+      return `<span class="im-conv-avatar"><img src="${escapeHtml(topic.avatarUrl)}" alt="" loading="lazy"></span>`;
+    }
+    if (isMaskAvatar() && !topic.summary) {
       const d = (skinHooks.disguiseAvatar || disguiseAvatarForTopicDingtalk)(topic);
       return `<span class="im-conv-avatar${d.className ? " " + d.className : ""}" style="background:${d.bg};${d.styleExtra}">${d.html}</span>`;
     }
@@ -15366,7 +15532,7 @@ ${data.raw}
     if (user && user.avatar_template) {
       return `<span class="im-conv-avatar"><img src="${escapeHtml(fullAvatarUrl(user.avatar_template))}" alt="" loading="lazy"></span>`;
     }
-    return `<span class="im-conv-avatar is-text-avatar is-solid" style="background:${avatarColor(displayName)}">${escapeHtml(avatarLetter(displayName))}</span>`;
+    return `<span class="im-conv-avatar is-text-avatar is-solid" style="background:${avatarColor(displayName)}">${escapeHtml(topic.avatarLetter || avatarLetter(displayName))}</span>`;
   }
   function convCategoryTag(topic) {
     if (SKIN_ID === "feishu" || isHideCatTags() || !topic.category_id) return "";
@@ -15379,14 +15545,14 @@ ${data.raw}
     const isUnread = unread > 0 || !!topic.unseen;
     const replyCount = Math.max(0, (topic.posts_count || 1) - 1);
     const rawSummary = topic.last_poster_username ? `[${replyCount}条] ${topic.last_poster_username}` : `${topic.posts_count || 0} 回复`;
-    const title = convDisplayTitle(topic);
-    const summary = convDisplaySummary(topic, rawSummary);
-    const tag = isMaskAvatar() ? "" : convCategoryTag(topic);
+    const title = topic.summary ? topic.title || "" : convDisplayTitle(topic);
+    const summary = topic.summary ?? convDisplaySummary(topic, rawSummary);
+    const tag = isMaskAvatar() || topic.summary ? "" : convCategoryTag(topic);
     const isHl = hasHighlightedKeyword(title) || hasHighlightedKeyword(summary);
     const highlightedTitle = highlightTitleText(title);
     const highlightedSummary = highlightTitleText(summary);
     return `
-    <a class="im-conv${isHl ? " is-highlighted" : ""}${isUnread ? " is-unread" : ""}" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.id}" title="${escapeHtml(title)}">
+    <a class="im-conv${isHl ? " is-highlighted" : ""}${isUnread ? " is-unread" : ""}" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.topicId || topic.id}" title="${escapeHtml(title)}">
       ${convAvatarHtml(topic, usersById)}
       <span class="im-conv-info">
         <span class="im-conv-top">
@@ -18592,12 +18758,34 @@ ${data.raw}
     const items = document.createElement("div");
     items.className = "im-rail-items";
     items.innerHTML = `<div class="im-rail-item active" data-rail-key="chat">${navIcon("chat")}<span>消息</span><span class="im-rail-badge" style="display:none"></span></div>` + RAIL_DECO_ITEMS.map(
-      (item) => `<div class="im-rail-item">${navIcon(item.icon)}<span>${item.label}</span></div>`
+      (item) => `<div class="im-rail-item"${item.key === "more" ? ' data-rail-key="more"' : ""}>${navIcon(item.icon)}<span>${item.label}</span></div>`
     ).join("");
     rail.appendChild(items);
+    const moreBtn = items.querySelector('[data-rail-key="more"]');
+    const mineGroup = document.createElement("div");
+    mineGroup.className = "im-rail-mine";
+    const open = localStorage.getItem("linuxdo-im-rail-more-open") === "1";
+    mineGroup.classList.toggle("is-open", open);
+    mineGroup.innerHTML = `
+    <div class="im-rail-mine-items"${open ? "" : " hidden"}>
+      <button type="button" class="im-rail-item" data-rail-key="follow">${navIcon("bell")}<span>关注</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="replies">${navIcon("chat")}<span>我的回复</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="likes">${navIcon("heartOutline")}<span>我的点赞</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="read">${navIcon("bell")}<span>最近浏览</span></button>
+    </div>`;
+    moreBtn == null ? void 0 : moreBtn.after(mineGroup);
+    moreBtn == null ? void 0 : moreBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const next = !mineGroup.classList.contains("is-open");
+      mineGroup.classList.toggle("is-open", next);
+      mineGroup.querySelector(".im-rail-mine-items").hidden = !next;
+      moreBtn.classList.toggle("is-on", next);
+      moreBtn.setAttribute("aria-expanded", String(next));
+      localStorage.setItem("linuxdo-im-rail-more-open", next ? "1" : "0");
+    });
     items.addEventListener("click", (e) => {
       const btn = e.target.closest(".im-rail-item[data-rail-key]");
-      if (!btn || !items.contains(btn)) return;
+      if (!btn || !items.contains(btn) || btn.dataset.railKey === "more") return;
       const key = btn.dataset.railKey;
       if (key && hasSource(key)) setActiveRailKey(key, { force: true });
     });
@@ -18956,7 +19144,17 @@ ${data.raw}
         timeout: 15e3,
         withCredentials: true,
         headers: { Accept: "text/html,application/xhtml+xml", Referer: CONNECT_URL },
-        onload: (r) => r.status >= 200 && r.status < 300 ? resolve(r.responseText) : reject(new Error(`HTTP ${r.status}`)),
+        onload: (r) => {
+          if (/Just a moment|Verify you are human|challenge-platform|Checking your browser/i.test(r.responseText || "")) {
+            reject(new Error("cf-challenge"));
+            return;
+          }
+          if (r.status >= 200 && r.status < 300) {
+            resolve(r.responseText);
+            return;
+          }
+          reject(new Error(`HTTP ${r.status}`));
+        },
         onerror: () => reject(new Error("network")),
         ontimeout: () => reject(new Error("timeout"))
       });
@@ -19025,6 +19223,7 @@ ${data.raw}
   let panelEl = null;
   let loading = false;
   let inflight = null;
+  let connectBlockedUntil = 0;
   async function loadLevelData(force = false) {
     if (!force && cache && Date.now() - cache.at < CACHE_TTL) return cache;
     if (inflight) return inflight;
@@ -19036,7 +19235,10 @@ ${data.raw}
       const level = Number(((_a2 = u.user) == null ? void 0 : _a2.trust_level) ?? 0);
       const [summary, connect] = await Promise.all([
         api(`/u/${encodeURIComponent(me)}/summary.json`).then((r) => r.user_summary || {}).catch(() => ({})),
-        level < 4 ? fetchConnect().catch(() => null) : Promise.resolve(null)
+        level < 4 && Date.now() > connectBlockedUntil ? fetchConnect().catch((err) => {
+          if ((err == null ? void 0 : err.message) === "cf-challenge") connectBlockedUntil = Date.now() + 10 * 60 * 1e3;
+          return null;
+        }) : Promise.resolve(null)
       ]);
       cache = { at: Date.now(), level, user: u.user || {}, summary, connect };
       return cache;

@@ -249,6 +249,14 @@ function bindListPanelClicks(panel) {
     // 目标就是当前打开的话题：Discourse routeTo 同路径会被忽略（表现为“点了没反应”），
     // 改为滚到行指向的楼层（未渲染时由 chat-panel 远端取窗口）；跳转失败再走站内路由兜底
     const tm = href.match(/^\/t\/(?:[\w-]+\/)?(\d+)(?:\/(\d+))?/);
+    // feed 源（关注/回复/点赞/浏览）行：直接 pushState + 手动 loadTopic，避免 Discourse routeTo 整页刷新
+    if (tm && link.closest(".im-list-body") && document.querySelector(".im-list-panel")?.dataset.railKey !== "chat") {
+      e.preventDefault();
+      e.stopPropagation();
+      history.pushState({}, "", href);
+      window.dispatchEvent(new Event("popstate"));
+      return;
+    }
     const jumped = tm && Number(tm[1]) === topicIdFromPath(location.pathname)
       ? chatHooks.jumpToPost?.(Number(tm[2] || 1))
       : null;
@@ -334,12 +342,17 @@ export function ensureListPanel() {
   return panel;
 }
 export function topicHref(topic) {
-  return `/t/${topic.slug || "topic"}/${topic.id}`;
+  return `/t/${topic.slug || "topic"}/${topic.topicId || topic.id}`;
 }
 function convAvatarHtml(topic, usersById) {
   const skinAvatar = skinHooks.convAvatar?.(topic);
   if (skinAvatar) return skinAvatar;
-  if (isMaskAvatar()) {
+  // feed 源行内已带头像 URL，直接用，不走伪装
+  if (topic.avatarUrl) {
+    return `<span class="im-conv-avatar"><img src="${escapeHtml(topic.avatarUrl)}" alt="" loading="lazy"></span>`;
+  }
+  // feed 源行（关注/回复/点赞/浏览）不做头像伪装，直接显示真实头像
+  if (isMaskAvatar() && !topic.summary) {
     const d = (skinHooks.disguiseAvatar || disguiseAvatarForTopicDingtalk)(topic);
     return `<span class="im-conv-avatar${d.className ? " " + d.className : ""}" style="background:${d.bg};${d.styleExtra}">${d.html}</span>`;
   }
@@ -352,7 +365,7 @@ function convAvatarHtml(topic, usersById) {
   if (user && user.avatar_template) {
     return `<span class="im-conv-avatar"><img src="${escapeHtml(fullAvatarUrl(user.avatar_template))}" alt="" loading="lazy"></span>`;
   }
-  return `<span class="im-conv-avatar is-text-avatar is-solid" style="background:${avatarColor(displayName)}">${escapeHtml(avatarLetter(displayName))}</span>`;
+  return `<span class="im-conv-avatar is-text-avatar is-solid" style="background:${avatarColor(displayName)}">${escapeHtml(topic.avatarLetter || avatarLetter(displayName))}</span>`;
 }
 function convCategoryTag(topic) {
   // 飞书皮肤不显示分类标签（钉钉/企微保留）
@@ -373,15 +386,16 @@ function convRowHtml(topic, usersById) {
   const rawSummary = topic.last_poster_username
     ? `[${replyCount}条] ${topic.last_poster_username}`
     : `${topic.posts_count || 0} 回复`;
-  const title = convDisplayTitle(topic);
-  const summary = convDisplaySummary(topic, rawSummary);
-  // 匿名模式隐藏分类 chip，避免暴露真实板块
-  const tag = isMaskAvatar() ? "" : convCategoryTag(topic);
+  const title = topic.summary ? (topic.title || "") : convDisplayTitle(topic);
+  // feed 源（关注/回复/点赞/浏览）行自带 summary，不走「最后回复者」拼接与伪装替换
+  const summary = topic.summary ?? convDisplaySummary(topic, rawSummary);
+  // 匿名模式隐藏分类 chip，避免暴露真实板块；feed 源行自带 summary 时同样隐藏
+  const tag = isMaskAvatar() || topic.summary ? "" : convCategoryTag(topic);
   const isHl = hasHighlightedKeyword(title) || hasHighlightedKeyword(summary);
   const highlightedTitle = highlightTitleText(title);
   const highlightedSummary = highlightTitleText(summary);
   return `
-    <a class="im-conv${isHl ? " is-highlighted" : ""}${isUnread ? " is-unread" : ""}" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.id}" title="${escapeHtml(title)}">
+    <a class="im-conv${isHl ? " is-highlighted" : ""}${isUnread ? " is-unread" : ""}" href="${escapeHtml(topicHref(topic))}" data-topic-id="${topic.topicId || topic.id}" title="${escapeHtml(title)}">
       ${convAvatarHtml(topic, usersById)}
       <span class="im-conv-info">
         <span class="im-conv-top">

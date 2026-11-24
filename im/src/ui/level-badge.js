@@ -109,7 +109,18 @@ function gmGet(url) {
       timeout: 15000,
       withCredentials: true,
       headers: { Accept: "text/html,application/xhtml+xml", Referer: CONNECT_URL },
-      onload: (r) => (r.status >= 200 && r.status < 300 ? resolve(r.responseText) : reject(new Error(`HTTP ${r.status}`))),
+      onload: (r) => {
+        // Cloudflare 挑战页：其中内联脚本会被页面 CSP 拦截刷日志，且不是有效数据，直接拒掉
+        if (/Just a moment|Verify you are human|challenge-platform|Checking your browser/i.test(r.responseText || "")) {
+          reject(new Error("cf-challenge"));
+          return;
+        }
+        if (r.status >= 200 && r.status < 300) {
+          resolve(r.responseText);
+          return;
+        }
+        reject(new Error(`HTTP ${r.status}`));
+      },
       onerror: () => reject(new Error("network")),
       ontimeout: () => reject(new Error("timeout"))
     });
@@ -182,6 +193,7 @@ let cache = null; // { at, level, user, summary, connect }
 let panelEl = null;
 let loading = false;
 let inflight = null; // 进行中的加载 Promise，合并页面首帧的并发触发，避免同一 URL 重复轰炸
+let connectBlockedUntil = 0; // CF 挑战冷却期：命中后短时间不再拉 connect，避免日志刷屏
 
 async function loadLevelData(force = false) {
   if (!force && cache && Date.now() - cache.at < CACHE_TTL) return cache;
@@ -195,7 +207,12 @@ async function loadLevelData(force = false) {
     const level = Number(u.user?.trust_level ?? 0);
     const [summary, connect] = await Promise.all([
       api(`/u/${encodeURIComponent(me)}/summary.json`).then((r) => r.user_summary || {}).catch(() => ({})),
-      level < 4 ? fetchConnect().catch(() => null) : Promise.resolve(null)
+      level < 4 && Date.now() > connectBlockedUntil
+        ? fetchConnect().catch((err) => {
+            if (err?.message === "cf-challenge") connectBlockedUntil = Date.now() + 10 * 60 * 1000;
+            return null;
+          })
+        : Promise.resolve(null)
     ]);
     cache = { at: Date.now(), level, user: u.user || {}, summary, connect };
     return cache;

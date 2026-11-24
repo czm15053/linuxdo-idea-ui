@@ -16,6 +16,7 @@ export const MASK_TITLE_KEY = "linuxdo-im-mask-title";   // "1" = 开
 export const HIDE_CAT_TAGS_KEY = "linuxdo-im-hide-cat-tags"; // "1" = 开
 export const BLUR_IMG_KEY = "linuxdo-im-blur-img"; // "1" = 聊天气泡图片默认模糊（点击显示）
 export const WATERMARK_KEY = "linuxdo-im-watermark"; // JSON：{ enabled, text, gap, opacity }
+export const RAIL_MORE_OPEN_KEY = "linuxdo-im-rail-more-open"; // "1" = 左栏「更多」分组展开
 
 export const NAV2_KEY = "linuxdo-im-nav2"; // "1" = 展开原生侧栏
 export const ORG_NAME_KEY = "linuxdo-im-org-name";

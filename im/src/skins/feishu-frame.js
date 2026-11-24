@@ -103,20 +103,44 @@ export function ensureRailFeishu() {
     </form>`;
   rail.appendChild(search);
 
-  // 文字导航（装饰；「消息」常驻 active 并带未读红点）
+  // 文字导航：「更多」装饰项改造为可展开分组，其余保持原样
   const items = document.createElement("div");
   items.className = "im-rail-items";
   items.innerHTML =
     `<div class="im-rail-item active" data-rail-key="chat">${navIcon("chat")}<span>消息</span>` +
     `<span class="im-rail-badge" style="display:none"></span></div>` +
     RAIL_DECO_ITEMS.map((item) =>
-      `<div class="im-rail-item">${navIcon(item.icon)}<span>${item.label}</span></div>`
+      `<div class="im-rail-item"${item.key === "more" ? ' data-rail-key="more"' : ""}>${navIcon(item.icon)}<span>${item.label}</span></div>`
     ).join("");
   rail.appendChild(items);
 
+  // 「我的」折叠分组：挂在「更多」装饰项下方，由它统一控制展开/收起
+  const moreBtn = items.querySelector('[data-rail-key="more"]');
+  const mineGroup = document.createElement("div");
+  mineGroup.className = "im-rail-mine";
+  const open = localStorage.getItem("linuxdo-im-rail-more-open") === "1";
+  mineGroup.classList.toggle("is-open", open);
+  mineGroup.innerHTML = `
+    <div class="im-rail-mine-items"${open ? "" : " hidden"}>
+      <button type="button" class="im-rail-item" data-rail-key="follow">${navIcon("bell")}<span>关注</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="replies">${navIcon("chat")}<span>我的回复</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="likes">${navIcon("heartOutline")}<span>我的点赞</span></button>
+      <button type="button" class="im-rail-item" data-rail-key="read">${navIcon("bell")}<span>最近浏览</span></button>
+    </div>`;
+  moreBtn?.after(mineGroup);
+  moreBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const next = !mineGroup.classList.contains("is-open");
+    mineGroup.classList.toggle("is-open", next);
+    mineGroup.querySelector(".im-rail-mine-items").hidden = !next;
+    moreBtn.classList.toggle("is-on", next);
+    moreBtn.setAttribute("aria-expanded", String(next));
+    localStorage.setItem("linuxdo-im-rail-more-open", next ? "1" : "0");
+  });
+
   items.addEventListener("click", (e) => {
     const btn = e.target.closest(".im-rail-item[data-rail-key]");
-    if (!btn || !items.contains(btn)) return;
+    if (!btn || !items.contains(btn) || btn.dataset.railKey === "more") return;
     const key = btn.dataset.railKey;
     if (key && hasSource(key)) setActiveRailKey(key, { force: true });
   });
