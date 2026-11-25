@@ -1234,6 +1234,40 @@ color: #7AA3D6;
     .__ROOT_CLASS__ .im-rail-mine-items .im-rail-item svg { width: 16px; height: 16px; }
     .__ROOT_CLASS__ .im-rail-mine-items .im-rail-item:hover { background: var(--im-hover); }
 
+    /* ---------- 已解决卡片（discourse-solved 插件） ---------- */
+    .__ROOT_CLASS__ .im-solved-card {
+      /* flex 列容器里 overflow:hidden 会让 min-height:auto 失效被压扁，禁止收缩 */
+      flex-shrink: 0;
+      margin: 8px 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--im-border);
+      background: var(--im-bg);
+    }
+    .__ROOT_CLASS__ .im-solved-title {
+      padding: 6px 12px;
+      background: #22A06B;
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+    .__ROOT_CLASS__ .im-solved-item { padding: 10px 12px; }
+    .__ROOT_CLASS__ .im-solved-item + .im-solved-item { border-top: 1px solid var(--im-border); }
+    .__ROOT_CLASS__ .im-solved-meta {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 6px; font-size: 12px; color: var(--im-text-2);
+    }
+    .__ROOT_CLASS__ .im-solved-avatar { width: 20px; height: 20px; border-radius: 50%; }
+    .__ROOT_CLASS__ .im-solved-author { font-weight: 600; color: var(--im-text); }
+    .__ROOT_CLASS__ .im-solved-time { color: var(--im-text-3); font-size: 11px; }
+    .__ROOT_CLASS__ .im-solved-content { font-size: 13px; line-height: 1.55; color: var(--im-text); }
+    .__ROOT_CLASS__ .im-solved-content p { margin: 0 0 6px; }
+    .__ROOT_CLASS__ .im-solved-more {
+      display: inline-block; margin-top: 6px;
+      font-size: 12px; color: var(--im-accent); text-decoration: none; cursor: pointer;
+    }
+    .__ROOT_CLASS__ .im-solved-more:hover { text-decoration: underline; }
+
     /* ---------- 聊天水印：背景平铺斜排文字（文字/间距/透明度可调） ---------- */
     .__ROOT_CLASS__.im-watermark-on .im-chat-body {
       background-image: var(--im-wm-image);

@@ -32,6 +32,30 @@ function afterChatPaint(body) {
   chatHooks.syncAiSummary?.();
 }
 
+/* ---------- 已解决卡片（linux.do 自定义多方案 solved） ----------
+ * 数据在话题 JSON 顶层 accepted_answers 数组（post 形态：cooked/post_number/username/avatar_template），
+ * 接口直取；楼层跳转重渲后用同一数据补插。 */
+function renderSolvedCard(body, answers) {
+  if (!body || !Array.isArray(answers) || !answers.length) return;
+  body.querySelector(".im-solved-card")?.remove();
+  const opEl = body.querySelector('.im-msg[data-post-number="1"]');
+  if (!opEl) return;
+  const sections = answers.map((a) => `
+    <div class="im-solved-item">
+      <div class="im-solved-meta">
+        ${a.avatar_template ? `<img class="im-solved-avatar" src="${escapeHtml(fullAvatarUrl(a.avatar_template))}" alt="">` : ""}
+        <span class="im-solved-author">${escapeHtml(a.name || a.username || "")}</span>
+        <span class="im-solved-time">${escapeHtml(formatTime(a.created_at))}</span>
+      </div>
+      <div class="im-solved-content">${a.cooked || ""}</div>
+      <a class="im-solved-more" data-jump-post="${a.post_number}">阅读更多 →</a>
+    </div>`).join("");
+  const card = document.createElement("div");
+  card.className = "im-solved-card";
+  card.innerHTML = `<div class="im-solved-title">✅ 已解决${answers.length > 1 ? ` · ${answers.length} 个方案` : ""}</div>${sections}`;
+  opEl.after(card);
+}
+
 export function extractTextSnippet(html, maxLen = 60) {
   if (!html) return "";
   try {
@@ -306,6 +330,27 @@ function bindChatPanelEvents(panel) {
         e.preventDefault();
         e.stopPropagation();
         chatHooks.popQuoteJump();
+      }
+      return;
+    }
+    // 已解决卡片「阅读更多」→ 跳对应楼层
+    const solvedMore = e.target.closest(".im-solved-more");
+    if (solvedMore && panel.contains(solvedMore)) {
+      e.preventDefault();
+      e.stopPropagation();
+      const postNo = Number(solvedMore.dataset.jumpPost || 0);
+      if (postNo) {
+        const body = panel.querySelector(".im-chat-body");
+        if (scrollChatToPost(body, postNo, true)) {
+          const targetMsg = panel.querySelector(`.im-msg[data-post-number="${postNo}"]`);
+          if (targetMsg) {
+            targetMsg.classList.remove("im-msg-highlight");
+            void targetMsg.offsetWidth;
+            targetMsg.classList.add("im-msg-highlight");
+          }
+        } else {
+          jumpToFloorRemote(postNo);
+        }
       }
       return;
     }
@@ -599,6 +644,7 @@ export function cookedWithQuoteBars(post) {
   try {
     const doc = new DOMParser().parseFromString(cooked, "text/html");
     let changed = false;
+
     for (const aside of [...doc.body.querySelectorAll("aside.quote")]) {
       if (aside.closest("blockquote")) continue; // 嵌套在引用内的保留原样
       const postNo = Number(aside.dataset.post || 0);
@@ -1097,6 +1143,7 @@ export async function loadTopic(topicId) {
     if (body) {
       body.innerHTML = renderBubbles(posts, getCurrentUsername()) ||
         `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
+      renderSolvedCard(body, data.accepted_answers);
       afterChatPaint(body);
       patchDevicesFromEmber(body);
       if (scrollToPost) {
@@ -1217,6 +1264,7 @@ export async function jumpToFloorRemote(postNumber, highlight = true) {
       const landed = posts.some((p) => p.post_number === n) ? n : posts[posts.length - 1].post_number;
       body.innerHTML = renderBubbles(posts, getCurrentUsername()) ||
         `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
+      renderSolvedCard(body, data.accepted_answers);
       afterChatPaint(body);
       patchDevicesFromEmber(body);
       requestAnimationFrame(() => scrollChatToPost(body, landed, highlight));

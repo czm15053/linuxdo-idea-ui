@@ -2,7 +2,7 @@
 // @name         Linux DO · IM 外观（钉钉 / 飞书 / 企业微信）
 // @namespace    https://linux.do/
 // @author       czm15053
-// @version      1.3.7
+// @version      1.3.8
 // @description  一套脚本三种 IM 皮肤：钉钉 / 飞书 / 企业微信，列表按钮一键切换。公共内核：投票、小火箭、图片灯箱、引用跳转、实时刷新、三态深色、伪装模式。
 // @match        https://linux.do/*
 // @exclude-match https://linux.do/pub/*
@@ -4180,6 +4180,40 @@ color: #7AA3D6;
     }
     .__ROOT_CLASS__ .im-rail-mine-items .im-rail-item svg { width: 16px; height: 16px; }
     .__ROOT_CLASS__ .im-rail-mine-items .im-rail-item:hover { background: var(--im-hover); }
+
+    /* ---------- 已解决卡片（discourse-solved 插件） ---------- */
+    .__ROOT_CLASS__ .im-solved-card {
+      /* flex 列容器里 overflow:hidden 会让 min-height:auto 失效被压扁，禁止收缩 */
+      flex-shrink: 0;
+      margin: 8px 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--im-border);
+      background: var(--im-bg);
+    }
+    .__ROOT_CLASS__ .im-solved-title {
+      padding: 6px 12px;
+      background: #22A06B;
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+    .__ROOT_CLASS__ .im-solved-item { padding: 10px 12px; }
+    .__ROOT_CLASS__ .im-solved-item + .im-solved-item { border-top: 1px solid var(--im-border); }
+    .__ROOT_CLASS__ .im-solved-meta {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 6px; font-size: 12px; color: var(--im-text-2);
+    }
+    .__ROOT_CLASS__ .im-solved-avatar { width: 20px; height: 20px; border-radius: 50%; }
+    .__ROOT_CLASS__ .im-solved-author { font-weight: 600; color: var(--im-text); }
+    .__ROOT_CLASS__ .im-solved-time { color: var(--im-text-3); font-size: 11px; }
+    .__ROOT_CLASS__ .im-solved-content { font-size: 13px; line-height: 1.55; color: var(--im-text); }
+    .__ROOT_CLASS__ .im-solved-content p { margin: 0 0 6px; }
+    .__ROOT_CLASS__ .im-solved-more {
+      display: inline-block; margin-top: 6px;
+      font-size: 12px; color: var(--im-accent); text-decoration: none; cursor: pointer;
+    }
+    .__ROOT_CLASS__ .im-solved-more:hover { text-decoration: underline; }
 
     /* ---------- 聊天水印：背景平铺斜排文字（文字/间距/透明度可调） ---------- */
     .__ROOT_CLASS__.im-watermark-on .im-chat-body {
@@ -10237,6 +10271,27 @@ body.im-detail-open #reply-control {
     (_a2 = chatHooks.enhancePolls) == null ? void 0 : _a2.call(chatHooks, body);
     (_b2 = chatHooks.syncAiSummary) == null ? void 0 : _b2.call(chatHooks);
   }
+  function renderSolvedCard(body, answers) {
+    var _a2;
+    if (!body || !Array.isArray(answers) || !answers.length) return;
+    (_a2 = body.querySelector(".im-solved-card")) == null ? void 0 : _a2.remove();
+    const opEl = body.querySelector('.im-msg[data-post-number="1"]');
+    if (!opEl) return;
+    const sections = answers.map((a) => `
+    <div class="im-solved-item">
+      <div class="im-solved-meta">
+        ${a.avatar_template ? `<img class="im-solved-avatar" src="${escapeHtml(fullAvatarUrl(a.avatar_template))}" alt="">` : ""}
+        <span class="im-solved-author">${escapeHtml(a.name || a.username || "")}</span>
+        <span class="im-solved-time">${escapeHtml(formatTime(a.created_at))}</span>
+      </div>
+      <div class="im-solved-content">${a.cooked || ""}</div>
+      <a class="im-solved-more" data-jump-post="${a.post_number}">阅读更多 →</a>
+    </div>`).join("");
+    const card = document.createElement("div");
+    card.className = "im-solved-card";
+    card.innerHTML = `<div class="im-solved-title">✅ 已解决${answers.length > 1 ? ` · ${answers.length} 个方案` : ""}</div>${sections}`;
+    opEl.after(card);
+  }
   function extractTextSnippet(html, maxLen = 60) {
     if (!html) return "";
     try {
@@ -10492,6 +10547,26 @@ body.im-detail-open #reply-control {
           e.preventDefault();
           e.stopPropagation();
           chatHooks.popQuoteJump();
+        }
+        return;
+      }
+      const solvedMore = e.target.closest(".im-solved-more");
+      if (solvedMore && panel.contains(solvedMore)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const postNo = Number(solvedMore.dataset.jumpPost || 0);
+        if (postNo) {
+          const body = panel.querySelector(".im-chat-body");
+          if (scrollChatToPost(body, postNo, true)) {
+            const targetMsg = panel.querySelector(`.im-msg[data-post-number="${postNo}"]`);
+            if (targetMsg) {
+              targetMsg.classList.remove("im-msg-highlight");
+              void targetMsg.offsetWidth;
+              targetMsg.classList.add("im-msg-highlight");
+            }
+          } else {
+            jumpToFloorRemote(postNo);
+          }
         }
         return;
       }
@@ -11221,6 +11296,7 @@ body.im-detail-open #reply-control {
       });
       if (body) {
         body.innerHTML = renderBubbles(posts, getCurrentUsername()) || `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
+        renderSolvedCard(body, data.accepted_answers);
         afterChatPaint(body);
         patchDevicesFromEmber(body);
         if (scrollToPost) {
@@ -11336,6 +11412,7 @@ body.im-detail-open #reply-control {
       if (body) {
         const landed = posts.some((p) => p.post_number === n) ? n : posts[posts.length - 1].post_number;
         body.innerHTML = renderBubbles(posts, getCurrentUsername()) || `<div class="im-chat-empty">${ICONS.msg}<div>暂无消息</div></div>`;
+        renderSolvedCard(body, data.accepted_answers);
         afterChatPaint(body);
         patchDevicesFromEmber(body);
         requestAnimationFrame(() => scrollChatToPost(body, landed, highlight));
@@ -19609,7 +19686,7 @@ ${data.raw}
       }
     }
     function bootstrap() {
-      console.info(`[linuxdo-im] v${"1.3.7"} loaded, skin=${SKIN_ID}`);
+      console.info(`[linuxdo-im] v${"1.3.8"} loaded, skin=${SKIN_ID}`);
       if (!document.documentElement) {
         setTimeout(bootstrap, 0);
         return;
