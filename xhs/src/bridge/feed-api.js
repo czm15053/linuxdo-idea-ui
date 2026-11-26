@@ -2,7 +2,7 @@
 // 优先纯内存直读 window.__INITIAL_STATE__（零 DOM、零穿帮、瞬时响应）
 // 降级静默触发单页路由加载，保障纯净的 IM 摸鱼对话流体验
 
-import { countIn, getInitialState, unwrap, extractTweet, isLikeActive, flagTrue, findVueRouter, timeFromNoteId, fmtStateTime, findTweetArticle, pageWindow } from "./x-dom.js";
+import { countIn, getInitialState, unwrap, extractTweet, isLikeActive, flagTrue, findVueRouter, timeFromNoteId, findTweetArticle, pageWindow } from "./x-dom.js";
 import { commentFromRaw } from "./comment-from-raw.js";
 
 function sleep(ms) {
@@ -136,32 +136,28 @@ export function pinFromNoteObject(rawNote, noteId) {
   };
 }
 
-/** 尝试从页面内存状态 __INITIAL_STATE__ 中静默提取已缓存的笔记详情 */
+/** SPA 切帖后初始快照可能不再更新，优先读取原生运行时的 note store。 */
+function getNoteState() {
+  const app = document.getElementById("app")?.__vue_app__;
+  return app?.config?.globalProperties?.$pinia?.state?.value?.note || getInitialState()?.note;
+}
+
 export function getCachedNoteFromState(noteId) {
-  const state = getInitialState();
-  if (!state) return null;
-
-  // 1. 直链详情页的单篇笔记根数据
-  const direct = unwrap(state.noteData?.data?.noteData);
-  if (direct && (!noteId || direct.id === noteId || direct.noteId === noteId)) {
-    return direct;
-  }
-
-  // 2. 多篇详情缓存 Map
-  const detailMap = unwrap(state.note?.noteDetailMap);
+  const detailMap = unwrap(getNoteState()?.noteDetailMap);
   if (detailMap) {
     const pickNote = (entry) => unwrap(unwrap(entry)?.note);
     if (noteId) {
-      const n = pickNote(detailMap[noteId]);
-      if (n) return n;
+      const note = pickNote(detailMap[noteId]);
+      if (note) return note;
     }
-    const items = Object.entries(detailMap).filter(([k]) => k && k !== "undefined");
+    const items = Object.entries(detailMap).filter(([key]) => key && key !== "undefined");
     for (let i = items.length - 1; i >= 0; i--) {
-      const n = pickNote(items[i][1]);
-      if (n && (!noteId || n.id === noteId || n.noteId === noteId)) return n;
+      const note = pickNote(items[i][1]);
+      if (note && (!noteId || note.id === noteId || note.noteId === noteId)) return note;
     }
   }
-  return null;
+  const direct = unwrap(getInitialState()?.noteData?.data?.noteData);
+  return direct && (!noteId || direct.id === noteId || direct.noteId === noteId) ? direct : null;
 }
 
 function noteContainer() {
@@ -301,14 +297,16 @@ export function harvestNoteComments(container = noteContainer()) {
   return replies;
 }
 
-function flattenRawComments(list, repliedTo, out) {
+function flattenRawComments(list, repliedTo, out, noteId) {
   if (!Array.isArray(list)) return;
   for (const raw of list) {
     const item = unwrap(raw);
+    const owner = String(unwrap(item?.noteId) || unwrap(item?.note_id) || noteId);
+    if (owner !== noteId) continue;
     const parsed = commentFromRaw(item, repliedTo);
-    if (parsed) out.push(parsed);
+    if (parsed) out.push({ ...parsed, noteId });
     const subs = unwrap(item?.subComments) || unwrap(item?.subCommentList) || unwrap(item?.sub_comments) || [];
-    if (Array.isArray(subs) && subs.length) flattenRawComments(subs, parsed?.name || repliedTo, out);
+    if (Array.isArray(subs) && subs.length) flattenRawComments(subs, parsed?.name || repliedTo, out, noteId);
   }
 }
 
@@ -316,63 +314,67 @@ function flattenRawComments(list, repliedTo, out) {
 export function harvestCommentsFromState(noteId) {
   const out = [];
   try {
-    const state = getInitialState();
-    if (!state) return out;
-    const map = unwrap(state.note?.noteDetailMap) || {};
+    if (!noteId) return null;
+    const map = unwrap(getNoteState()?.noteDetailMap) || {};
     const entry = unwrap(noteId ? map[noteId] : null) || {};
     const buckets = [
       unwrap(entry.comments),
       unwrap(entry.comment),
       unwrap(entry.commentList),
-      unwrap(state.note?.comments),
-      unwrap(state.comment?.commentMap?.[noteId]),
+      unwrap(getInitialState()?.comment?.commentMap?.[noteId]),
     ];
     for (const b of buckets) {
-      const list = Array.isArray(b) ? b : (Array.isArray(b?.list) ? b.list : []);
-      if (list.length) flattenRawComments(list, "", out);
-      if (out.length) break;
+      const list = Array.isArray(b) ? b : unwrap(b?.list);
+      if (!Array.isArray(list) || unwrap(b?.firstRequestFinish) === false) continue;
+      flattenRawComments(list, "", out, noteId);
+      return out;
     }
   } catch { /* ignore */ }
-  return out;
+  // null 表示缓存尚不可用；[] 表示已确认该帖没有评论。
+  return null;
 }
 
 export function collectNoteComments(noteId, container = noteContainer()) {
-  const fromDom = harvestNoteComments(container);
   const fromState = harvestCommentsFromState(noteId);
-
-  const map = new Map();
-  // 先置入 state 的接口纯净数据（100% 自带真实头像）
-  for (const c of fromState) {
-    const k = c.id && !c.id.startsWith("0.") ? c.id : `${c.name}|${c.text}`;
-    map.set(k, { ...c });
-  }
-
-  // 再用 DOM 渲染的评论更新（若 DOM 评论尚未加载出头像，保留 state 中的真实头像）
+  if (fromState === null) return null;
+  const keyOf = (c) => c.id && !c.id.startsWith("0.") ? c.id : `${c.name}|${c.text}`;
+  const map = new Map(fromState.map((c) => [keyOf(c), c]));
+  // 切帖时 DOM 可能仍属于旧帖，只接受目标帖缓存能确认的评论 ID。
+  const fromDom = harvestNoteComments(container).filter((c) => map.has(keyOf(c)));
+  const order = [];
+  const ordered = new Set();
+  // 以原生 DOM 树为顺序依据，state 仅补充尚未挂载的评论。
   for (const c of fromDom) {
-    const k = c.id && !c.id.startsWith("0.") ? c.id : `${c.name}|${c.text}`;
-    if (map.has(k)) {
-      const existing = map.get(k);
-      map.set(k, {
-        ...existing,
-        ...c,
-        avatar: c.avatar || existing.avatar || "",
-      });
-    } else {
-      map.set(k, c);
+    const key = keyOf(c);
+    const existing = map.get(key);
+    map.set(key, { ...existing, ...c, noteId, avatar: c.avatar || existing?.avatar || "" });
+    if (!ordered.has(key)) {
+      order.push(key);
+      ordered.add(key);
     }
   }
-
-  return Array.from(map.values());
+  let nextKey = null;
+  for (let i = fromState.length - 1; i >= 0; i--) {
+    const key = keyOf(fromState[i]);
+    if (!ordered.has(key)) {
+      const nextIndex = nextKey === null ? order.length : order.indexOf(nextKey);
+      order.splice(nextIndex, 0, key);
+      ordered.add(key);
+    }
+    nextKey = key;
+  }
+  return order.map((key) => map.get(key));
 }
 
 function kickCommentScroller() {
   const c = noteContainer();
   if (!c) return;
-  const scroller = c.querySelector(".comments-container, .list-container, .note-scroller, .interaction-container, .note-content") || c;
-  try {
-    scroller.scrollTop = scroller.scrollHeight;
-    scroller.dispatchEvent(new Event("scroll", { bubbles: true }));
-  } catch { /* ignore */ }
+  const scroller = [...c.querySelectorAll(".comments-container, .list-container, .note-scroller, .interaction-container, .note-content"), c].find((node) =>
+    node.clientHeight > 0 && node.scrollHeight > node.clientHeight && /^(auto|scroll)$/.test(getComputedStyle(node).overflowY)
+  );
+  if (!scroller) return;
+  scroller.scrollTop = scroller.scrollHeight;
+  scroller.dispatchEvent(new Event("scroll", { bubbles: true }));
 }
 
 function commentMoreButtons() {
@@ -389,7 +391,8 @@ function commentMoreButtons() {
 }
 
 /** 点一轮原生「展开/更多评论」，并滚动评论容器触发分页 */
-export function expandCommentRound() {
+export function expandCommentRound(noteId) {
+  if (String(unwrap(getNoteState()?.currentNoteId) || "") !== noteId) return 0;
   kickCommentScroller();
   let n = 0;
   for (const b of commentMoreButtons()) {
@@ -399,11 +402,12 @@ export function expandCommentRound() {
 }
 
 /** 自动循环展开当前笔记详情中的所有二级折叠评论与后续分页 */
-export async function expandAllComments(_container) {
+export async function expandAllComments(noteId, isCurrent = () => true) {
   let clicked = 0;
   let idle = 0;
   for (let round = 0; round < 20; round++) {
-    const n = expandCommentRound();
+    if (!isCurrent()) break;
+    const n = expandCommentRound(noteId);
     clicked += n;
     if (!n) {
       idle++;
@@ -415,10 +419,12 @@ export async function expandAllComments(_container) {
 }
 
 /** 拉下一页评论：滚动原生容器 + 点展开，返回当前已抓到的全部评论 */
-export async function loadMoreComments(noteId) {
-  expandCommentRound();
+export async function loadMoreComments(noteId, isCurrent = () => true) {
+  if (!isCurrent()) return null;
+  expandCommentRound(noteId);
   await new Promise((r) => setTimeout(r, 400));
-  expandCommentRound();
+  if (!isCurrent()) return null;
+  expandCommentRound(noteId);
   return collectNoteComments(noteId);
 }
 
@@ -458,134 +464,6 @@ export function downloadNoteCommentsAsTxt(pin, replies) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }, 100);
-}
-
-function collectNotePhotos(container) {
-  const photos = [];
-  const push = (src) => {
-    if (src && !photos.includes(src) && !src.includes("avatar") && !src.includes("emoji")) photos.push(src);
-  };
-  container.querySelectorAll(".media-container .swiper-slide:not(.swiper-slide-duplicate) img, .note-slider-img img").forEach((img) => push(img.getAttribute("src")));
-  if (!photos.length) {
-    container.querySelectorAll(".media-container img").forEach((img) => push(img.getAttribute("src")));
-  }
-  return photos;
-}
-
-function extractNoteFromVueComp(container) {
-  if (!container) return null;
-  const nodes = [
-    container,
-    container.querySelector(".note-content"),
-    container.querySelector(".interaction-container"),
-    container.querySelector(".author-container"),
-    container.querySelector(".media-container"),
-    container.querySelector(".note-scroller"),
-    ...Array.from(container.querySelectorAll("[class*='note'], [class*='content'], [class*='author']")).slice(0, 15),
-  ];
-  for (const el of nodes) {
-    if (!el) continue;
-    let comp = el.__vueParentComponent || el.__vue_app__;
-    for (let i = 0; i < 16 && comp; i++) {
-      const bags = [comp.props, comp.setupState, comp.ctx];
-      for (const bag of bags) {
-        if (!bag || typeof bag !== "object") continue;
-        const note = unwrap(bag.note) || unwrap(bag.noteData) || unwrap(bag.noteInfo) || unwrap(bag.item);
-        if (note && typeof note === "object" && (note.title || note.desc || note.displayTitle || note.user)) {
-          return note;
-        }
-      }
-      comp = comp.parent;
-    }
-  }
-  return null;
-}
-
-function pinFromNoteContainer(container, noteId) {
-  // 1. 优先从 Vue 3 内部组件状态提取完整 note 对象
-  const vueNote = extractNoteFromVueComp(container);
-  if (vueNote) {
-    const pin = pinFromNoteObject(vueNote, noteId);
-    if (pin && (pin.text !== "分享了一篇笔记" || pin.name !== "小红书薯友")) {
-      return pin;
-    }
-  }
-
-  // 2. 降级：从 DOM 全面提取
-  const titleEl = container.querySelector("#detail-title, .title, [class*='detail-title'], .note-content .title, .note-scroller .title");
-  const title = (titleEl?.innerText || titleEl?.textContent || "").trim();
-
-  const descEl = container.querySelector("#detail-desc, .desc, [class*='detail-desc'], .note-content .desc, .note-text, .note-scroller .desc");
-  const desc = (descEl?.innerText || descEl?.textContent || "").trim();
-
-  let fullText = [title, desc].filter(Boolean).join("\n\n");
-  if (!fullText) {
-    const contentEl = container.querySelector(".note-content, .note-scroller, .interaction-container");
-    if (contentEl) {
-      const t = (contentEl.innerText || "").trim();
-      if (t && t.length > 5) fullText = t;
-    }
-  }
-  if (!fullText) fullText = "分享了一篇笔记";
-
-  const authorEl = container.querySelector(".author-container, .author-wrapper, .interaction-container .author-wrapper, .author-info, .author, [class*='author']");
-  const authorLink = container.querySelector("a[href*='/user/profile/']");
-  const authorNameEl = authorEl?.querySelector(".name, .username, [class*='name']") || authorLink;
-  const authorName = (authorNameEl?.innerText || authorNameEl?.textContent || "").trim() || "小红书薯友";
-  const authorHandle = authorLink?.getAttribute("href")?.match(/\/user\/profile\/([^?/]+)/)?.[1] || authorName;
-  const authorImg = authorEl?.querySelector("img.avatar-item, img.user-image, .avatar img, img[src*='avatar'], img");
-  const authorAvatar = authorImg?.currentSrc || authorImg?.src || authorImg?.getAttribute("src") || "";
-
-  const photos = collectNotePhotos(container);
-  const videoEl = container.querySelector(".media-container video, video");
-  const videoSrc = videoEl?.getAttribute("src") || "";
-  const video = videoSrc || videoEl ? { src: videoSrc, poster: videoEl?.getAttribute("poster") || photos[0] || "" } : null;
-
-  const bar = container.querySelector(".engage-bar, .buttons.engage-bar-style");
-  const likeEl = bar?.querySelector(".like-wrapper") || container.querySelector(".engage-bar .like-wrapper, [class*='like-wrapper']");
-  const collectEl = bar?.querySelector(".collect-wrapper") || container.querySelector(".engage-bar .collect-wrapper, [class*='collect-wrapper']");
-  const chatEl = bar?.querySelector(".chat-wrapper") || container.querySelector(".engage-bar .chat-wrapper, [class*='chat-wrapper']");
-  const likeCount = countIn(likeEl?.querySelector(".count")?.textContent || "") || "";
-  const collectCount = countIn(collectEl?.querySelector(".count")?.textContent || "") || "";
-  const replyCount = countIn(chatEl?.querySelector(".count")?.textContent || container.querySelector(".comments-container .total, .comments-container")?.textContent || "") || "";
-  const isLiked = isLikeActive(likeEl);
-  const isCollected = !!(collectEl?.querySelector(".collect-active, .active") || collectEl?.classList.contains("active"));
-
-  const dateObj = timeFromNoteId(noteId);
-  const noteTime = (container.querySelector(".date, .info .date, .time, [class*='date']")?.textContent || "").trim()
-    || (dateObj ? fmtStateTime(dateObj) : "")
-    || "刚刚";
-
-  return {
-    id: noteId,
-    name: authorName,
-    handle: authorHandle,
-    profileHref: authorLink?.getAttribute("href") || "",
-    avatar: authorAvatar,
-    text: fullText,
-    photos,
-    images: photos,
-    video,
-    time: noteTime,
-    datetime: dateObj ? dateObj.toISOString() : "",
-    timeIso: dateObj ? dateObj.toISOString() : new Date().toISOString(),
-    likeCount,
-    rtCount: collectCount,
-    replyCount,
-    liked: isLiked,
-    retweeted: isCollected,
-    bookmarked: isCollected,
-    following: false,
-    author: { name: authorName, handle: authorHandle, avatar: authorAvatar, verified: false },
-    stats: { reply: replyCount, rt: collectCount, like: likeCount, liked: isLiked, retweeted: isCollected, bookmarked: isCollected },
-    source: "note",
-  };
-}
-
-function extractFromNoteContainer(nid) {
-  const box = noteContainer();
-  if (!box) return null;
-  return { pin: pinFromNoteContainer(box, nid), replies: harvestNoteComments(box) };
 }
 
 /** 优先从 DOM 卡片上的链接中获取带 xsec_token 的实际 URL */
@@ -649,44 +527,29 @@ function clickNativeNoteCard(nid) {
   } catch { /* ignore */ }
 }
 
-export async function fetchTweetDetail(noteId) {
-  if (!noteId) return null;
+export async function fetchTweetDetail(noteId, isCurrent = () => true) {
+  if (!noteId || !isCurrent()) return null;
 
   let pin = (() => {
     const cached = getCachedNoteFromState(noteId);
     if (cached) return pinFromNoteObject(cached, noteId);
-    return extractFromNoteContainer(noteId)?.pin || null;
+    return null;
   })();
 
   // 始终触发原生卡片打开/路由加载，无感静默填充
   clickNativeNoteCard(noteId);
 
-  let replies = collectNoteComments(noteId);
+  let replies = collectNoteComments(noteId) || [];
 
   // 快速轮询：每 80ms 一次，最多 15 次（总计最长仅 1.2s，正文就绪立刻返回）
   for (let i = 0; i < 15; i++) {
     await sleep(80);
-    if (i === 2 || i === 6) kickCommentScroller();
+    if (!isCurrent()) return null;
+    if ((i === 2 || i === 6) && String(unwrap(getNoteState()?.currentNoteId) || "") === noteId) kickCommentScroller();
     const cached = getCachedNoteFromState(noteId);
     if (cached) pin = pinFromNoteObject(cached, noteId);
-    const live = extractFromNoteContainer(noteId);
-    if (live?.pin) {
-      if (!pin) {
-        pin = live.pin;
-      } else {
-        // 只有在 live.pin 具备有效真实数据时才合并更新，严禁空壳覆盖真实卡片数据！
-        if (live.pin.text && live.pin.text !== "分享了一篇笔记") pin.text = live.pin.text;
-        if (live.pin.name && live.pin.name !== "小红书薯友") pin.name = live.pin.name;
-        if (live.pin.avatar) pin.avatar = live.pin.avatar;
-        if (live.pin.handle && live.pin.handle !== "小红书薯友") pin.handle = live.pin.handle;
-        if (live.pin.profileHref) pin.profileHref = live.pin.profileHref;
-        if (live.pin.photos?.length) pin.photos = live.pin.photos;
-        if (live.pin.likeCount) pin.likeCount = live.pin.likeCount;
-        if (live.pin.rtCount) pin.rtCount = live.pin.rtCount;
-        if (live.pin.replyCount) pin.replyCount = live.pin.replyCount;
-      }
-    }
-    replies = collectNoteComments(noteId);
+    // 正文也从目标帖缓存读取，不能把切帖中过渡的原生 DOM 标记为目标帖。
+    replies = collectNoteComments(noteId) || [];
 
     // 一旦获取到完整正文（超过标题长度）或多图或来自缓存，且稍微等待了一两轮以获取首批评论，立即返回！
     const hasDetailedPin = pin && (pin.photos?.length > 1 || (pin.text && pin.text.length > 25) || cached);
